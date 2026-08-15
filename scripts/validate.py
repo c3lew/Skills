@@ -3,6 +3,9 @@
 
 Checks every skill under skills/: SKILL.md exists, frontmatter has
 name + description, and path references (docs/, skills/, relative) resolve.
+Bundled discipline copies (skills/*/references/<name> sharing a filename with
+docs/disciplines/<name>) must byte-match the docs original — the docs file is
+the source of truth; skills carry verbatim copies so they survive install.
 Does NOT validate prose content.
 
 Usage:
@@ -71,6 +74,19 @@ def validate(skills_dir, repo):
             # resolve relative to the skill dir first, then the repo root
             if not (skill_dir / ref).exists() and not (repo / ref).exists():
                 errors.append(f"{label}/SKILL.md: broken reference '{ref}'")
+        refs_dir = skill_dir / "references"
+        if refs_dir.is_dir():
+            for copy in sorted(refs_dir.iterdir()):
+                original = repo / "docs" / "disciplines" / copy.name
+                if (
+                    copy.is_file()
+                    and original.is_file()
+                    and copy.read_bytes() != original.read_bytes()
+                ):
+                    errors.append(
+                        f"{label}/references/{copy.name}: out of sync with "
+                        f"docs/disciplines/{copy.name} (docs is source of truth)"
+                    )
     return errors
 
 
@@ -159,6 +175,22 @@ def self_check():
         )
         (broken / "extra.md").write_text("x", encoding="utf-8")
         assert validate(skills, repo) == []
+
+        # bundled discipline copy must byte-match docs/disciplines original
+        (repo / "docs" / "disciplines").mkdir()
+        (repo / "docs" / "disciplines" / "disc.md").write_text("v1", encoding="utf-8")
+        bundle_dir = broken / "references"
+        bundle_dir.mkdir()
+        (bundle_dir / "disc.md").write_text("v1", encoding="utf-8")
+        (bundle_dir / "unrelated.md").write_text("no docs counterpart", encoding="utf-8")
+        (bundle_dir / "disc.md.d").mkdir()  # subdir must not crash the check
+        assert validate(skills, repo) == []
+        (bundle_dir / "disc.md").write_text("v2 drifted", encoding="utf-8")
+        errs = validate(skills, repo)
+        assert errs == [
+            "skills/broken/references/disc.md: out of sync with "
+            "docs/disciplines/disc.md (docs is source of truth)"
+        ], errs
 
     print("OK validate self-check green")
 
