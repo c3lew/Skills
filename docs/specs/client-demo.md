@@ -4,7 +4,9 @@
 
 ## 職責
 
-QA 過後的驗收點:client **親手操作**切片、處理「不對」、判定過關。UAT 本質需要人 — 看錄影會漏操作感,agent 不代答。
+QA 過後的驗收點:agent **跑給 client 看**(每個情境 → 會發生什麼),client 逐項確認「是不是我要的」、處理「不對」、判定過關。「真的會動」由 `qa` 證明;demo 只驗「是不是你要的」— 所以 client 用看的就夠,動手成本降到最低。過關話語權仍在 client:agent 不代答,client 沒點頭的判定都不算數。
+
+**親手操作是 opt-in**,兩種情況才切回:驗收項本身是操作感(快捷鍵、拖拉手感、原生殼行為),或 client 主動想摸。
 
 ## 觸發與入口
 
@@ -18,7 +20,7 @@ QA 過後的驗收點:client **親手操作**切片、處理「不對」、判�
 
 ## 行為
 
-1. **Demo checkpoint**:給 client 可點的 link + 一頁照驗收清單走的白話 demo script + QA 報告摘要;開頭白話告知 known issues。
+1. **Demo checkpoint**:agent 照驗收清單逐條當場演給 client 看(每條 = 什麼情況 → 你會看到什麼),配一頁白話 demo script + QA 報告摘要;開頭白話告知 known issues。可點的 link 照給(client 想摸就摸)。當場弄不出條件的情境(錯誤、斷網、邊界)用 QA 同款環境 / fakes 演出來。
 2. Client 說「不對」→ agent 當場提**四分類**建議(白話解釋差別,client 確認,agent 只建議不硬拍):
    - spec 理解錯 → 回 pm-intake 改 spec
    - 實作錯 → bug ticket 走 QA loop

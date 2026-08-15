@@ -1,11 +1,11 @@
 ---
 name: client-demo
-description: QA 綠後帶 client 親手驗收切片:demo checkpoint(可點 link + 白話 demo script + QA 摘要)、「不對」四分類回流、known issues 處置、過關即發(build + 換裝 + release note)。當 qa blocking 清零後 ticket 指路「/client-demo #N」時使用;client 要在場,agent 不代答。
+description: QA 綠後跑給 client 看驗收切片:demo checkpoint(agent 逐條演「什麼情況 → 你會看到什麼」+ 可點 link + QA 摘要)、「不對」四分類回流、known issues 處置、過關即發(build + 換裝 + release note)。當 qa blocking 清零後 ticket 指路「/client-demo #N」時使用;client 要在場點頭,agent 不代答。
 ---
 
 # client-demo
 
-QA 過後的驗收點:client **親手操作**切片、處理「不對」、判定過關。UAT 本質需要人 — 看錄影會漏操作感,client 沒點頭的判定都不算數。對 client 的所有輸出照 [`references/pm-interview.md`](references/pm-interview.md) 的語言規則:白話、非技術也看得懂。
+QA 過後的驗收點:agent **跑給 client 看**,client 確認「是不是我要的」、處理「不對」、判定過關。「真的會動」由 `qa` 證明,demo 只驗「是不是你要的」— client 用看的就夠;過關話語權不變,client 沒點頭的判定都不算數。對 client 的所有輸出照 [`references/pm-interview.md`](references/pm-interview.md) 的語言規則:白話、非技術也看得懂。
 
 ## 1. 定輸入
 
@@ -19,11 +19,13 @@ QA 過後的驗收點:client **親手操作**切片、處理「不對」、判�
 
 把三樣輸入整理成一頁給 client:
 
-1. 可點的 link。
-2. 白話 demo script:照驗收清單逐條走,每條寫「做什麼操作、應該看到什麼」。
-3. QA 報告摘要 — **開頭先白話告知 known issues**,client 帶著預期操作,不是操作到一半踩到。
+1. 可點的 link(client 想摸就摸)。
+2. 白話 demo script:照驗收清單逐條走,每條寫「什麼情況 → 你會看到什麼」。
+3. QA 報告摘要 — **開頭先白話告知 known issues**,client 帶著預期看,不是看到一半嚇到。
 
-然後讓 client 親手走。agent 陪跑答疑,不代操作、不替 client 說「這樣算過」。
+然後 agent 照 script **當場逐條演給 client 看**,每條演完 client 點頭「這是我要的」才走下一條。當場弄不出條件的情境(錯誤、斷網、邊界)用 QA 同款環境 / fakes 演出來,並說明「這是模擬的情況」。agent 只演示不代答,「算不算過」永遠 client 說。
+
+**切回親手操作**的兩種情況:驗收項本身是操作感(快捷鍵、拖拉手感、原生殼行為 tray / hotkey),或 client 主動說想摸 — 這時 agent 陪跑答疑,不代操作。
 
 ## 3. Client 說「不對」→ 四分類
 
