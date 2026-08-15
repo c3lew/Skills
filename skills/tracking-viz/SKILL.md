@@ -9,7 +9,7 @@ description: 讀 GitHub Issues 產一頁全白話靜態 HTML dashboard — hero�
 
 ## 1. 收資料(`gh` CLI)
 
-四宮格各有固定資料來源,只讀 tracker,不讀 spec 正本、不讀 code:
+Hero 與四宮格各有固定資料來源,只讀 tracker,不讀 spec 正本、不讀 code:
 
 | 區塊 | 來源 |
 |------|------|
@@ -30,6 +30,8 @@ description: 讀 GitHub Issues 產一頁全白話靜態 HTML dashboard — hero�
 | implement 進行中 | 開發中 |
 | 還沒動 | 還沒開始 |
 
+進度條寬度照同一張表推,不假裝精確:還沒開始 0%、開發中 30%、測試中 70%、你已驗收 100%。
+
 品質三 tile 的詞:blocking →「必須先修」、known issue →「小毛病(帶著走)」、regression 綠燈 →「既有功能全數正常」。切片名稱用 client 聽得懂的功能描述,ticket 標題帶術語就改寫。
 
 ## 3. 產 HTML
@@ -38,8 +40,10 @@ description: 讀 GitHub Issues 產一頁全白話靜態 HTML dashboard — hero�
 
 - 單檔靜態 HTML、無 server、無外部資源;icon 用 template 內建的 inline SVG,不用 emoji。
 - Hero 的「下一步」含可複製的下一棒指令(`<code>/skill #N</code>`)— 這是產線交棒的指路牌,只指路,不自動 spawn 下一環節。
-- 沒資料的區塊留著並寫白話空狀態(例:「還沒有幫你做過決定」),讓版面穩定。
+- 沒資料的區塊留著並寫白話空狀態(例:「還沒有幫你做過決定」),讓版面穩定。例外:「等你決定」callout 是提醒不是常駐區塊,沒有待決事項就整塊拿掉。
+- 其他環節掛在 dashboard 的一句話資訊(release note 目前版本、監控新錯數、retro 提示)放副標列或品質卡,一樣白話。
 - 寫到目標專案 repo 根的 `dashboard.html`;已存在就整份覆蓋更新。
+- 資訊過載、一頁塞不下時的退路(#7 落選取向):功能進度可借看板「卡片往右走」的心智模型分欄,或借旅程圖的敘事感排時間軸 — 版面主體仍是拍板的儀表板。
 
 ## 4. 白話自查
 
