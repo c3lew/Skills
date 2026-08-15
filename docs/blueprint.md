@@ -16,13 +16,14 @@ skill、哪些用 matt-pocock 原件、哪些薄層 wrap、哪些自建取代,�
 | `client-demo` | [specs/client-demo.md](specs/client-demo.md) | 自建(HITL) |
 | `tracking-viz` | [specs/tracking-viz.md](specs/tracking-viz.md) | 自建(AFK) |
 | `maintain` | [specs/maintain.md](specs/maintain.md) | 薄層 wrap `/triage` |
+| `retro` | [specs/retro.md](specs/retro.md) | 自建(AFK + 點頭把關) |
 
 **安裝模式**:本 repo 是 source of truth;建置時 copy 到 `~/.claude/skills/`
 (user 級,跟 matt-pocock 套件同層並存,全專案生效)。Spec 寫到 spec 級即止 —
 SKILL.md 文案由建置 session 撰寫、靠 Quacket 試點實跑打磨。
 
 各角色的設計討論脈絡見對應 issue:pm-intake #5、qa/client-demo #6、tracking-viz #7、
-ui-mockup #8、技術決策層 #9、維護流程 #10、接線圖 #11、組裝 #12。
+ui-mockup #8、技術決策層 #9、維護流程 #10、接線圖 #11、組裝 #12、發佈/維運/retro #13。
 
 ## 三條總原則
 
@@ -44,7 +45,7 @@ ui-mockup #8、技術決策層 #9、維護流程 #10、接線圖 #11、組裝 #1
 | 3 | 切票 | `slice-tickets` | **自建薄層** wrap `/to-tickets` | vertical slice tickets,每張標注覆蓋的驗收項 |
 | 4 | 實作(每張 ticket) | `/implement`(tdd + code-review) | **原件** | 完成 comment +「下一步:/qa #N」 |
 | 5 | QA | `qa` | **自建**(AFK) | 綠 →「下一步:demo」;fail → 開 ticket 回 4(blocking 修完才 demo) |
-| 6 | 驗收 | `client-demo` | **自建**(HITL) | 過關 → regression 固化;「不對」四分類回流 |
+| 6 | 驗收 | `client-demo` | **自建**(HITL) | 過關 → regression 固化 + **過關即發**(build + 換裝 + release note);「不對」四分類回流 |
 | 7 | 追蹤(隨時) | `tracking-viz` | **自建** | 讀 GitHub Issues 產靜態 HTML dashboard |
 
 ### 入口分流
@@ -76,6 +77,8 @@ ticket / 技術拍板錯重拍)→ 過關(client 點頭 + blocking 清零 + know
 | 改功能 | 兩軸分流:輕量一輪確認 或 完整 pm-intake(+ui-mockup) | 自建 |
 | 技術債 | backlog 攢批,白話三行制定期報;執行 AFK,regression 全綠即結 | 自建慣例 |
 | 架構重構 | `/improve-codebase-architecture` | **原件** + 結案儀式 invariant(ticket + regression 全綠 + 決策投影) |
+| 監控 | 本機 error log,`maintain` session 開頭順掃 → agent-自撿 ticket | 自建慣例 |
+| Solo retro | `retro`(攢批觸發、全 AFK、amendment 經點頭落地) | **自建** |
 
 ## 橫切層
 
@@ -98,11 +101,32 @@ Web 切片 QA 走 Playwright MCP;desktop(Tauri)切片 QA 環境 = **Vite dev ser
 injected fakes 在瀏覽器跑**(前提:UI 為 pure reducer + injected seams),原生殼行為
 (tray / hotkey / updater)由 client-demo 親手操作把關。詳見 `specs/qa.md`。
 
-## 後議角色(placeholder)
+## 發佈 / 維運 / Solo retro(#13 amendment)
 
-發佈 / 維運 / solo retro 角色尚未設計(map ticket #13,charter 定調「後議」)。
-解完後以 amendment 補進本藍圖 — 預期是加章節,不動現有骨架。已預留的餵食口:
-決策更正 comment 的「當初為什麼拍錯」一行(見 `disciplines/tech-decisions.md`)。
+使用者專案形態:desktop app(Tauri)裝在自己 PC 上日用,單機單使用者。
+三條線都是重用現有機制,唯一新 skill 是 `retro`。
+
+### 發佈:過關即發
+
+- 發佈不是獨立 session,是 client-demo 過關 checklist 的**最後一格**:agent build
+  新版 + 直接換裝本機(app 重啟一次,client 在場)。
+- 前提:build/deploy pipeline 全自動化,第一個切片過關前建好(技術決策,系統自拍)。
+- Rollback:留上一版 installer,反悔成本 = 裝回去。
+- 每次發佈在 dashboard 留一行白話 release note — 維護進件時對版本用。
+
+### 監控:本機 error log + agent 掃
+
+- App 錯誤寫本機結構化 error log;agent 每次 `maintain` session 開頭順掃,
+  新錯 → agent-自撿 ticket(分級閉環:regression 綠即結)。
+- Dashboard 顯示「上次掃到 N 個新錯誤」。
+- 換機 / 多機時升級 Sentry Tauri SDK(反悔成本低)。
+
+### Solo retro:攢批、全 AFK、amendment 出口
+
+- 見 [`specs/retro.md`](specs/retro.md)。餵食口:拍板錯更正的「當初為什麼拍錯」、
+  tech-debt backlog、demo 抓到的 QA 漏抓。
+- 攢到門檻 dashboard 提示,client 說跑才跑;AFK 產報告 + 提案,client 逐條點頭
+  才動 disciplines / skills — 系統自我升級的唯一入口。
 
 ## 成效檢驗
 
