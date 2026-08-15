@@ -32,3 +32,7 @@
 - **PM 訪談紀律**:跟 client 談話的規則書 — 兩軸對齊測試、情境問法、每輪 ≤3 題、收斂回合、白話三行制;pm-intake 主用,wayfinder map Notes 引用,mini-intake 為輕量版。
 - **歷史對照**:本系統說的「A/B」— 不同 feature 各跑一套或同 feature 跑兩遍都不採;新 feature 只用新系統跑一次,舊做法的 baseline 取自既有 tracker 實績(訪談輪數、rework、漏到 client 的 works-but-wrong),對照痕跡 + client debrief。
 - **Refactor 結案儀式**:任何 refactor(含 /improve-codebase-architecture 拍板者)的 invariant — 沒有 ticket + regression 全綠 + 決策投影,就不算做過。grilling 中發現會動到可見行為,即刻分流為改功能 ticket。
+- **過關即發**:切片過關的最後一格 — agent build 新版 + 換裝本機(app 重啟一次),dashboard 留一行白話 release note;rollback = 裝回上一版 installer。不開獨立發佈 session。
+- **監控掃描**:app 錯誤寫本機結構化 error log,agent 每次維護 session 開頭順掃,新錯開 agent-自撿 ticket(分級閉環);dashboard 顯示新錯數。單機自用場景,換機時升級 Sentry。
+- **Retro 餵食口**:solo retro 的三個原料來源 — 拍板錯更正 comment 的「當初為什麼拍錯」、tech-debt backlog、demo 抓到的 QA 漏抓(「不對」分類 comment)。
+- **Solo retro**:攢批觸發的全 AFK 檢討 — 餵食口累積到門檻 dashboard 提示,client 說跑才跑;agent 找 pattern 產白話報告 + amendment 提案,client 逐條點頭才改 disciplines/skills。系統自我升級的唯一入口。
