@@ -69,5 +69,5 @@ QA 過後的驗收點:agent **跑給 client 看**,client 確認「是不是我�
 
 ## 8. 收尾
 
-- 過關 → 關閉 ticket,dashboard 更新(切片狀態 + release note)。
+- 過關 → comment「下一步:`/close #N`」— 關票 + dashboard 統一走結案出口(`skills/close/SKILL.md`)。
 - 有「不對」未閉環 → ticket 列出回流 tickets 與各自下一步,本票留著等 re-demo。
