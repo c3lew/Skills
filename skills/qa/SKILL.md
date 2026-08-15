@@ -22,7 +22,9 @@ Bug fix ticket 的範圍 = 該 bug 的重現 scenario + regression suite。
 
 ## 3. Walkthrough(Playwright MCP)
 
-起 QA 環境,逐條驗收項照原句描述的情境操作,每步取 a11y snapshot 當證據;有視覺 oracle 就同場對照 prototype。
+起 QA 環境,逐條驗收項照原句描述的情境操作,每步取 a11y snapshot 當證據;有視覺 oracle 就同場對照 prototype。同場開錄影(Playwright video / 逐步截圖),**每條驗收項存一段 demo 實錄** — 這是 client-demo 的預設素材,存到專案 repo 的 QA artifacts 目錄(位置第一次跑時拍板,之後沿用)。
+
+QA 環境的啟動做成**一鍵重開**:單一 script / 指令(起 dev server + 灌 fakes)。還沒有就本次順手建好 — 這是技術決策,照規則書自拍留投影;之後每輪 QA 與 client-demo 的「client 想摸」都用同一個指令。
 
 - **Web 切片**:專案 dev server。
 - **Desktop(Tauri)切片**:Vite dev server + injected fakes 在瀏覽器跑(前提:UI 是 pure reducer + injected seams)。原生殼行為(tray、global hotkey、updater)不進本 pipeline,由 `client-demo` 親手操作把關 — 報告註明未涵蓋。
@@ -40,7 +42,7 @@ Bug fix ticket 的範圍 = 該 bug 的重現 scenario + regression suite。
 
 ## 6. 報告與交棒
 
-QA 報告寫回本 ticket:白話摘要 + blocking / known issues 清單 + 未涵蓋範圍(如 Tauri 原生殼)。
+QA 報告寫回本 ticket:白話摘要 + blocking / known issues 清單 + 未涵蓋範圍(如 Tauri 原生殼)+ **demo 實錄清單**(每條驗收項對一段,附路徑)+ **一鍵重開指令**(client-demo 直接抄)。
 
 - blocking 清零 → comment「下一步:`/client-demo #N`」。
 - 有 blocking → 列出 bug tickets,修完重跑 `/qa #N`。

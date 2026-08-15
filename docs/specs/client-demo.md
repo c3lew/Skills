@@ -14,13 +14,14 @@ QA 過後的驗收點:agent **跑給 client 看**(每個情境 → 會發生什�
 
 ## 輸入
 
+- QA 實錄(每條驗收項一段,qa 產)+ QA 環境一鍵重開指令。
 - 可點的 link(跑起來的切片)。
 - 驗收清單 + QA 報告摘要。
 - Known issues 清單。
 
 ## 行為
 
-1. **Demo checkpoint**:agent 照驗收清單逐條當場演給 client 看(每條 = 什麼情況 → 你會看到什麼),配一頁白話 demo script + QA 報告摘要;開頭白話告知 known issues。可點的 link 照給(client 想摸就摸)。當場弄不出條件的情境(錯誤、斷網、邊界)用 QA 同款環境 / fakes 演出來。
+1. **Demo checkpoint**:agent 照驗收清單逐條給 client 看(每條 = 什麼情況 → 你會看到什麼),**預設素材 = QA 實錄**(標明是 QA 實跑的錄影)— 不為 demo 重搭環境;配一頁白話 demo script + QA 報告摘要,開頭白話告知 known issues。client 想摸、或想試實錄沒演的情況 → 用一鍵重開指令起 QA 同款環境(弄不出條件的情境靠 fakes)。可點的 link 照給。
 2. Client 說「不對」→ agent 當場提**四分類**建議(白話解釋差別,client 確認,agent 只建議不硬拍):
    - spec 理解錯 → 回 pm-intake 改 spec
    - 實作錯 → bug ticket 走 QA loop

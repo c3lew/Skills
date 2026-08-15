@@ -9,11 +9,12 @@ QA 過後的驗收點:agent **跑給 client 看**,client 確認「是不是我�
 
 ## 1. 定輸入
 
+- **QA 實錄 + 一鍵重開指令**:QA 報告附的每條驗收項實錄與環境重開指令(qa 產出)。
 - **可點的 link**:跑起來的切片(desktop 切片 = 裝好的 app 本體)。
 - **驗收清單**:spec issue 裡 client 拍板的原句,只取本 ticket 覆蓋的驗收項。
 - **QA 報告摘要 + known issues 清單**:本 ticket 的 QA 報告(qa 產出)。
 
-缺件就停下回報、指回產者,不要自己補:link 或 QA 報告缺 → `/qa #N`;ticket 覆蓋驗收項段缺 → `slice-tickets`;spec 沒有拍板驗收清單 → `pm-intake`。QA 報告有 blocking 未清零也一樣擋下。
+缺件就停下回報、指回產者,不要自己補(例外:實錄缺不擋 — 退一層用一鍵重開當場演):link 或 QA 報告缺 → `/qa #N`;ticket 覆蓋驗收項段缺 → `slice-tickets`;spec 沒有拍板驗收清單 → `pm-intake`。QA 報告有 blocking 未清零也一樣擋下。
 
 ## 2. Demo checkpoint
 
@@ -23,9 +24,9 @@ QA 過後的驗收點:agent **跑給 client 看**,client 確認「是不是我�
 2. 白話 demo script:照驗收清單逐條走,每條寫「什麼情況 → 你會看到什麼」。
 3. QA 報告摘要 — **開頭先白話告知 known issues**,client 帶著預期看,不是看到一半嚇到。
 
-然後 agent 照 script **當場逐條演給 client 看**,每條演完 client 點頭「這是我要的」才走下一條。當場弄不出條件的情境(錯誤、斷網、邊界)用 QA 同款環境 / fakes 演出來,並說明「這是模擬的情況」。agent 只演示不代答,「算不算過」永遠 client 說。
+然後 agent 照 script **逐條放 QA 實錄給 client 看**(標明「這是 QA 實跑的錄影」),每條看完 client 點頭「這是我要的」才走下一條 — 不為 demo 重搭環境。實錄沒演到的情況、或 client 想再看一次不同走法 → 用 QA 報告附的一鍵重開指令起同款環境當場演(弄不出條件的情境靠 fakes,說明「這是模擬的情況」)。agent 只演示不代答,「算不算過」永遠 client 說。
 
-**切回親手操作**的兩種情況:驗收項本身是操作感(快捷鍵、拖拉手感、原生殼行為 tray / hotkey),或 client 主動說想摸 — 這時 agent 陪跑答疑,不代操作。
+**切回親手操作**的兩種情況:驗收項本身是操作感(快捷鍵、拖拉手感、原生殼行為 tray / hotkey)→ 本機真 app;或 client 主動說想摸 → 一鍵重開的環境給他玩 — 這時 agent 陪跑答疑,不代操作。
 
 ## 3. Client 說「不對」→ 四分類
 

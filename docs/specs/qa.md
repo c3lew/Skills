@@ -19,7 +19,7 @@ agent 扮演使用者、拿驗收清單實測切片:五階段 pipeline + regress
 ## 行為
 
 1. **先跑 regression suite**,再走新切片 walkthrough。
-2. 五階段 pipeline(承 #4 research):spec→Gherkin scenarios(已在驗收清單定稿)→ Playwright MCP a11y snapshot walkthrough → 獨立 LLM judge 對 spec 原句覆核抓 works-but-wrong → 報告。
+2. 五階段 pipeline(承 #4 research):spec→Gherkin scenarios(已在驗收清單定稿)→ Playwright MCP a11y snapshot walkthrough → 獨立 LLM judge 對 spec 原句覆核抓 works-but-wrong → 報告。Walkthrough 同時錄 **demo 實錄**(每條驗收項一段 video / 截圖序列)— client-demo 的預設素材,在 QA 階段免費產出。
 3. Fail 直接開 ticket、標 severity:**blocking**(驗收清單 fail,修完才 demo)/ **known issue**(非 blocking,帶著 demo)。
 4. 切片過關後(client-demo 判定)把高價值 scenarios 固化成 Playwright regression test。
 
@@ -29,7 +29,7 @@ QA 環境 = **Vite dev server + injected fakes 在瀏覽器跑**,給 Playwright 
 
 ## 產出與交棒
 
-- QA 報告(白話摘要 + blocking / known issues 清單)寫回 ticket。
+- QA 報告(白話摘要 + blocking / known issues 清單)寫回 ticket,**附 demo 實錄**(每條驗收項一段)與 **QA 環境一鍵重開指令**(單一 script,起 dev server + 灌 fakes;第一次跑 QA 時建好,技術決策系統自拍)。
 - 綠 → comment「下一步:`/client-demo #N`」;blocking → 開 bug tickets 回 `/implement`,修完重跑。
 
 ## 引用
