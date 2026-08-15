@@ -11,9 +11,9 @@ description: 系統自我升級的唯一入口:AFK 掃三餵食口(拍板錯更�
 
 ## 1. 觸發與 watermark
 
-不排程,攢批:未消化餵食項 ≥ 5 時 dashboard(tracking-viz)提示「該 retro 了」,client 說跑才跑(門檻是自動拍板的預設,retro 報告可提案調整)。
+不排程,攢批:未消化餵食項 ≥ 5 時 dashboard(tracking-viz)提示「該 retro 了」,client 說跑才跑。門檻是自動拍板:首輪 retro 在 retro issue 發決策投影留紀錄,之後要調整走 amendment 提案。
 
-上一輪的 retro issue 是 **watermark**:本輪只掃 watermark 建立時間之後新增的餵食項 — 已消化的不重讀。找不到 retro issue(第一輪)就全掃。
+上一輪的 retro issue 是 **watermark**:本輪掃描範圍 = watermark 建立時間之後新增的餵食項 + 上輪報告的「未成案觀察」清單。已成案處理的才算消化;找不到 retro issue(第一輪)就全掃。
 
 ## 2. AFK 掃三餵食口
 
@@ -21,18 +21,19 @@ description: 系統自我升級的唯一入口:AFK 掃三餵食口(拍板錯更�
 
 1. **拍板錯更正**:帶「當初為什麼拍錯」那行的更正 comments。
 2. **Tech-debt backlog**:`tech-debt` label tickets(讀 pattern 用,票本身留給 maintain 的批次拍板)。
-3. **QA 漏抓**:demo「不對」分類為**實作錯**的回流 tickets — QA 該抓沒抓的每一件。
+3. **QA 漏抓**:demo「不對」分類為**實作錯**的紀錄(分類 comment 與回流 tickets 都算)— QA 該抓沒抓的每一件。
 
 ## 3. 找 pattern
 
-單一事件不成案,重複才是 signal:同類成因出現 ≥ 2 次才立案,每個 pattern 對到一份該改的 discipline / skill 檔。料不足就老實說「這批料不足以成案」— 報告照發(零提案),watermark 照推進。
+單一事件不成案,重複才是 signal:同類成因出現 ≥ 2 次才立案,每個 pattern 對到一份該改的 discipline / skill 檔。沒立案的單一事件進報告的「**未成案觀察**」清單(一行一件),留給下輪累積。料不足就老實說「這批料不足以成案」— 報告照發(零提案 + 未成案觀察)。
 
 ## 4. 白話報告 + amendment 提案
 
 在專案 tracker 開一張 retro issue 發報告(這張就是下一輪 watermark),全白話:
 
 - 每個 pattern 一段:發現了什麼 → 建議改哪份 discipline / skill → 改了之後差在哪。
-- 每條 amendment 用三行制報:做什麼修改 / 對流程的影響 / 反悔成本。
+- 每條 amendment 用白話三行制報(格式見規則書)。
+- 「未成案觀察」清單:這輪讀過但沒立案的單一事件,下輪接著累積。
 - 固定留一格「**你有沒有要補充的觀察**」— 有就聊、成案就併入提案清單;沒有就結。
 
 ## 5. 逐條點頭 → 落地
