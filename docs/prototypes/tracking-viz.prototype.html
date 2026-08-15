@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — 專案追蹤可視化(三個取向)</title>
+<!--
+  PROTOTYPE — throwaway. Ticket: https://github.com/c3lew/Skills/issues/7
+  三個 variant(A 儀表板 / B 看板 / C 旅程圖),?variant= 切換,底部 bar 循環。
+  Mock data:Quacket 專案情境。資料來源設定上全部可從 GitHub Issues tracker 讀出。
+-->
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1a202c; --muted: #64748b;
+    --line: #e2e8f0; --accent: #2563eb; --accent-soft: #dbeafe;
+    --ok: #16a34a; --ok-soft: #dcfce7;
+    --warn: #d97706; --warn-soft: #fef3c7;
+    --bad: #dc2626; --bad-soft: #fee2e2;
+    --fog: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Noto Sans TC", system-ui, sans-serif; background: var(--bg); color: var(--ink); padding: 32px 24px 96px; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 10px; border-radius: 999px; font-weight: 600; }
+  .b-ok { background: var(--ok-soft); color: var(--ok); }
+  .b-warn { background: var(--warn-soft); color: var(--warn); }
+  .b-bad { background: var(--bad-soft); color: var(--bad); }
+  .b-info { background: var(--accent-soft); color: var(--accent); }
+  .b-fog { background: #e2e8f0; color: var(--fog); }
+  svg.ic { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  /* ===== Variant A: 儀表板 ===== */
+  .hero { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .hero .where { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+  .hero .next { display: flex; gap: 10px; align-items: flex-start; background: var(--accent-soft); border-radius: 8px; padding: 12px 16px; color: #1e40af; font-size: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  .card h2 { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .slice-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .slice-row:first-of-type { border-top: none; }
+  .slice-name { flex: 1; }
+  .bar { width: 130px; height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; flex: none; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+  .bar i.done { background: var(--ok); }
+  .qa-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .tile { border: 1px solid var(--line); border-radius: 10px; padding: 14px; text-align: center; }
+  .tile .num { font-size: 26px; font-weight: 800; }
+  .tile .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .list li { list-style: none; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; display: flex; gap: 8px; align-items: flex-start; }
+  .list li:first-child { border-top: none; }
+  .list .when { color: var(--muted); font-size: 12px; white-space: nowrap; margin-top: 2px; }
+  .ask { border-left: 3px solid var(--warn); background: var(--warn-soft); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 14px; margin-top: 8px; }
+
+  /* ===== Variant B: 看板 ===== */
+  .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; align-items: start; }
+  @media (max-width: 900px) { .board { grid-template-columns: repeat(2, 1fr); } }
+  .col { background: #eef1f5; border-radius: 12px; padding: 12px; }
+  .col.hot { outline: 2px solid var(--warn); }
+  .col h3 { font-size: 13px; color: var(--muted); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .col h3 .cnt { background: var(--card); border-radius: 999px; padding: 0 8px; font-size: 12px; }
+  .kcard { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 10px; font-size: 14px; }
+  .kcard .t { font-weight: 600; margin-bottom: 6px; }
+  .kcard .m { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; }
+  .kcard.ghost { border-style: dashed; color: var(--fog); background: transparent; }
+  .board-foot { margin-top: 18px; display: flex; gap: 10px; align-items: flex-start; background: var(--accent-soft); border-radius: 8px; padding: 12px 16px; color: #1e40af; font-size: 14px; }
+
+  /* ===== Variant C: 旅程圖 ===== */
+  .journey { position: relative; padding-left: 34px; }
+  .journey::before { content: ""; position: absolute; left: 11px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
+  .stop { position: relative; margin-bottom: 22px; }
+  .stop .dot { position: absolute; left: -34px; top: 2px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--card); border: 2px solid var(--line); color: var(--muted); }
+  .stop.done .dot { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .stop.now .dot { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .stop.fog .dot { border-style: dashed; }
+  .stop .head { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .stop.fog .head { color: var(--fog); font-weight: 500; }
+  .stop .body { font-size: 14px; color: var(--muted); }
+  .stop .event { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin-top: 8px; padding: 8px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); }
+  .stop.now .body .card-inline { margin-top: 10px; background: var(--card); border: 1px solid var(--warn); border-radius: 10px; padding: 14px; color: var(--ink); font-size: 14px; }
+
+  /* ===== Switcher ===== */
+  .switcher { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; background: #111827; color: #fff; border-radius: 999px; padding: 6px 8px; box-shadow: 0 8px 24px rgba(0,0,0,.25); font-size: 13px; z-index: 99; }
+  .switcher button { background: none; border: none; color: #fff; cursor: pointer; padding: 6px; border-radius: 999px; display: flex; }
+  .switcher button:hover { background: rgba(255,255,255,.15); }
+  .switcher .lbl { padding: 0 10px; min-width: 190px; text-align: center; }
+  .variant { display: none; }
+  .variant.active { display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============ Variant A: 儀表板 ============ -->
+<section class="variant" id="v-A">
+  <h1>Quacket</h1>
+  <div class="sub">專案儀表板 · 更新於今天 14:20 · 資料來自 issue tracker</div>
+
+  <div class="hero">
+    <div class="where">現在在哪:第 2 個功能「編輯與刪除帳目」測試中,發現 1 個必須先修的問題。</div>
+    <div class="next">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <div><strong>下一步:</strong>修好「刪除後清單沒更新」這個問題,修完就會請你親手操作驗收。預計明天前。</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>功能進度</h2>
+      <div class="slice-row"><span class="slice-name">記一筆帳、看到清單</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
+      <div class="slice-row"><span class="slice-name">編輯與刪除帳目</span><span class="badge b-warn">測試中</span><span class="bar"><i style="width:70%"></i></span></div>
+      <div class="slice-row"><span class="slice-name">每月花費統計圖</span><span class="badge b-info">開發中</span><span class="bar"><i style="width:30%"></i></span></div>
+      <div class="slice-row"><span class="slice-name">匯出成 Excel 檔</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
+    </div>
+
+    <div class="card">
+      <h2><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>品質現況</h2>
+      <div class="qa-tiles">
+        <div class="tile"><div class="num" style="color:var(--bad)">1</div><div class="lbl">必須先修</div></div>
+        <div class="tile"><div class="num" style="color:var(--warn)">2</div><div class="lbl">小毛病(帶著走)</div></div>
+        <div class="tile"><div class="num" style="color:var(--ok)">12</div><div class="lbl">既有功能全數正常</div></div>
+      </div>
+      <div class="ask"><strong>等你決定:</strong>「數字千分位逗號」這個小毛病 — 現在修、之後修、還是不修?</div>
+    </div>
+
+    <div class="card">
+      <h2><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>最近幫你做的決定</h2>
+      <ul class="list">
+        <li><span class="when">8/14</span><span>資料存在你手機裡,不放雲端 — 不用月費,換來的是換手機要手動搬資料。</span></li>
+        <li><span class="when">8/12</span><span>先做手機版,電腦版之後再說 — 你說九成時間用手機記帳。</span></li>
+        <li><span class="when">8/10</span><span>統計圖先做長條圖一種 — 快兩天上線,其他圖表之後想要再加。</span></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2><svg class="ic" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>接下來的驗收點</h2>
+      <ul class="list">
+        <li><span class="when">明天</span><span>你親手試「編輯與刪除帳目」— 會給你連結和一份操作步驟。</span></li>
+        <li><span class="when">下週</span><span>你親手試「每月花費統計圖」。</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Variant B: 看板 ============ -->
+<section class="variant" id="v-B">
+  <h1>Quacket</h1>
+  <div class="sub">功能看板 · 每張卡片是一個你用得到的功能,從左到右往「你驗收完成」移動</div>
+
+  <div class="board">
+    <div class="col">
+      <h3>還沒開始 <span class="cnt">2</span></h3>
+      <div class="kcard"><div class="t">匯出成 Excel 檔</div><div class="m"><span class="badge b-fog">排隊中</span></div></div>
+      <div class="kcard ghost"><div class="t">(未來想到的新功能會出現在這)</div></div>
+    </div>
+    <div class="col">
+      <h3>開發中 <span class="cnt">1</span></h3>
+      <div class="kcard"><div class="t">每月花費統計圖</div><div class="m"><span class="badge b-info">進行中</span><span>約 3 成</span></div></div>
+    </div>
+    <div class="col hot">
+      <h3>測試中 <span class="cnt">1</span></h3>
+      <div class="kcard"><div class="t">編輯與刪除帳目</div><div class="m"><span class="badge b-bad">1 個必須先修</span><span class="badge b-warn">2 個小毛病</span></div></div>
+    </div>
+    <div class="col">
+      <h3>等你驗收 <span class="cnt">0</span></h3>
+      <div class="kcard ghost"><div class="t">(測試通過的功能會停在這,等你親手試)</div></div>
+    </div>
+    <div class="col">
+      <h3>你驗收完成 <span class="cnt">1</span></h3>
+      <div class="kcard"><div class="t">記一筆帳、看到清單</div><div class="m"><span class="badge b-ok">8/11 你點頭</span></div></div>
+    </div>
+  </div>
+
+  <div class="board-foot">
+    <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    <div><strong>下一步:</strong>把「編輯與刪除帳目」的必修問題修掉,卡片就會移到「等你驗收」。另外有一個小毛病(數字千分位逗號)等你決定要不要修。</div>
+  </div>
+</section>
+
+<!-- ============ Variant C: 旅程圖 ============ -->
+<section class="variant" id="v-C">
+  <h1>Quacket</h1>
+  <div class="sub">專案旅程 · 由上往下走,走到哪一站一目了然</div>
+
+  <div class="journey">
+    <div class="stop done">
+      <div class="dot"><svg class="ic" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+      <div class="head">記一筆帳、看到清單 <span class="badge b-ok">完成</span></div>
+      <div class="body">8/11 你親手試過、點頭通過。之後每次改東西都會自動重測這個功能,確保不會被弄壞。
+        <div class="event"><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>做這站時定的:資料存在你手機裡,不放雲端 — 免月費,換手機要手動搬。</div>
+      </div>
+    </div>
+
+    <div class="stop now">
+      <div class="dot"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg></div>
+      <div class="head">編輯與刪除帳目 <span class="badge b-warn">現在在這</span></div>
+      <div class="body">
+        測試到七成,發現 1 個必須先修的問題。
+        <div class="card-inline">
+          <strong>下一步:</strong>修好「刪除後清單沒更新」→ 明天請你親手操作驗收。<br>
+          <strong>等你決定:</strong>「數字千分位逗號」小毛病 — 現在修 / 之後修 / 不修?
+        </div>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="dot">3</div>
+      <div class="head">每月花費統計圖 <span class="badge b-info">開發中</span></div>
+      <div class="body">做了約三成。做這站前定的:先做長條圖一種,快兩天上線,其他圖表之後想要再加。</div>
+    </div>
+
+    <div class="stop">
+      <div class="dot">4</div>
+      <div class="head">匯出成 Excel 檔 <span class="badge b-fog">還沒開始</span></div>
+      <div class="body">排在統計圖之後。</div>
+    </div>
+
+    <div class="stop fog">
+      <div class="dot"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v.01M12 12v.01M12 19v.01"/></svg></div>
+      <div class="head">之後的路</div>
+      <div class="body">你在使用過程冒出的新想法會加到這裡,一起排優先順序。</div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div class="switcher">
+  <button id="prev" aria-label="上一個"><svg class="ic" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <span class="lbl" id="lbl"></span>
+  <button id="next" aria-label="下一個"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+</div>
+
+<script>
+  const variants = [
+    { key: 'A', name: '儀表板 — 現在在哪 + 四宮格' },
+    { key: 'B', name: '看板 — 功能卡片往右走' },
+    { key: 'C', name: '旅程圖 — 一條路走到底' },
+  ];
+  let idx = Math.max(0, variants.findIndex(v => v.key === new URLSearchParams(location.search).get('variant')));
+  function render() {
+    const v = variants[idx];
+    document.querySelectorAll('.variant').forEach(el => el.classList.toggle('active', el.id === 'v-' + v.key));
+    document.getElementById('lbl').textContent = v.key + ' — ' + v.name;
+    try { history.replaceState(null, '', '?variant=' + v.key); } catch (e) { /* file:// 直接開時可能不給改 URL,切換照常運作 */ }
+  }
+  function cycle(d) { idx = (idx + d + variants.length) % variants.length; render(); }
+  document.getElementById('prev').onclick = () => cycle(-1);
+  document.getElementById('next').onclick = () => cycle(1);
+  document.addEventListener('keydown', e => {
+    if (/input|textarea/i.test(e.target.tagName) || e.target.isContentEditable) return;
+    if (e.key === 'ArrowLeft') cycle(-1);
+    if (e.key === 'ArrowRight') cycle(1);
+  });
+  render();
+</script>
+</body>
+</html>
