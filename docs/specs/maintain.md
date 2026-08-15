@@ -4,7 +4,7 @@
 
 ## 職責
 
-上線後 client 白話丟來的問題或想法(bug / 改功能 / 技術債)走 `/triage` 的 state machine 進件,補四個 delta。不重造 state machine、不另造維護執行 skill(執行一律 `/implement` → `/qa`)。
+上線後 client 白話丟來的問題或想法(bug / 改功能 / 技術債)走 `/triage` 的 state machine 進件,補四個 delta。不重造 state machine、不另造維護執行 skill(執行一律 `/build`(wrap `/implement`)→ `/qa`)。
 
 ## 觸發與入口
 
@@ -29,7 +29,7 @@ Client 白話進件為主;client 自開 issue 也收(標 `needs-triage`)。分�
 
 ## 產出與交棒
 
-分類完的 tickets 進對應產線:bug → `/implement` → `/qa`(regression + 重現 scenario)→ 分級閉環;改功能 → 輕量確認或 pm-intake;技術債 → backlog。
+分類完的 tickets 進對應產線:bug → `/build` → `/qa`(regression + 重現 scenario)→ 分級閉環;改功能 → 輕量確認或 pm-intake;技術債 → backlog。
 
 ## 引用
 

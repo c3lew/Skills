@@ -1,11 +1,11 @@
 ---
 name: maintain
-description: 上線後的進件入口:薄層 wrap /triage,client 白話報的 bug / 改功能 / 想法走原件 state machine 分類,補四 delta(tech-debt 攢批、改功能兩軸分流、分級閉環、refactor 結案儀式)+ bug mini-intake + session 開頭 error log 順掃。當上線後 client 丟問題或想法、client 自開 issue、或 client 說要清 tech-debt backlog 時使用;執行不在此 — 分類完指路 /implement。
+description: 上線後的進件入口:薄層 wrap /triage,client 白話報的 bug / 改功能 / 想法走原件 state machine 分類,補四 delta(tech-debt 攢批、改功能兩軸分流、分級閉環、refactor 結案儀式)+ bug mini-intake + session 開頭 error log 順掃。當上線後 client 丟問題或想法、client 自開 issue、或 client 說要清 tech-debt backlog 時使用;執行不在此 — 分類完指路 /build。
 ---
 
 # maintain
 
-薄層 wrap 原件 `/triage`:state machine、roles、agent brief、verify-before-grill 全依原件,本檔只補維護情境的 deltas。本 skill 只做進件與分類,執行一律走 `/implement` → `/qa`。
+薄層 wrap 原件 `/triage`:state machine、roles、agent brief、verify-before-grill 全依原件,本檔只補維護情境的 deltas。本 skill 只做進件與分類,執行一律走 `/build`(wrap 原件 `/implement`)→ `/qa`。
 
 規則書(開工前先讀完):
 
@@ -58,7 +58,7 @@ Invariant:任何 refactor — 含 `/improve-codebase-architecture` 拍板的 —
 
 Client 報的即到即分類開票;agent 自撿的照 §5 攢批,client 說了才清。分類完的票進對應產線,每張票 comment 下一步指令當接力棒:
 
-- bug → 「下一步:`/implement #N`」,票上附重現 scenario(`/qa` 要跑 regression + 這個 scenario)。
+- bug → 「下一步:`/build #N`」,票上附重現 scenario(`/qa` 要跑 regression + 這個 scenario)。
 - 改功能 → 輕量票同上;完整版寫「下一步:`/pm-intake`」。
 - tech-debt → 留在 backlog,等 §5 的批次拍板。
 

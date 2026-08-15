@@ -43,7 +43,7 @@ ui-mockup #8、技術決策層 #9、維護流程 #10、接線圖 #11、組裝 #1
 | 2 | 需求訪談 + spec | `pm-intake`(同 session 呼叫 `/to-spec`) | **自建**;to-spec 原件 | spec(Implementation Decisions + 驗收清單 + 拍板 prototype link) |
 | 2a | 長相分岔(訪談中 inline) | `ui-mockup` | **自建薄層** wrap `/prototype` | 拍板 prototype → 入 spec、當 QA 視覺 oracle |
 | 3 | 切票 | `slice-tickets` | **自建薄層** wrap `/to-tickets` | vertical slice tickets,每張標注覆蓋的驗收項 |
-| 4 | 實作(每張 ticket) | `/implement`(tdd + code-review) | **原件** | 完成 comment +「下一步:/qa #N」 |
+| 4 | 實作(每張 ticket) | `build`(wrap `/implement`:tdd + code-review,補交棒) | **薄層 wrap** | 完成 comment +「下一步:/qa #N」 |
 | 5 | QA | `qa` | **自建**(AFK) | 綠 →「下一步:demo」;fail → 開 ticket 回 4(blocking 修完才 demo) |
 | 6 | 驗收 | `client-demo` | **自建**(HITL) | 過關 → regression 固化 + **過關即發**(build + 換裝 + release note);「不對」四分類回流 |
 | 7 | 追蹤(隨時) | `tracking-viz` | **自建** | 讀 GitHub Issues 產靜態 HTML dashboard |
@@ -62,7 +62,7 @@ ui-mockup #8、技術決策層 #9、維護流程 #10、接線圖 #11、組裝 #1
 
 ### QA → demo → 過關 loop
 
-`/implement` → `qa`(regression 先跑 + 驗收清單 walkthrough + 獨立 judge 抓
+`build` → `qa`(regression 先跑 + 驗收清單 walkthrough + 獨立 judge 抓
 works-but-wrong)→ blocking 清零 → `client-demo`(client 親手操作)→
 「不對」四分類回流(spec 錯回 pm-intake / 實作錯開 bug ticket / 新想法開 feature
 ticket / 技術拍板錯重拍)→ 過關(client 點頭 + blocking 清零 + known issues 有
@@ -137,6 +137,7 @@ injected fakes 在瀏覽器跑**(前提:UI 為 pure reducer + injected seams),�
 
 | matt-pocock 原件 | 去留 |
 |------------------|------|
-| wayfinder / to-spec / implement / tdd / code-review / prototype / research / triage / improve-codebase-architecture / domain-modeling | **照用不改**(部分被自建層呼叫或 wrap) |
+| wayfinder / to-spec / tdd / code-review / prototype / research / triage / improve-codebase-architecture / domain-modeling | **照用不改**(部分被自建層呼叫或 wrap) |
 | to-tickets | **薄層 wrap** by `slice-tickets`(補驗收項標注) |
+| implement | **薄層 wrap** by `build`(補交棒 comment) |
 | grilling(對 client) | **被 pm-intake 取代**;保留給 engineer-mode 與 wayfinder 建圖 |

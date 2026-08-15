@@ -21,7 +21,7 @@ description: 產線路由入口:讀現場(交棒 comment、tickets、repo 地基
 | 大而模糊的 idea,還沒有 map issue | `/wayfinder` 建圖 |
 | 清楚的單一 feature 需求,還沒有 spec | `/pm-intake` |
 | spec 拍板了,還沒切票 | `/slice-tickets` |
-| 有 `ready-for-agent` 切片票沒開工 | `/implement #N` |
+| 有 `ready-for-agent` 切片票沒開工 | `/build #N` |
 | implement 完成的票在等驗 | `/qa #N` |
 | QA blocking 清零在等驗收 | `/client-demo #N` |
 | 過關 / fix 驗完在等結案 | `/close #N` |

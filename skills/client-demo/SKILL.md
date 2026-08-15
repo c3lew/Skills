@@ -33,7 +33,7 @@ QA 過後的驗收點:agent **跑給 client 看**,client 確認「是不是我�
 每個「不對」當場提分類建議 — 白話解釋四類差在哪,client 確認;agent 只建議不硬拍:
 
 - **spec 理解錯**(spec 寫的就不是 client 要的)→ 回 `pm-intake` 改 spec。
-- **實作錯**(spec 對,做出來不對)→ 開 bug ticket 走 QA loop(`/implement` → `/qa`)。
+- **實作錯**(spec 對,做出來不對)→ 開 bug ticket 走 QA loop(`/build` → `/qa`)。
 - **新想法**(spec 沒提過,看到實物才想到)→ 開 feature ticket 排優先,不混進本切片。
 - **技術拍板錯**(agent 自動拍的技術決策拍錯)→ 照 [`references/tech-decisions.md`](references/tech-decisions.md) 的修正回路重拍,不重訪 client。
 

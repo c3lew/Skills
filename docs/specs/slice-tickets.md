@@ -19,7 +19,7 @@ Spec 拍板後,ticket comment 指路「下一步:`/slice-tickets #N`」。
 ## 產出與交棒
 
 - Vertical slice tickets(各標覆蓋驗收項)。
-- 每張 ticket comment 指路「下一步:`/implement #N`」。
+- 每張 ticket comment 指路「下一步:`/build #N`」。
 
 ## 引用
 

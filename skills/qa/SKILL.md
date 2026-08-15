@@ -37,7 +37,7 @@ QA 環境的啟動做成**一鍵重開**:單一 script / 指令(起 dev server +
 
 每條 fail 開 bug ticket(重現步驟 + 對應驗收原句 + 證據)並標 severity:
 
-- **blocking** — 驗收清單 fail,修完才能 demo。ticket comment「下一步:`/implement #N`」。
+- **blocking** — 驗收清單 fail,修完才能 demo。ticket comment「下一步:`/build #N`」。
 - **known issue** — 非 blocking,帶著 demo;處置(現在修 / 之後修 / 不修)由 client 在 demo 收尾整批確認。
 
 ## 6. 報告與交棒
