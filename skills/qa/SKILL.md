@@ -1,6 +1,6 @@
 ---
 name: qa
-description: 扮演使用者拿驗收清單實測切片:regression 先跑、Playwright MCP walkthrough、獨立 judge 對 spec 原句抓 works-but-wrong、fail 分 blocking/known issue 開票。當 implement 完成後 ticket 指路「/qa #N」、維護產線 bug fix 要驗證、或 client-demo 過關後要固化 regression scenarios 時使用。
+description: 扮演使用者拿驗收清單實測切片,獨立 judge 抓 works-but-wrong,fail 開票標 blocking/known issue。當 implement 完成後 ticket 指路「/qa #N」、維護產線 bug fix 要驗證、或 client-demo 過關後要固化 regression scenarios 時使用。
 ---
 
 # qa
@@ -10,7 +10,7 @@ description: 扮演使用者拿驗收清單實測切片:regression 先跑、Play
 ## 1. 定輸入
 
 - **測試範圍 oracle**:ticket 的「覆蓋驗收項」段(slice-tickets 標注)。walkthrough 只測這幾條;段落缺失就停下回報,指路回 `slice-tickets` 補,不要自己編 scenarios。
-- **判定 oracle**:spec issue 裡驗收清單的**原句**(pm-intake 收斂回合已拍板成 Gherkin,直接用,不重寫)。
+- **判定 oracle**:spec issue 裡驗收清單的**原句**(Gherkin scenarios 的白話版,pm-intake 收斂回合 client 已拍板 — 直接用,不重寫)。
 - **視覺 oracle**(如有):spec 裡拍板的 prototype。
 - **既有 regression suite**。
 
@@ -22,7 +22,7 @@ Bug fix ticket 的範圍 = 該 bug 的重現 scenario + regression suite。
 
 ## 3. Walkthrough(Playwright MCP)
 
-起 QA 環境,逐條驗收項照 Gherkin 步驟操作,每步取 a11y snapshot 當證據;有視覺 oracle 就同場對照 prototype。
+起 QA 環境,逐條驗收項照原句描述的情境操作,每步取 a11y snapshot 當證據;有視覺 oracle 就同場對照 prototype。
 
 - **Web 切片**:專案 dev server。
 - **Desktop(Tauri)切片**:Vite dev server + injected fakes 在瀏覽器跑(前提:UI 是 pure reducer + injected seams)。原生殼行為(tray、global hotkey、updater)不進本 pipeline,由 `client-demo` 親手操作把關 — 報告註明未涵蓋。
@@ -33,10 +33,10 @@ Bug fix ticket 的範圍 = 該 bug 的重現 scenario + regression suite。
 
 ## 5. 分類與開票
 
-每條 fail 標 severity:
+每條 fail 開 bug ticket(重現步驟 + 對應驗收原句 + 證據)並標 severity:
 
-- **blocking** — 驗收清單 fail,修完才能 demo。開 bug ticket(重現步驟 + 對應驗收原句 + 證據),comment「下一步:`/implement #N`」。
-- **known issue** — 非 blocking,帶著 demo。記進報告,不擋路。
+- **blocking** — 驗收清單 fail,修完才能 demo。ticket comment「下一步:`/implement #N`」。
+- **known issue** — 非 blocking,帶著 demo;處置(現在修 / 之後修 / 不修)由 client 在 demo 收尾整批確認。
 
 ## 6. 報告與交棒
 
