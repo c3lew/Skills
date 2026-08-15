@@ -21,3 +21,9 @@
 - **Regression 固化**:切片過關後,高價值 scenarios 轉成 Playwright regression test,之後每次 QA 先跑。
 - **Prototype 拍板**:client 親手操作可點的 HTML prototype(首見 flow 給 2–3 個 variant)後選定的 UI 原型。發生在 spec 拍板前;拍板後成為 spec 的一部分、QA 的視覺 oracle。
 - **Design system 文件**:首個切片 UI 拍板後抽出的輕量樣式慣例(色、字、間距、元件),之後所有 prototype 與實作引用;偏離要過 client。
+- **維護進件**:上線後 client 用白話丟給 agent 的問題或想法(bug / 改功能 / 技術債)。agent 追問、分類(「不對」四分類的日常版)、開 ticket 走 /triage 的 state machine;client 自己開的 issue 也收,標 `needs-triage`。
+- **Mini-intake**:bug 進件的輕量訪談 — 追問到「能重現 + 期望行為清楚」為止,每輪 ≤3 題、只問 client 看得到的事,複述確認後開 ticket;重現不了標 `needs-info`,不瞎猜。
+- **分級閉環**:client 報的 bug 要 client 點頭才閉環(只有他知道「好了沒」);agent 自撿的問題 regression 綠 + 白話回報即結案。
+- **兩軸分流(維護版)**:改功能進件用影響 × 把握判定走輕量版(一輪確認 + 只更新動到的驗收項)或完整 pm-intake,agent 提議、client 確認。
+- **Tech-debt backlog**:agent 觀察到的技術債開 ticket 掛 `tech-debt` + `needs-triage` 攢批,白話三行制定期報 client,client 只決定「現在做 / 之後 / 不做」;執行 AFK,驗收 = regression 全綠(可見行為不變)。
+- **Refactor 結案儀式**:任何 refactor(含 /improve-codebase-architecture 拍板者)的 invariant — 沒有 ticket + regression 全綠 + 決策投影,就不算做過。grilling 中發現會動到可見行為,即刻分流為改功能 ticket。
