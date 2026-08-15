@@ -1,6 +1,6 @@
 ---
 name: client-demo
-description: QA 綠後帶 client 親手驗收切片:demo checkpoint(可點 link + 白話 demo script + QA 摘要)、「不對」四分類回流、known issues 處置、過關即發(build + 換裝 + release note)。當 qa blocking 清零後 ticket 指路「/client-demo #N」時使用;HITL,client 要在場,agent 不代答。
+description: QA 綠後帶 client 親手驗收切片:demo checkpoint(可點 link + 白話 demo script + QA 摘要)、「不對」四分類回流、known issues 處置、過關即發(build + 換裝 + release note)。當 qa blocking 清零後 ticket 指路「/client-demo #N」時使用;client 要在場,agent 不代答。
 ---
 
 # client-demo
@@ -13,11 +13,11 @@ QA 過後的驗收點:client **親手操作**切片、處理「不對」、判�
 - **驗收清單**:spec issue 裡 client 拍板的原句,只取本 ticket 覆蓋的驗收項。
 - **QA 報告摘要 + known issues 清單**:本 ticket 的 QA 報告(qa 產出)。
 
-缺任何一項就停下回報,指路回 `/qa #N`,不要自己補。QA 報告有 blocking 未清零也一樣擋下。
+缺件就停下回報、指回產者,不要自己補:link 或 QA 報告缺 → `/qa #N`;ticket 覆蓋驗收項段缺 → `slice-tickets`;spec 沒有拍板驗收清單 → `pm-intake`。QA 報告有 blocking 未清零也一樣擋下。
 
 ## 2. Demo checkpoint
 
-給 client 三樣東西,一頁講完:
+把三樣輸入整理成一頁給 client:
 
 1. 可點的 link。
 2. 白話 demo script:照驗收清單逐條走,每條寫「做什麼操作、應該看到什麼」。
@@ -42,7 +42,7 @@ QA 過後的驗收點:client **親手操作**切片、處理「不對」、判�
 
 ## 5. Known issues 收尾
 
-逐條給建議處置 — **現在修 / 開 ticket 之後修 / 不修留紀錄** — 附一句白話理由,client 整批確認、有意見才挑出來談。每條的決定寫回 ticket。
+逐條給建議處置 — **現在修 / 之後修 / 不修** — 附一句白話理由,client 整批確認、有意見才挑出來談。每條的決定寫回 ticket(之後修 → 開 ticket;不修 → 留紀錄)。
 
 ## 6. 過關判定
 
@@ -54,11 +54,11 @@ QA 過後的驗收點:client **親手操作**切片、處理「不對」、判�
 4. regression suite 全綠。
 5. 高價值 scenarios 已固化。
 
-前三條成立後,comment「下一步:`/qa #N` 固化」交 `qa` 把本切片高價值 scenarios 寫進 regression suite;suite 跑綠即補齊第 4、5 條。任一條不成立就停在對應步驟,不往下走。
+前三條成立後,comment「下一步:`/qa #N` 固化」交 `qa` 把本切片高價值 scenarios 寫進 regression suite;拿到 qa 回報固化完成、suite 全綠,第 4、5 條才成立。五條全部成立才進 §7;任一條不成立就停在對應步驟。
 
 ## 7. 過關即發
 
-過關 checklist 的最後一格,不另開 session:
+過關 checklist 的最後一格,不開獨立發佈 session — 五條成立、client 還在場時接著做。前提:build/deploy pipeline 全自動化(第一個切片過關前建好的技術決策);還沒有就先照 [`references/tech-decisions.md`](references/tech-decisions.md) 拍板建好再發。
 
 1. agent build 新版 + 直接換裝本機(app 重啟一次,client 在場)。
 2. 留上一版 installer 當 rollback — 反悔成本 = 裝回去。

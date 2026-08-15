@@ -47,4 +47,4 @@ QA 報告寫回本 ticket:白話摘要 + blocking / known issues 清單 + 未涵
 
 ## 7. 過關後固化
 
-`client-demo` 判定過關、指回本 skill 時:把該切片高價值 scenarios(核心流程、曾抓到 bug 的)寫成 Playwright regression test 進 suite,跑綠後 comment 固化了哪幾條。期間拍的取捨照 [`references/tech-decisions.md`](references/tech-decisions.md) 的決策投影格式記錄。
+`client-demo` 過關判定前三條(client OK + blocking 清零 + known issues 有處置)成立、指回本 skill 固化時:把該切片高價值 scenarios(核心流程、曾抓到 bug 的)寫成 Playwright regression test 進 suite,跑綠後 comment 固化了哪幾條。期間拍的取捨照 [`references/tech-decisions.md`](references/tech-decisions.md) 的決策投影格式記錄。
