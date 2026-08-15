@@ -16,9 +16,12 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 
 FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---", re.S)
-# markdown link targets, plus backticked repo-relative / relative paths
+# markdown link targets, plus backticked relative paths (anything slash-joined
+# with a file extension, e.g. `docs/x.md`, `references/foo.html`, `./local.md`)
 LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
-BACKTICK_PATH_RE = re.compile(r"`((?:\.{1,2}/|docs/|skills/)[^`\s]+)`")
+BACKTICK_PATH_RE = re.compile(
+    r"`(\.{1,2}/[^`\s]+|[\w.-]+(?:/[\w.-]+)+\.[A-Za-z0-9]{1,5})`"
+)
 
 
 def parse_frontmatter(text):
@@ -93,9 +96,15 @@ def self_check():
 
     # ref extraction: keeps repo paths, drops urls and anchors
     refs = find_path_refs(
-        "[a](docs/specs/qa.md) [b](https://x.com) [c](#anchor) `docs/blueprint.md` `./local.md`"
+        "[a](docs/specs/qa.md) [b](https://x.com) [c](#anchor) "
+        "`docs/blueprint.md` `./local.md` `references/foo.html` `not a path` `a/b`"
     )
-    assert refs == ["docs/specs/qa.md", "docs/blueprint.md", "./local.md"], refs
+    assert refs == [
+        "docs/specs/qa.md",
+        "docs/blueprint.md",
+        "./local.md",
+        "references/foo.html",
+    ], refs
 
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp)
