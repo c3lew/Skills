@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>專案儀表板</title>
+<!--
+  tracking-viz dashboard template — #7 拍板 variant A(儀表板)。
+  內容是示意資料,產出時整份換成真資料;版面與 CSS 照抄。
+-->
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1a202c; --muted: #64748b;
+    --line: #e2e8f0; --accent: #2563eb; --accent-soft: #dbeafe;
+    --ok: #16a34a; --ok-soft: #dcfce7;
+    --warn: #d97706; --warn-soft: #fef3c7;
+    --bad: #dc2626; --bad-soft: #fee2e2;
+    --fog: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Noto Sans TC", system-ui, sans-serif; background: var(--bg); color: var(--ink); padding: 32px 24px; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 10px; border-radius: 999px; font-weight: 600; }
+  .b-ok { background: var(--ok-soft); color: var(--ok); }
+  .b-warn { background: var(--warn-soft); color: var(--warn); }
+  .b-bad { background: var(--bad-soft); color: var(--bad); }
+  .b-info { background: var(--accent-soft); color: var(--accent); }
+  .b-fog { background: #e2e8f0; color: var(--fog); }
+  svg.ic { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .hero { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .hero .where { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+  .hero .next { display: flex; gap: 10px; align-items: flex-start; background: var(--accent-soft); border-radius: 8px; padding: 12px 16px; color: #1e40af; font-size: 14px; }
+  .hero .next code { font-family: Consolas, monospace; background: rgba(255,255,255,.7); border-radius: 4px; padding: 1px 6px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  .card h2 { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .slice-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .slice-row:first-of-type { border-top: none; }
+  .slice-name { flex: 1; }
+  .bar { width: 130px; height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; flex: none; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+  .bar i.done { background: var(--ok); }
+  .qa-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .tile { border: 1px solid var(--line); border-radius: 10px; padding: 14px; text-align: center; }
+  .tile .num { font-size: 26px; font-weight: 800; }
+  .tile .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .list li { list-style: none; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; display: flex; gap: 8px; align-items: flex-start; }
+  .list li:first-child { border-top: none; }
+  .list .when { color: var(--muted); font-size: 12px; white-space: nowrap; margin-top: 2px; }
+  .ask { border-left: 3px solid var(--warn); background: var(--warn-soft); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 14px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Quacket</h1>
+<div class="sub">專案儀表板 · 更新於 8/15 14:20</div>
+
+<div class="hero">
+  <div class="where">現在在哪:第 2 個功能「編輯與刪除帳目」測試中,發現 1 個必須先修的問題。</div>
+  <div class="next">
+    <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    <div><strong>下一步:</strong>修好「刪除後清單沒更新」這個問題,修完就會請你親手操作驗收。開下一棒:<code>/implement #12</code></div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>功能進度</h2>
+    <div class="slice-row"><span class="slice-name">記一筆帳、看到清單</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
+    <div class="slice-row"><span class="slice-name">編輯與刪除帳目</span><span class="badge b-warn">測試中</span><span class="bar"><i style="width:70%"></i></span></div>
+    <div class="slice-row"><span class="slice-name">每月花費統計圖</span><span class="badge b-info">開發中</span><span class="bar"><i style="width:30%"></i></span></div>
+    <div class="slice-row"><span class="slice-name">匯出成 Excel 檔</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
+  </div>
+
+  <div class="card">
+    <h2><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>品質現況</h2>
+    <div class="qa-tiles">
+      <div class="tile"><div class="num" style="color:var(--bad)">1</div><div class="lbl">必須先修</div></div>
+      <div class="tile"><div class="num" style="color:var(--warn)">2</div><div class="lbl">小毛病(帶著走)</div></div>
+      <div class="tile"><div class="num" style="color:var(--ok)">12</div><div class="lbl">既有功能全數正常</div></div>
+    </div>
+    <div class="ask"><strong>等你決定:</strong>「數字千分位逗號」這個小毛病 — 現在修、之後修、還是不修?</div>
+  </div>
+
+  <div class="card">
+    <h2><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>最近幫你做的決定</h2>
+    <ul class="list">
+      <li><span class="when">8/14</span><span>資料存在你手機裡,不放雲端 — 不用月費,換來的是換手機要手動搬資料。</span></li>
+      <li><span class="when">8/12</span><span>先做手機版,電腦版之後再說 — 你說九成時間用手機記帳。</span></li>
+      <li><span class="when">8/10</span><span>統計圖先做長條圖一種 — 快兩天上線,其他圖表之後想要再加。</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2><svg class="ic" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>接下來的驗收點</h2>
+    <ul class="list">
+      <li><span class="when">明天</span><span>你親手試「編輯與刪除帳目」— 會給你連結和一份操作步驟。</span></li>
+      <li><span class="when">下週</span><span>你親手試「每月花費統計圖」。</span></li>
+    </ul>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
