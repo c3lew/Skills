@@ -1,6 +1,6 @@
 ---
 name: ui-mockup
-description: 在 spec 拍板前把長相/操作流程的分岔做成可點 HTML prototype 給 client 選,拍板結果回寫 spec 當 QA 的視覺 oracle。當訪談(pm-intake)或改功能分流(maintain)出現長相/操作感分岔、且沒把握 client 會怎麼選時使用;純後端/CLI 切片與小改動不觸發。
+description: 在 spec 拍板前把長相/操作流程的分岔做成可點 HTML prototype 給 client 選,拍板結果回寫 spec 當 QA 的視覺 oracle。當訪談(pm-intake)或改功能分流(maintain)出現長相/操作感分岔、且過兩軸對齊測試(選錯會影響 client、沒把握 client 會怎麼選)時使用;純後端/CLI 切片與小改動由呼叫方逕行拍板。
 ---
 
 # ui-mockup
@@ -14,7 +14,7 @@ description: 在 spec 拍板前把長相/操作流程的分岔做成可點 HTML 
 
 ## 2. 出可點 prototype
 
-呼叫 `/prototype` 走 UI branch,產單一可點 HTML。份量按 variant 分級:
+呼叫 `/prototype` 走 UI branch 出可點 prototype,commit 到 `prototype/<name>` branch,資產放 docs/prototypes/(沿 tracking-viz 慣例)。份量按 variant 分級:
 
 - **首次出現的頁面或主要 flow** → 2–3 個可點 variant,讓 client 實際操作後選一個。
 - **後續小改動** → 單一 proposal,client 點頭即過;不喜歡退回改,不另開 variant。
@@ -23,7 +23,6 @@ description: 在 spec 拍板前把長相/操作流程的分岔做成可點 HTML 
 
 client 選定即拍板,一次做完:
 
-- prototype commit 到 `prototype/<name>` branch,資產放 docs/prototypes/(沿 tracking-viz 慣例),不進 main。
 - 拍板 prototype 的 branch link 寫入 spec — QA 拿它當視覺 oracle 抓 works-but-wrong;prototype 沒畫到的畫面(RWD、edge case)以其風格延伸。
 - Spec 驗收清單加一條:「長相與操作流程與拍板 prototype 一致」。
 
