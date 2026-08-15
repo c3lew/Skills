@@ -1,11 +1,28 @@
-# 藍圖骨架:逐環節接線圖
+# 藍圖:逐環節接線圖
 
-本檔是「像軟體公司一樣開發」skills 系統的骨架 — 開發生命週期每個環節用哪個 skill、
-哪些用 matt-pocock 原件、哪些薄層 wrap、哪些自建取代,以及環節之間的交棒點。
-血肉(各 skill 的完整 SKILL.md 規格)由「組裝藍圖」階段補上。
+本檔是「像軟體公司一樣開發」skills 系統的藍圖 index — 開發生命週期每個環節用哪個
+skill、哪些用 matt-pocock 原件、哪些薄層 wrap、哪些自建取代,以及環節之間的交棒點。
+各 skill 的 spec 在 `docs/specs/`,引用規範在 `docs/disciplines/`,試點計畫在
+`docs/pilot-quacket.md`。
 
-各角色的設計細節見對應 issue:pm-intake #5、qa/client-demo #6、tracking-viz #7、
-ui-mockup #8、技術決策層 #9、維護流程 #10、本接線圖 #11。
+## Skill specs(建置時每個 skill 一個 session,只載自己那份)
+
+| Skill | Spec | 型態 |
+|-------|------|------|
+| `pm-intake` | [specs/pm-intake.md](specs/pm-intake.md) | 自建(HITL) |
+| `ui-mockup` | [specs/ui-mockup.md](specs/ui-mockup.md) | 薄層 wrap `/prototype`(HITL) |
+| `slice-tickets` | [specs/slice-tickets.md](specs/slice-tickets.md) | 薄層 wrap `/to-tickets` |
+| `qa` | [specs/qa.md](specs/qa.md) | 自建(AFK) |
+| `client-demo` | [specs/client-demo.md](specs/client-demo.md) | 自建(HITL) |
+| `tracking-viz` | [specs/tracking-viz.md](specs/tracking-viz.md) | 自建(AFK) |
+| `maintain` | [specs/maintain.md](specs/maintain.md) | 薄層 wrap `/triage` |
+
+**安裝模式**:本 repo 是 source of truth;建置時 copy 到 `~/.claude/skills/`
+(user 級,跟 matt-pocock 套件同層並存,全專案生效)。Spec 寫到 spec 級即止 —
+SKILL.md 文案由建置 session 撰寫、靠 Quacket 試點實跑打磨。
+
+各角色的設計討論脈絡見對應 issue:pm-intake #5、qa/client-demo #6、tracking-viz #7、
+ui-mockup #8、技術決策層 #9、維護流程 #10、接線圖 #11、組裝 #12。
 
 ## 三條總原則
 
@@ -24,7 +41,7 @@ ui-mockup #8、技術決策層 #9、維護流程 #10、本接線圖 #11。
 | 1 | 大模糊 idea | `/wayfinder` | **原件**;map Notes 引用 PM 訪談紀律 | map + decision tickets |
 | 2 | 需求訪談 + spec | `pm-intake`(同 session 呼叫 `/to-spec`) | **自建**;to-spec 原件 | spec(Implementation Decisions + 驗收清單 + 拍板 prototype link) |
 | 2a | 長相分岔(訪談中 inline) | `ui-mockup` | **自建薄層** wrap `/prototype` | 拍板 prototype → 入 spec、當 QA 視覺 oracle |
-| 3 | 切票 | wrap `/to-tickets` | **自建薄層** | vertical slice tickets,每張標注覆蓋的驗收項 |
+| 3 | 切票 | `slice-tickets` | **自建薄層** wrap `/to-tickets` | vertical slice tickets,每張標注覆蓋的驗收項 |
 | 4 | 實作(每張 ticket) | `/implement`(tdd + code-review) | **原件** | 完成 comment +「下一步:/qa #N」 |
 | 5 | QA | `qa` | **自建**(AFK) | 綠 →「下一步:demo」;fail → 開 ticket 回 4(blocking 修完才 demo) |
 | 6 | 驗收 | `client-demo` | **自建**(HITL) | 過關 → regression 固化;「不對」四分類回流 |
@@ -54,7 +71,7 @@ ticket / 技術拍板錯重拍)→ 過關(client 點頭 + blocking 清零 + know
 
 | 環節 | 用什麼 | 關係 |
 |------|--------|------|
-| 維護進件 | wrap `/triage`(補四 delta:tech-debt 類別 / 兩軸分流 / 分級閉環 / refactor 結案儀式) | **自建薄層** |
+| 維護進件 | `maintain`(wrap `/triage`,補四 delta:tech-debt 類別 / 兩軸分流 / 分級閉環 / refactor 結案儀式) | **自建薄層** |
 | Bug | mini-intake → 開票 → `/implement` → `qa` → client 點頭閉環 | 原件 + 自建 |
 | 改功能 | 兩軸分流:輕量一輪確認 或 完整 pm-intake(+ui-mockup) | 自建 |
 | 技術債 | backlog 攢批,白話三行制定期報;執行 AFK,regression 全綠即結 | 自建慣例 |
@@ -68,17 +85,34 @@ ticket / 技術拍板錯重拍)→ 過關(client 點頭 + blocking 清零 + know
 - **PM 訪談紀律**(兩軸對齊測試 / 情境問法 / 每輪 ≤3 題 / 收斂回合 / 白話三行制):
   **引用規範文件** — pm-intake 主用,wayfinder map Notes 引用,mini-intake 是輕量版。
 
-## 引用規範清單(`docs/disciplines/`,內容待組裝階段)
+## 引用規範清單(`docs/disciplines/`,內容已定稿)
 
 | 檔案 | 一行 scope |
 |------|-----------|
-| `pm-interview.md` | 怎麼跟 client 談話:兩軸測試、情境問法、節奏、收斂回合 |
-| `tech-decisions.md` | 技術決策怎麼拍:依據型查證、三行制、決策投影、修正回路 |
+| [`pm-interview.md`](disciplines/pm-interview.md) | 怎麼跟 client 談話:兩軸測試、情境問法、節奏、收斂回合 |
+| [`tech-decisions.md`](disciplines/tech-decisions.md) | 技術決策怎麼拍:依據型查證、三行制、決策投影、修正回路 |
+
+## Desktop app 的 QA 路線
+
+Web 切片 QA 走 Playwright MCP;desktop(Tauri)切片 QA 環境 = **Vite dev server +
+injected fakes 在瀏覽器跑**(前提:UI 為 pure reducer + injected seams),原生殼行為
+(tray / hotkey / updater)由 client-demo 親手操作把關。詳見 `specs/qa.md`。
+
+## 後議角色(placeholder)
+
+發佈 / 維運 / solo retro 角色尚未設計(map ticket #13,charter 定調「後議」)。
+解完後以 amendment 補進本藍圖 — 預期是加章節,不動現有骨架。已預留的餵食口:
+決策更正 comment 的「當初為什麼拍錯」一行(見 `disciplines/tech-decisions.md`)。
+
+## 成效檢驗
+
+見 [`pilot-quacket.md`](pilot-quacket.md):以 Quacket 為歷史對照的 A/B 試點 —
+全新 feature 走全產線,舊 25 張 issues 當 baseline,輕量記錄 + client debrief。
 
 ## 原件去留總表
 
 | matt-pocock 原件 | 去留 |
 |------------------|------|
 | wayfinder / to-spec / implement / tdd / code-review / prototype / research / triage / improve-codebase-architecture / domain-modeling | **照用不改**(部分被自建層呼叫或 wrap) |
-| to-tickets | **薄層 wrap**(補驗收項標注) |
+| to-tickets | **薄層 wrap** by `slice-tickets`(補驗收項標注) |
 | grilling(對 client) | **被 pm-intake 取代**;保留給 engineer-mode 與 wayfinder 建圖 |

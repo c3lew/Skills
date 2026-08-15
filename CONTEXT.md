@@ -30,4 +30,5 @@
 - **Ticket 接力棒**:環節間的交棒機制 — session 收尾把產出 link 與「下一步指令」寫回 ticket comment,下一個 session 以 `/skill #N` 冷啟動;下一棒由 client 手動開,dashboard hero 指路。
 - **引用規範 (discipline)**:抽成獨立文件的行為規則,多個 skill 引用同一份(PM 訪談紀律、技術決策紀律),改一處全體生效。
 - **PM 訪談紀律**:跟 client 談話的規則書 — 兩軸對齊測試、情境問法、每輪 ≤3 題、收斂回合、白話三行制;pm-intake 主用,wayfinder map Notes 引用,mini-intake 為輕量版。
+- **歷史對照**:本系統說的「A/B」— 不同 feature 各跑一套或同 feature 跑兩遍都不採;新 feature 只用新系統跑一次,舊做法的 baseline 取自既有 tracker 實績(訪談輪數、rework、漏到 client 的 works-but-wrong),對照痕跡 + client debrief。
 - **Refactor 結案儀式**:任何 refactor(含 /improve-codebase-architecture 拍板者)的 invariant — 沒有 ticket + regression 全綠 + 決策投影,就不算做過。grilling 中發現會動到可見行為,即刻分流為改功能 ticket。
