@@ -19,6 +19,8 @@ description: 產線路由入口:讀現場(交棒 comment、tickets、repo 地基
 |------|--------|
 | 沒 git repo / 沒 GitHub tracker / 沒 `docs/agents/` | 鋪地基:`git init` + 開 GitHub repo + `/setup-matt-pocock-skills` |
 | 大而模糊的 idea,還沒有 map issue | `/wayfinder` 建圖 |
+| map 還有 open 子票(decision tickets) | 繼續 `/wayfinder` — 子票不逐張下指令 |
+| map 收斂、或某 feature 相關 decisions 已全關 | `/pm-intake`(會讀 map 的 Decisions so far,不重問) |
 | 清楚的單一 feature 需求,還沒有 spec | `/pm-intake` |
 | spec 拍板了,還沒切票 | `/slice-tickets` |
 | 有 `ready-for-agent` 切片票沒開工 | `/build #N` |
