@@ -34,6 +34,6 @@ description: 把 client 的 feature 需求訪談成可拍板的 spec:兩軸分�
 
 ## 4. 產 spec + 交棒
 
-原件 user-invoked,agent 不能代叫 — 請 client 同 session 打 `/to-spec`(「一環節一 session」的唯一例外 — to-spec 要吃訪談對話 context)。Spec issue 必含:Implementation Decisions(正本)、拍板的驗收清單(QA 的唯一 oracle)、拍板 prototype link(如有)。
+同 session 呼叫 `/to-spec`(已收編,模型可叫;「一環節一 session」的唯一例外 — to-spec 要吃訪談對話 context)。Spec issue 必含:Implementation Decisions(正本)、拍板的驗收清單(QA 的唯一 oracle)、拍板 prototype link(如有)。
 
 收尾在 ticket 留 comment:產出 link +「下一步:`/slice-tickets #N`」。

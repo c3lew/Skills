@@ -80,7 +80,7 @@ docs/
   specs/              每個 skill 一份行為 spec
   disciplines/        跨 skill 共用紀律(訪談、技術決策)— 改一處全體生效
   agents/             tracker / labels / domain 慣例
-skills/               11 個 skill(SKILL.md + references/)— source of truth
+skills/               自建 + 收編 skills(SKILL.md + references/)— source of truth
 scripts/
   validate.py         結構 lint(frontmatter、斷連結、discipline 副本同步)
   install.py          idempotent 安裝到 ~/.claude/skills/(先 validate,紅就拒裝)
@@ -91,6 +91,6 @@ CONTEXT.md            ubiquitous language 詞彙表
 
 1. **spec 是正本**:改行為先改 `docs/specs/`,再同步 SKILL.md。
 2. **disciplines 改 `docs/disciplines/`**,然後把各 skill `references/` 的副本同步成 byte 一致(validate 會抓不同步)。
-3. **不改 matt-pocock 原件**:要加行為就開薄層 wrap skill(如 `build` wrap `/implement`);wrap 不能跟原件同名,install 會蓋掉原件目錄。原件多標 `disable-model-invocation` — wrap 走到原件步驟時請 client 打指令,agent 不能代叫。
+3. **matt-pocock 原件分兩類**:產線會叫的四個(`to-tickets` / `to-spec` / `triage` / `implement`)已 fork 收編進本 repo(模型可叫、全權控制,upstream 更新手動 port);其餘原件不改,要加行為開薄層 wrap skill(wrap 不能跟未收編原件同名,install 會蓋掉)。
 4. 每次改完:`python scripts/validate.py` 綠 → `python scripts/install.py` 換裝 → commit。
 5. 系統性的流程改進走 `/retro`,不要散落在對話裡改。

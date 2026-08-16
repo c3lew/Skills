@@ -9,6 +9,7 @@ Usage:
     python scripts/install.py               # install to ~/.claude/skills/
     python scripts/install.py --self-check  # run built-in assertions
 """
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -33,7 +34,11 @@ def install(skills_dir, repo, dest):
     installed = []
     for skill_dir in sorted(p for p in skills_dir.iterdir() if p.is_dir()):
         target = dest / skill_dir.name
-        if target.exists():
+        if target.is_symlink() or target.is_junction():
+            # 收編的原件在 dest 是 symlink/junction(指向套件本體)— 拆連結即可,
+            # 本體留在原處不動,反悔 = 重建連結。os.rmdir 兩種連結都能拆且不進目標。
+            os.rmdir(target)
+        elif target.exists():
             shutil.rmtree(target)
         shutil.copytree(skill_dir, target)
         installed.append(skill_dir.name)

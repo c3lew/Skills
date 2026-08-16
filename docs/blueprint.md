@@ -137,7 +137,8 @@ injected fakes 在瀏覽器跑**(前提:UI 為 pure reducer + injected seams),�
 
 | matt-pocock 原件 | 去留 |
 |------------------|------|
-| wayfinder / to-spec / tdd / code-review / prototype / research / triage / improve-codebase-architecture / domain-modeling | **照用不改**(部分被自建層呼叫或 wrap) |
+| wayfinder / tdd / code-review / prototype / research / improve-codebase-architecture / domain-modeling | **照用不改**(部分被自建層呼叫或 wrap) |
+| to-tickets / to-spec / triage / implement | **fork 收編進本 repo**(拿掉 disable-model-invocation,wrap/自建層直接呼叫;upstream 更新手動 port) |
 | to-tickets | **薄層 wrap** by `slice-tickets`(補驗收項標注) |
 | implement | **薄層 wrap** by `build`(補交棒 comment) |
 | grilling(對 client) | **被 pm-intake 取代**;保留給 engineer-mode 與 wayfinder 建圖 |

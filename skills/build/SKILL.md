@@ -9,7 +9,7 @@ description: 薄層 wrap /implement:tdd、code-review、commit 全依原件,只�
 
 ## 1. 呼叫原件
 
-原件 user-invoked,agent 不能代叫 — 請 client 打 `/implement #N`(同 session)跑完整流程;原件跑完回到 §2 收尾。
+呼叫 `/implement #N`(已收編,模型可叫)跑完整流程,跑完接 §2 收尾。
 
 ## 2. 收尾交棒(delta)
 

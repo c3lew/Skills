@@ -5,7 +5,7 @@ description: 上線後的進件入口:薄層 wrap /triage,client 白話報的 bu
 
 # maintain
 
-薄層 wrap 原件 `/triage`:state machine、roles、agent brief、verify-before-grill 全依原件,本檔只補維護情境的 deltas。原件 user-invoked,agent 不能代叫 — session 開頭請 client 順手打 `/triage` 載入原件規則,本檔 deltas 疊加其上。本 skill 只做進件與分類,執行一律走 `/build`(wrap 原件 `/implement`)→ `/qa`。
+薄層 wrap 原件 `/triage`:state machine、roles、agent brief、verify-before-grill 全依原件,本檔只補維護情境的 deltas。進件分類時呼叫 `/triage`(已收編,模型可叫)載入原件規則,本檔 deltas 疊加其上。本 skill 只做進件與分類,執行一律走 `/build`(wrap 原件 `/implement`)→ `/qa`。
 
 規則書(開工前先讀完):
 

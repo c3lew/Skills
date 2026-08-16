@@ -12,7 +12,7 @@ Spec 拍板後,ticket comment 指路「下一步:`/slice-tickets #N`」。
 
 ## 行為
 
-1. 請 client 同 session 打 `/to-tickets`(原件 user-invoked,agent 不能代叫)照其原生邏輯切票(vertical slice:每張都端到端、可 demo)。
+1. 呼叫 `/to-tickets`(收編件)照其原生邏輯切票(vertical slice:每張都端到端、可 demo)。
 2. **Delta**:每張 ticket body 加「覆蓋驗收項」段,列出這片做完後驗收清單哪幾條可測 — `qa` 走 walkthrough 時按這個範圍測,`client-demo` 的 re-demo 也按它定範圍。
 3. 檢查覆蓋完整性:驗收清單每一條至少被一張 ticket 覆蓋,漏了就回報。
 
