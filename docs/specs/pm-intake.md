@@ -24,7 +24,7 @@
 3. 自動拍板依 `docs/disciplines/tech-decisions.md`:依據型查證、決策投影、三行制。
 4. 訪談中遇到長相/操作感分岔且沒把握 → inline 呼叫 `ui-mockup`(見其 spec),拍板 prototype 入 spec。
 5. 收斂回合(一次做完):自動拍板白話清單 → devil's advocate pass → 相對成本標注 → 驗收清單拍板。
-6. 同 session 呼叫 `/to-spec` 收斂(to-spec 吃訪談對話 context — 這是「一環節一 session」的唯一例外)。
+6. 請 client 同 session 打 `/to-spec` 收斂(原件 user-invoked,agent 不能代叫)(to-spec 吃訪談對話 context — 這是「一環節一 session」的唯一例外)。
 
 ## 產出與交棒
 

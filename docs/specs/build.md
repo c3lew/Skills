@@ -12,7 +12,7 @@ ticket comment 指路「下一步:`/build #N`」(slice-tickets 切完、maintain
 
 ## 行為
 
-1. 呼叫原件 `/implement #N`,流程全依原件。
+1. 請 client 同 session 打 `/implement #N`(原件 user-invoked,agent 不能代叫),流程全依原件。
 2. Delta:收尾在票上留產出 comment(commit links + review findings 處置)+ 交棒 comment「下一步:`/qa #N`」;票上看得到交棒 comment 才算完成。
 
 ## 引用

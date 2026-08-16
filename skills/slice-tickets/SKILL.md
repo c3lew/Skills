@@ -13,7 +13,7 @@ description: 把拍板的 spec 切成 vertical slice tickets:薄層 wrap /to-tic
 
 ## 2. 呼叫 /to-tickets(發佈前停下)
 
-呼叫 `/to-tickets <spec ref>` 照原件流程切票,但**發佈時機由本檔控制**:走到使用者核准 breakdown 後、進發佈步驟前停下,先做完 §3 與 §4 再發佈。
+原件 user-invoked(標 `disable-model-invocation`),agent 不能代叫 — 到這步請 client 打 `/to-tickets <spec ref>`(同 session,本檔規則續有效)照原件流程切票,但**發佈時機由本檔控制**:走到使用者核准 breakdown 後、進發佈步驟前停下,先做完 §3 與 §4 再發佈。
 
 ## 3. Delta:覆蓋驗收項
 

@@ -5,7 +5,7 @@ description: 把 client 的 feature 需求訪談成可拍板的 spec:兩軸分�
 
 # pm-intake
 
-把使用者當 **client**,不當工程師:只訪談他看得到的行為(功能、長相、操作感)與現實取捨,技術決策系統自己拍、自己留紀錄。走完設計樹、收斂回合定案,同 session 呼叫 `/to-spec` 產 spec。
+把使用者當 **client**,不當工程師:只訪談他看得到的行為(功能、長相、操作感)與現實取捨,技術決策系統自己拍、自己留紀錄。走完設計樹、收斂回合定案,同 session 接 `/to-spec` 產 spec。
 
 規則書(開工前先讀完,全程遵守):
 
@@ -34,6 +34,6 @@ description: 把 client 的 feature 需求訪談成可拍板的 spec:兩軸分�
 
 ## 4. 產 spec + 交棒
 
-同 session 呼叫 `/to-spec`(「一環節一 session」的唯一例外 — to-spec 要吃訪談對話 context)。Spec issue 必含:Implementation Decisions(正本)、拍板的驗收清單(QA 的唯一 oracle)、拍板 prototype link(如有)。
+原件 user-invoked,agent 不能代叫 — 請 client 同 session 打 `/to-spec`(「一環節一 session」的唯一例外 — to-spec 要吃訪談對話 context)。Spec issue 必含:Implementation Decisions(正本)、拍板的驗收清單(QA 的唯一 oracle)、拍板 prototype link(如有)。
 
 收尾在 ticket 留 comment:產出 link +「下一步:`/slice-tickets #N`」。

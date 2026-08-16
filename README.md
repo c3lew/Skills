@@ -91,6 +91,6 @@ CONTEXT.md            ubiquitous language 詞彙表
 
 1. **spec 是正本**:改行為先改 `docs/specs/`,再同步 SKILL.md。
 2. **disciplines 改 `docs/disciplines/`**,然後把各 skill `references/` 的副本同步成 byte 一致(validate 會抓不同步)。
-3. **不改 matt-pocock 原件**:要加行為就開薄層 wrap skill(如 `build` wrap `/implement`);wrap 不能跟原件同名,install 會蓋掉原件目錄。
+3. **不改 matt-pocock 原件**:要加行為就開薄層 wrap skill(如 `build` wrap `/implement`);wrap 不能跟原件同名,install 會蓋掉原件目錄。原件多標 `disable-model-invocation` — wrap 走到原件步驟時請 client 打指令,agent 不能代叫。
 4. 每次改完:`python scripts/validate.py` 綠 → `python scripts/install.py` 換裝 → commit。
 5. 系統性的流程改進走 `/retro`,不要散落在對話裡改。
