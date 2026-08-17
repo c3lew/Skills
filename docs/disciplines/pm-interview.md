@@ -1,6 +1,6 @@
 # PM 訪談紀律
 
-跟 client 談話的規則書。pm-intake 主用;wayfinder map 的 HITL ticket 引用;mini-intake(見 `docs/specs/maintain.md`)是輕量版。被引用的 skill 在 SKILL.md 開頭指向本檔,規則改一處全體生效。
+跟 client 談話的規則書。pm-intake 主用;wayfinder map 的 HITL ticket 引用;maintain 進件時走的 mini-intake 是輕量版 — 一樣過兩軸,但只問到「夠開一張票」就收。被引用的 skill 在 SKILL.md 開頭指向本檔,規則改一處全體生效。
 
 ## 大原則
 

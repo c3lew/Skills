@@ -2,7 +2,8 @@
 """Structural lint for skills in this repo.
 
 Checks every skill under skills/: SKILL.md exists, frontmatter has
-name + description, and path references resolve *inside the skill dir* —
+name + description, and path references in *every* `*.md` the skill ships
+(SKILL.md, references/, anything else) resolve *inside the skill dir* —
 install copies only the skill dir, so a ref that needs the repo root is a
 link that breaks on every other machine. Skills in REPO_SCOPED_SKILLS are
 exempt — operating this repo is their job, so repo-root refs are correct.
@@ -43,7 +44,10 @@ HANDOFF_SPAN_RE = re.compile(r"下一步[:︰:][^」\n]*")
 SLASH_CMD_RE = re.compile(r"`/([A-Za-z0-9_-]+)")
 # Only file refs are links an agent can follow. Bare directory refs
 # (`docs/disciplines/`, `.out-of-scope/`) are prose about paths a skill
-# operates on in the *target* repo — not links, so not checked.
+# operates on in the *target* repo — not links, so not checked. Same for
+# anything *under* a dot-directory (`.out-of-scope/dark-mode.md`,
+# `.claude/settings.json`): a skill never ships a dotdir, so such a path is
+# always describing the target repo, never a link into the skill's own files.
 
 
 def parse_frontmatter(text):
@@ -59,6 +63,12 @@ def parse_frontmatter(text):
     return fields
 
 
+def in_target_repo_dotdir(ref):
+    """True if ref lives under a dot-directory — target-repo prose, not a link."""
+    head = ref.split("/")[0]
+    return head.startswith(".") and head not in (".", "..")
+
+
 def find_path_refs(text):
     """Extract candidate file-path references from markdown text."""
     refs = []
@@ -67,7 +77,7 @@ def find_path_refs(text):
             continue
         refs.append(target.split("#")[0])
     refs.extend(BACKTICK_PATH_RE.findall(text))
-    return [r for r in refs if r]
+    return [r for r in refs if r and not in_target_repo_dotdir(r)]
 
 
 def find_slash_only_handoffs(text):
@@ -113,19 +123,23 @@ def validate(skills_dir, repo):
                 f"Codex form `${name}` inside the same 「下一步:…」 baton"
             )
         repo_scoped = skill_dir.name in REPO_SCOPED_SKILLS
-        for ref in find_path_refs(text):
-            if resolves_in(skill_dir, ref):
-                continue
-            # exists, just not inside the skill dir — install won't copy it
-            if (repo / ref).exists() or (skill_dir / ref).exists():
-                if repo_scoped:
+        # every *.md ships with the skill, so every one of them can carry a
+        # link that dies on install — references/ included, not just SKILL.md
+        for md in sorted(skill_dir.rglob("*.md")):
+            rel = md.relative_to(skill_dir).as_posix()
+            for ref in find_path_refs(md.read_text(encoding="utf-8")):
+                if resolves_in(skill_dir, ref):
                     continue
-                errors.append(
-                    f"{label}/SKILL.md: reference '{ref}' escapes the skill dir "
-                    f"(only resolves from outside — breaks once installed)"
-                )
-            else:
-                errors.append(f"{label}/SKILL.md: broken reference '{ref}'")
+                # exists, just not inside the skill dir — install won't copy it
+                if (repo / ref).exists() or (skill_dir / ref).exists():
+                    if repo_scoped:
+                        continue
+                    errors.append(
+                        f"{label}/{rel}: reference '{ref}' escapes the skill dir "
+                        f"(only resolves from outside — breaks once installed)"
+                    )
+                else:
+                    errors.append(f"{label}/{rel}: broken reference '{ref}'")
         refs_dir = skill_dir / "references"
         if refs_dir.is_dir():
             for copy in sorted(refs_dir.iterdir()):
@@ -218,6 +232,43 @@ def self_check():
                 text.replace(span, span.replace(f"`${name}", "`", 1), 1), encoding="utf-8"
             )
             assert expected in validate(skills.parent, Path(tmp)), label
+
+    # dot-directory paths are target-repo prose, never links into the skill
+    assert find_path_refs("`.out-of-scope/dark-mode.md` `.claude/settings.json`") == []
+    assert find_path_refs("`./local.md` `../up.md`") == ["./local.md", "../up.md"]
+
+    # the real-file layer: #46 was a dead link inside references/, invisible because
+    # the ref check only read SKILL.md. Take actual shipped non-SKILL.md files — one
+    # bundled discipline (must redden when mutated) and triage/OUT-OF-SCOPE.md, which
+    # documents target-repo paths in prose (must stay quiet, untouched).
+    bundled = sorted((REPO / "skills").glob("*/references/*.md"))
+    assert bundled, "no skill bundles a references/*.md — mutation has nothing to bite"
+    src = bundled[0]
+    quiet = REPO / "skills" / "triage" / "OUT-OF-SCOPE.md"
+    assert quiet.is_file(), quiet
+    with tempfile.TemporaryDirectory() as tmp:
+        repo = Path(tmp)
+        # a fixed name, not the real skill's — an allowlisted skill would pass vacuously
+        skill = repo / "skills" / "underreview"
+        (skill / "references").mkdir(parents=True)
+        (skill / "SKILL.md").write_text(
+            "---\nname: underreview\ndescription: d\n---\nbody", encoding="utf-8"
+        )
+        (skill / quiet.name).write_text(quiet.read_text(encoding="utf-8"), encoding="utf-8")
+        (repo / "docs").mkdir()
+        (repo / "docs" / "gone.md").write_text("only at repo root", encoding="utf-8")
+        shipped = skill / "references" / src.name
+        text = src.read_text(encoding="utf-8")
+        shipped.write_text(text, encoding="utf-8")
+        # verbatim shipped files, including the target-repo prose one -> silent
+        got = validate(repo / "skills", repo)
+        assert got == [], got
+        shipped.write_text(text + "\n見 `docs/gone.md`。\n", encoding="utf-8")
+        got = validate(repo / "skills", repo)
+        assert got == [
+            f"skills/underreview/references/{src.name}: reference 'docs/gone.md' "
+            f"escapes the skill dir (only resolves from outside — breaks once installed)"
+        ], got
 
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp)
