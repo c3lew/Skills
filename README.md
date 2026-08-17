@@ -82,7 +82,7 @@ docs/
   agents/             tracker / labels / domain 慣例
 skills/               自建 + 收編 skills(SKILL.md + references/)— source of truth
 scripts/
-  validate.py         結構 lint(frontmatter、斷連結、discipline 副本同步)
+  validate.py         結構 lint(frontmatter、斷連結、引用不得跑出 skill 目錄、discipline 副本同步)
   install.py          idempotent 安裝到 ~/.claude/skills/(先 validate,紅就拒裝)
 CONTEXT.md            ubiquitous language 詞彙表
 ```

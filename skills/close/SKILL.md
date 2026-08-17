@@ -13,12 +13,12 @@ description: 通用結案出口:讀票判型別核對完工定義、執行票上
 
 | 票型 | 完工定義(全滿足才關) | 正本 |
 |------|------------------------|------|
-| slice 票 | 過關五條:client 親口 OK、blocking 清零、known issues 有處置、regression 全綠、scenarios 已固化 | `skills/client-demo/SKILL.md` §6 |
-| 純基礎工程切片(覆蓋驗收項標「無 — 間接驗證」) | QA blocking 清零 + regression 全綠;驗收由後續票的 demo 間接把關 | `skills/qa/SKILL.md` §6 |
-| client 報的 bug | fix 過 `/qa` + client 點頭 | `skills/maintain/SKILL.md` §3 |
-| agent 自撿 bug | regression 綠 + 白話回報 | `skills/maintain/SKILL.md` §3 |
-| tech-debt / refactor | regression 全綠(可見行為不變)+ 決策投影 | `skills/maintain/SKILL.md` §5–6 |
-| known issue「之後修」票 | 同 bug,依報的人分級 | `skills/client-demo/SKILL.md` §5 |
+| slice 票 | 過關五條:client 親口 OK、blocking 清零、known issues 有處置、regression 全綠、scenarios 已固化 | `/client-demo` §6 |
+| 純基礎工程切片(覆蓋驗收項標「無 — 間接驗證」) | QA blocking 清零 + regression 全綠;驗收由後續票的 demo 間接把關 | `/qa` §6 |
+| client 報的 bug | fix 過 `/qa` + client 點頭 | `/maintain` §3 |
+| agent 自撿 bug | regression 綠 + 白話回報 | `/maintain` §3 |
+| tech-debt / refactor | regression 全綠(可見行為不變)+ 決策投影 | `/maintain` §5–6 |
+| known issue「之後修」票 | 同 bug,依報的人分級 | `/client-demo` §5 |
 
 型別對不上表(例:純文件票)→ 用票上 acceptance criteria 當完工定義,逐條核對。
 

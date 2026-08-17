@@ -62,4 +62,4 @@ Client 報的即到即分類開票;agent 自撿的照 §5 攢批,client 說了�
 - 改功能 → 輕量票同上;完整版寫「下一步:`/pm-intake`」。
 - tech-debt → 留在 backlog,等 §5 的批次拍板。
 
-任何票的關票一律走 `/close #N` — 結案出口(`skills/close/SKILL.md`)核對完工定義(§3 的分級閉環、§5–6 的 regression + 投影都是它對表的正本)才關。
+任何票的關票一律走 `/close #N` — 結案出口(`/close`)核對完工定義(§3 的分級閉環、§5–6 的 regression + 投影都是它對表的正本)才關。
