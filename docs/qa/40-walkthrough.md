@@ -211,3 +211,181 @@ judge 理由摘要:
 - **其他 agent**(Cursor / Gemini 等)未實測 — spec 明確 out of scope。
 - 兩條安裝路徑**混用**(A 的 symlink 被 B 的實體副本蓋掉)只有 build 側實測紀錄,本輪未獨立重驗。
 - `claude -p` 那個 run 的 `gh` 被 permission 擋、`codex exec` 的 shell 在 Windows sandbox spawn 失敗,兩者皆為本機環境限制,非產品行為。
+
+---
+
+# 第二輪(blocking #45 / #46 修完後重跑)
+
+repo HEAD = `origin/main` = `d1f9849`,working tree clean。oracle 換成 **client 在 #40
+追認更正後的第 1、2 條**(舊句已作廢),第 3–5 條不變,另加票面 checkbox 第 6 條。
+全程新開一個乾淨 fake HOME(安裝前只有 `.` 與 `..`),不沿用第一輪的目錄。
+
+**一鍵重開指令**(client-demo 直接抄,取代上面那份):
+
+```bash
+# regression(在 repo 根)
+python scripts/validate.py && python scripts/validate.py --self-check && python scripts/install.py --self-check
+
+# 乾淨環境實裝(fake HOME,不動本機)
+export HOME="$PWD/qa40home" USERPROFILE="$HOME"; mkdir -p "$HOME"
+npx -y skills add c3lew/Skills -g -a claude-code -a codex -y
+ls "$HOME/.claude/skills" | wc -l ; ls "$HOME/.agents/skills" | wc -l
+```
+
+### R2 Step 0 — regression suite
+
+```
+$ python scripts/validate.py            -> OK validate green            exit=0
+$ python scripts/validate.py --self-check -> OK validate self-check green exit=0
+$ python scripts/install.py --self-check
+FAIL skills/bad: missing SKILL.md       # 預期輸出:self-check 內部的負面測試 fixture
+OK install self-check green             exit=0
+$ git status --short                    -> (clean)
+$ git rev-parse HEAD origin/main        -> d1f9849 / d1f9849
+```
+
+全綠。
+
+### R2 Step 1 — 更正後的驗收句 1 + 2
+
+```
+$ export HOME=<新空目錄>; export USERPROFILE=<同一目錄>
+$ ls -a "$HOME"                          -> .  ..
+$ npx -y skills add c3lew/Skills -g -a claude-code -a codex -y
+  ✓ ~\.agents\skills\<name>   universal: Codex   symlinked: Claude Code   (15 個)
+  Done!
+
+$ ls "$HOME/.claude/skills" | wc -l      -> 15
+$ ls -l "$HOME/.claude/skills"           # 15 行全部是 symlink,無例外
+lrwxrwxrwx build       -> <HOME>/.agents/skills/build
+... (15 條)
+$ ls "$HOME/.agents/skills" | wc -l      -> 15
+$ ls -a "$HOME"                          -> .  ..  .agents  .claude
+$ ls "$HOME/.codex"                      -> No such file or directory
+```
+
+→ 兩條更正句都成立:Claude Code 全域 15 個 symlink → `~/.agents/skills/` 實體本體,
+`~/.codex/` 從未被建立。
+
+### R2 Step 2 — 驗收句 3:安裝後引用可讀性
+
+(a) 拿 repo 的 `validate()` 對**安裝後的樹**跑,repo root 參數指到不存在的目錄
+(模擬另一台機器只有安裝樹):
+
+```
+$ validate(~/.agents/skills, ~/no-such-repo)   -> errors: 0
+$ validate(~/.claude/skills, ~/no-such-repo)   -> errors: 0   # 走 symlink 那棵
+```
+
+(b) 獨立於該 lint、QA 自寫的掃描器掃安裝樹所有 `*.md`:
+
+```
+unresolved markdown links: 0
+unresolved backtick .md refs: 6
+  triage/OUT-OF-SCOPE.md:58,75,76  dark-mode.md / graphql-api.md / plugin-system.md / .out-of-scope/dark-mode.md
+  triage/SKILL.md:77               CONTEXT.md
+```
+
+這 6 筆與第一輪同一批誤報 — 講的是**使用者自己專案**的檔案 / 圍欄內示意圖,不是要一起安裝的檔案。
+
+(c) 第一輪抓到的真斷連結(#46)重掃:
+
+```
+$ grep -rn "docs/specs/maintain.md" ~/.agents/skills/     -> 無任何 match
+$ grep -rn "mini-intake" ~/.agents/skills/*/references/pm-interview.md
+client-demo|maintain|pm-intake /references/pm-interview.md:3:
+  「…maintain 進件時走的 mini-intake 是輕量版 — 一樣過兩軸,但只問到『夠開一張票』就收。」
+```
+
+→ 三份副本改寫成自足句子,不再指向未安裝的檔案。第 3 條清了。
+
+### R2 Step 3 — 驗收句 4:Claude Code `/next`
+
+fake HOME 只額外複製登入憑證 `.claude/.credentials.json`,沒有任何 skill / 設定 / hook。
+
+```
+$ claude -p "/next"    (cwd = repo)
+**下一棒:`/qa #40`(Codex: `$qa #40`)** (Recommended)
+#40 上一輪 QA 開了兩張 blocking(#45、#46),兩張都已結案,client 也追認了第 1、2 條新原句。
+blocking 清零 …
+- **代價/前提**:要在乾淨 fake HOME 重跑一次實裝…
+- **接著會是**:#40 綠 → `/client-demo #40` → `/close #40`,然後才解鎖 #41。
+**替代選項**:`/build #42`、`/build #43`
+**現場一句話**:#35 的 6 張切片已關到剩 #40、#41…
+```
+
+吻合 `next` skill 規定的格式(推薦 `(Recommended)` + 雙寫 + 替代 + 現場一句話),
+且讀到最新現場(#45/#46 已結案、client 追認)。
+
+### R2 Step 4 — 驗收句 5:Codex `$next`
+
+同一 fake HOME,只額外複製 `.codex/auth.json` 與 `config.toml` 供登入。
+
+```
+$ codex exec '$next'    (cwd = repo)
+- **推薦指令 (Recommended):** `/qa #40`(Codex:`$qa #40`)— 兩張 blocking 票 #45、#46 已關閉,現在應重跑驗收。
+- **替代:** `/build #42`(Codex:`$build #42`)
+- **現場:** #40 正在等 QA;#41 仍被 #40 阻擋。
+```
+
+`$next` 只存在於 `~/.agents/skills/` → Codex 確實讀該落點。
+(過程中有一段讀本機 session 摘要的 PowerShell 報 InvalidOperation,屬 codex 記憶機制,
+不影響最終輸出。)
+
+### R2 Step 5 — 票面 checkbox 第 6 條:`npx skills update`
+
+先驗 no-op 半:
+
+```
+$ npx -y skills update -g -y   -> ✓ All global skills are up to date
+```
+
+再驗 fetch→overwrite 半(讓本地變舊,等價於遠端變新,不推 probe commit 汙染 repo):
+
+```
+$ echo "QA40R2-TAMPERED" >> ~/.agents/skills/next/SKILL.md
+$ 把 ~/.agents/.skill-lock.json 的 skills.next.skillFolderHash 改成 000…0
+$ npx -y skills update -g -y
+Found 1 global update(s) / Updating next… / ✓ Updated next / ✓ Updated 1 skill(s)
+
+$ grep -c "QA40R2-TAMPERED" ~/.agents/skills/next/SKILL.md   -> 0     # 竄改消失
+$ head -6 ~/.agents/skills/next/SKILL.md                     -> 遠端原文回來
+$ 讀 lock:next hash = 020dce7a…                              # 寫回正確值
+$ npx -y skills update -g -y   -> ✓ All global skills are up to date  # 不重複報
+```
+
+只有 `next` 被更新,其餘 14 個未動 → per-skill hash 比對。
+
+### R2 Step 6 — 獨立 judge 判定
+
+乾淨 subagent,只餵更正後的驗收原句 + 上面證據,不餵實作脈絡:
+
+| # | 驗收原句 | 判定 |
+|---|---------|------|
+| 1 | 15 個 skill 進 `~/.claude/skills/`(symlink → `~/.agents/skills/`)| pass |
+| 2 | `-a codex` 那半進 `~/.agents/skills/`,非 `~/.codex/skills/` | pass |
+| 3 | 裝完內部引用全部讀得到 | pass |
+| 4 | Claude Code `/next` 讀現場給下一步 | pass |
+| 5 | Codex `$next` 讀現場給下一步 | pass |
+| 6 | (票面 checkbox)`npx skills update` 拉到新版 | pass |
+
+judge 對第 6 條先判 fail(只有 no-op 證據),補上 R2 Step 5 後段的竄改實證後改判 pass —
+理由是 `QA40R2-TAMPERED` 是本地獨有字串,消失只可能來自「真的抓遠端 bytes 覆寫」。
+
+### blocking
+
+無。#45(驗收句更正)、#46(斷連結 + lint 死角)兩張皆已結案且本輪重驗有效。
+
+### known issues
+
+無。6 筆 backtick 掃描結果逐筆判為誤報,不開票。
+
+### 未涵蓋範圍
+
+- **spec 驗收清單第 6–10 條**不在本票的「覆蓋驗收項」段(第 6 條 Codex 端到端屬 #41)。
+- **其他 agent**(Cursor / Gemini 等)未實測 — spec 明確 out of scope。
+- 兩條安裝路徑**混用**(A 的 symlink 被 B 的實體副本蓋掉)只有 build 側紀錄,本輪未重驗。
+- 第 6 條的「遠端真的長出新 commit」那條路徑本輪用竄改本地等價替代;真 push 版本在第一輪
+  用 `08f6deb` 驗過。
+- 環境限制非產品行為:fake HOME 需另外複製 `.claude/.credentials.json`、`.codex/auth.json`
+  才能登入 CLI;codex 讀本機 session 摘要那段報錯。
