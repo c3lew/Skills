@@ -31,6 +31,8 @@
   .hero .where { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
   .hero .next { display: flex; gap: 10px; align-items: flex-start; background: var(--accent-soft); border-radius: 8px; padding: 12px 16px; color: #1e40af; font-size: 14px; }
   .hero .next code { font-family: Consolas, monospace; background: rgba(255,255,255,.7); border-radius: 4px; padding: 1px 6px; }
+  .hero .release { border-left: 3px solid var(--ok); background: #f0fdf4; border-radius: 0 8px 8px 0; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; line-height: 1.7; }
+  .hero .release .rb { font-weight: 600; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
   .card h2 { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
@@ -54,13 +56,14 @@
 <div class="wrap">
 
 <h1>Skills 產線</h1>
-<div class="sub">專案儀表板 · 更新於 8/17 · 資料來自工作紀錄 · 目前用的版本:「一行裝好」前 4 個功能已上線</div>
+<div class="sub">專案儀表板 · 更新於 8/17 · 資料來自工作紀錄 · 目前用的版本:「一行裝好」前 5 個功能已上線</div>
 
 <div class="hero">
-  <div class="where">現在在哪:「<strong>在乾淨的電腦上一行指令裝好</strong>」已經在一台全新的電腦上<strong>實際裝過一次</strong>來驗,不是用講的 — 15 個功能都到位,兩種助理也都叫得動。驗的時候冒出的兩件事現在<strong>都處理完了</strong>:裝完會叫人去看不存在檔案的那三份說明已經修好也驗過;那兩句跟實況對不上的驗收標準你也點頭改成正確版本了,現在標準跟真實情況是同一件事。</div>
+  <div class="where">現在在哪:「<strong>在乾淨的電腦上一行指令裝好</strong>」<strong>你已經看過並點頭了</strong> — 六條驗收標準逐條放實跑紀錄給你看,全部 OK,沒有一條你說「不對」。這一版<strong>已經換裝到你自己的電腦上</strong>,兩種助理現在讀到的都是最新版。</div>
+  <div class="release"><strong>這次換裝了什麼:</strong>三份會叫人去看不存在檔案的說明,修好的版本現在正式生效(你電腦上原本裝的還是舊的);安裝說明那行指令改成真的能裝到全電腦到處能用的寫法,而且以後有人把它改壞,自動檢查會當場變紅。<span class="rb">反悔的話</span>:裝回上一版就好,舊版還留著,一個指令的事。</div>
   <div class="next">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <div><strong>下一步:</strong>開下一棒重驗:<code>/qa #40</code>(另一種助理:<code>$qa #40</code>)<br>會照改好的標準,把整台全新電腦的安裝再實際跑一次給你看。過了這關,這個功能就只剩演給你看、你點頭。</div>
+    <div><strong>下一步:</strong>把這件工作正式結案:<code>/close #40</code>(另一種助理:<code>$close #40</code>)<br>結完就換最後一個功能:「在另一種助理上完整跑通一次」。</div>
   </div>
 </div>
 
@@ -71,7 +74,7 @@
     <div class="slice-row"><span class="slice-name">交接說明同時給兩種寫法</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">說明書分清楚「用的人」跟「改的人」各走哪條路</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">公開前先掃一遍不該外流的內容</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
-    <div class="slice-row"><span class="slice-name">在乾淨的電腦上一行指令裝好</span><span class="badge b-warn">測試中</span><span class="bar"><i style="width:70%"></i></span></div>
+    <div class="slice-row"><span class="slice-name">在乾淨的電腦上一行指令裝好</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">在另一種助理上完整跑通一次</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
   </div>
 
@@ -111,7 +114,7 @@
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>接下來的驗收點</h2>
     <ul class="list">
-      <li><span class="when">馬上</span><span>「在乾淨的電腦上一行裝好」 — 照改好的標準重驗一次,然後實際打那行指令、在一台全新的電腦上裝給你看。</span></li>
+      <li><span class="when">已完成</span><span>「在乾淨的電腦上一行裝好」 — 六條逐條演給你看,你全部點頭,新版也已經裝到你電腦上了。</span></li>
       <li><span class="when">最後</span><span>「在另一種助理上完整跑通一次」 — 一樣實際跑給你看。</span></li>
     </ul>
   </div>
