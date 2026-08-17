@@ -31,6 +31,9 @@ python scripts/install.py    # 抄進兩個 agent 的全域目錄(它會先跑 v
 先跑 `validate.py` 是為了看清楚錯在哪 — 直接跑 `install.py` 也安全,它自己會 validate,紅就拒裝。它會同時抄進 `~/.claude/skills/`(Claude Code)和 `~/.agents/skills/`(Codex),裝完馬上生效,同一個 session 重開就吃得到。這條路完全不碰 GitHub,改一行測一次的迭代速度不受影響。
 
 > 兩條路裝到同一個位置,後裝的蓋前面的。在本 repo 開發時用 B,別把自己的 working copy 用 A 蓋掉。
+> 混用的話注意:A 在 `~/.claude/skills/` 放的是指向 `~/.agents/skills/` 的 symlink,B 會把它換成實體副本 —
+> 之後 `npx skills update` 只會更到 `~/.agents/skills/`,Claude Code 那份會停在你最後一次 `install.py`。
+> 想交回 CLI 管就重跑一次 A 的 add 指令。
 
 ## 迷路了?一個指令
 

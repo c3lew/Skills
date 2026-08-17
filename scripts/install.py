@@ -62,18 +62,20 @@ def snapshot(root):
     }
 
 
-def main():
-    for dest in DEFAULT_DESTS:
-        installed = install(REPO / "skills", REPO, dest)
-        if not installed:
-            print("OK nothing to install (no skills/ yet)")
-        else:
-            for name in installed:
-                print(f"OK installed {name} -> {dest / name}")
+def main(dests=DEFAULT_DESTS):
+    by_dest = {d: install(REPO / "skills", REPO, d) for d in dests}
+    if not any(by_dest.values()):
+        print("OK nothing to install (no skills/ yet)")
+        return 0
+    for dest, installed in by_dest.items():
+        for name in installed:
+            print(f"OK installed {name} -> {dest / name}")
     return 0
 
 
 def self_check():
+    import contextlib
+    import io
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -148,13 +150,22 @@ def self_check():
         install(skills, repo, dest)
         assert "QA38PROBE" not in landed.read_text(encoding="utf-8"), real.name
 
-    # both agents get the same tree: dropping either root is the failure mode
-    # (#40 — Codex reads ~/.agents/skills, Claude Code reads ~/.claude/skills)
+    # one run lands the same tree at every agent root — dropping a root is the
+    # failure mode #40 found (Codex reads ~/.agents/skills, Claude Code
+    # ~/.claude/skills; installing to one leaves the other agent on a stale copy)
     assert {tuple(d.parts[-2:]) for d in DEFAULT_DESTS} == {
         (".claude", "skills"),
         (".agents", "skills"),
     }, DEFAULT_DESTS
     assert all(d.parent.parent == Path.home() for d in DEFAULT_DESTS), DEFAULT_DESTS
+
+    with tempfile.TemporaryDirectory() as tmp:
+        dests = [Path(tmp) / "claude", Path(tmp) / "agents"]
+        with contextlib.redirect_stdout(io.StringIO()):
+            assert main(dests) == 0
+        trees = [snapshot(d) for d in dests]
+        assert trees[0] == trees[1], "agent roots drifted"
+        assert set(trees[0]) == snapshot(REPO / "skills").keys()
 
     print("OK install self-check green")
 

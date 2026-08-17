@@ -18,8 +18,9 @@ skill、哪些用 matt-pocock 原件、哪些薄層 wrap、哪些自建取代,�
 | `maintain` | [specs/maintain.md](specs/maintain.md) | 薄層 wrap `/triage` |
 | `retro` | [specs/retro.md](specs/retro.md) | 自建(AFK + 點頭把關) |
 
-**安裝模式**:本 repo 是 source of truth;建置時 copy 到 `~/.claude/skills/`
-(user 級,跟 matt-pocock 套件同層並存,全專案生效)。Spec 寫到 spec 級即止 —
+**安裝模式**:本 repo 是 source of truth;建置時 copy 到兩個 agent 的 user 級
+skills root — `~/.claude/skills/`(Claude Code)與 `~/.agents/skills/`(Codex),
+跟 matt-pocock 套件同層並存,全專案生效。Spec 寫到 spec 級即止 —
 SKILL.md 文案由建置 session 撰寫、靠 Quacket 試點實跑打磨。
 
 各角色的設計討論脈絡見對應 issue:pm-intake #5、qa/client-demo #6、tracking-viz #7、

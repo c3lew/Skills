@@ -28,7 +28,7 @@ n=1 要的是「哪裡明顯更好/更糟」的訊號,不是統計:
 
 ## 開跑條件與步驟
 
-1. 藍圖 skills 建置完成(specs → SKILL.md → copy 到 `~/.claude/skills/`,見 blueprint 建置章)。
+1. 藍圖 skills 建置完成(specs → SKILL.md → copy 到 `~/.claude/skills/` 與 `~/.agents/skills/`,見 blueprint 建置章)。
 2. Client 挑定新 feature 題目。
 3. 在 Quacket repo 開 feature ticket,從 `/pm-intake` 起跑;此後每環節按 ticket 接力棒交棒。
 4. 過關後寫 debrief,對照 baseline,決定系統哪裡要修 — 修正回饋回本 repo 的 specs。
