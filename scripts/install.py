@@ -137,11 +137,16 @@ def self_check():
 
         # red validate blocks install
         (skills / "bad").mkdir()
+        fixture_output = io.StringIO()
         try:
-            install(skills, repo, dest)
+            with contextlib.redirect_stdout(fixture_output):
+                install(skills, repo, dest)
             raise AssertionError("install should refuse on red validate")
         except SystemExit as e:
             assert e.code == 1
+        failure = fixture_output.getvalue().strip()
+        assert failure == "FAIL skills/bad: missing SKILL.md", failure
+        print(f"[fixture] {failure}")
 
         # empty repo installs nothing
         empty_repo = Path(tmp) / "empty"
