@@ -118,3 +118,26 @@ $ python scripts/validate.py --self-check   # OK
 $ python scripts/validate.py                # OK
 $ git status --short                        # clean
 ```
+
+## 步驟 7 — 固化(client-demo 過關後)
+
+步驟 5 的 mutation 原本只是一次性手動實錄,現在進 `validate.py --self-check` 常駐:
+掃遍 `skills/*/SKILL.md` 的每條 baton,先驗未動的版本不紅,再把該 baton 裡的
+`` `$name `` 那半拿掉,斷言 validate 紅且訊息指名檔名 + 缺的指令。
+
+```
+$ python scripts/validate.py --self-check
+OK validate self-check green
+```
+
+test-the-test(兩次 mutation,確認新 case 真的咬得到):
+
+```
+# A. 拆掉 find_slash_only_handoffs 的回報 -> 舊 unit case 先紅(既有覆蓋)
+AssertionError: assert find_slash_only_handoffs("下一步:`/qa #12`") == ["qa"]
+
+# B. validate() 不再接上 baton 檢查(舊 case 全綠,只有新 case 紅)
+AssertionError: skills/build/SKILL.md   <- 新 case 唯一抓到
+```
+
+收尾 regression:`validate --self-check` / `validate` / `install --self-check` / `install` 全綠。

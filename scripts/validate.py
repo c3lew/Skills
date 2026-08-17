@@ -187,6 +187,38 @@ def self_check():
     ) == []
     assert find_slash_only_handoffs("跑 `/qa #12` 驗收") == []
 
+    # the real-skill layer: the cases above feed hand-written strings, so they
+    # stay green even if every baton in the repo vanished. This one takes each
+    # actual skill's baton, drops the Codex half, and asserts validate reddens
+    # naming the file and the missing command — the mutation demoed on #37.
+    batons = []
+    for src in sorted((REPO / "skills").glob("*/SKILL.md")):
+        text = src.read_text(encoding="utf-8")
+        for span in HANDOFF_SPAN_RE.findall(text):
+            m = SLASH_CMD_RE.search(span)
+            if m:
+                batons.append((src, text, span, m.group(1)))
+                break
+    assert batons, "no skill carries a 「下一步:… `/x`」 baton — mutation has nothing to bite"
+
+    for src, text, span, name in batons:
+        label = f"skills/{src.parent.name}/SKILL.md"
+        expected = (
+            f"{label}: handoff 「下一步:… `/{name}`」 missing the "
+            f"Codex form `${name}` inside the same 「下一步:…」 baton"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            skills = Path(tmp) / "skills" / src.parent.name
+            skills.mkdir(parents=True)
+            # unmutated copy: the baton is dual-written today, so no baton error
+            (skills / "SKILL.md").write_text(text, encoding="utf-8")
+            assert expected not in validate(skills.parent, Path(tmp)), label
+            # drop the `$name` twin from that baton only -> must redden
+            (skills / "SKILL.md").write_text(
+                text.replace(span, span.replace(f"`${name}", "`", 1), 1), encoding="utf-8"
+            )
+            assert expected in validate(skills.parent, Path(tmp)), label
+
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp)
         skills = repo / "skills"
