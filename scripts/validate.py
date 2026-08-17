@@ -47,6 +47,15 @@ SLASH_CMD_RE = re.compile(r"`/([A-Za-z0-9_-]+)")
 # 「下一步:`/skill #N`」 is the template a skill quotes when describing the
 # convention, not a command anyone pastes — there is no skills/skill.
 PLACEHOLDER_SKILLS = {"skill"}
+# #49 固化:a skill that tells the agent to paste commit links into a ticket must
+# tell it to push *first* — an unpushed sha is a 404 on GitHub, and the comment
+# is already out there when the client clicks it. Order matters, so the guard is
+# positional: the push instruction has to appear before the commit-link one.
+# The push side matches the literal command, not the word — a prose "push 後產出
+# 寫回票" (build's frontmatter) is a summary, not a step an agent can run, and
+# matching it would keep the guard green after the actual step is deleted.
+COMMIT_LINK_RE = re.compile(r"commit link", re.I)
+PUSH_RE = re.compile(r"git push", re.I)
 # Only file refs are links an agent can follow. Bare directory refs
 # (`docs/disciplines/`, `.out-of-scope/`) are prose about paths a skill
 # operates on in the *target* repo — not links, so not checked. Same for
@@ -93,6 +102,15 @@ def find_slash_only_handoffs(text):
             if f"`${name}" not in span:
                 missing.append(name)
     return missing
+
+
+def unpushed_commit_link_issue(text):
+    """True if the text asks for commit links without asking to push first."""
+    link = COMMIT_LINK_RE.search(text)
+    if not link:
+        return False
+    push = PUSH_RE.search(text)
+    return push is None or push.start() > link.start()
 
 
 def handoff_target_issues(skills_dir):
@@ -149,6 +167,11 @@ def validate(skills_dir, repo):
             for field in ("name", "description"):
                 if not fm.get(field):
                     errors.append(f"{label}/SKILL.md: frontmatter missing '{field}'")
+        if unpushed_commit_link_issue(text):
+            errors.append(
+                f"{label}/SKILL.md: asks for commit links in a ticket comment "
+                f"without asking to `git push` first — an unpushed sha is a 404"
+            )
         for name in find_slash_only_handoffs(text):
             errors.append(
                 f"{label}/SKILL.md: handoff 「下一步:… `/{name}`」 missing the "
@@ -263,6 +286,41 @@ def self_check():
             (skills / "SKILL.md").write_text(
                 text.replace(span, span.replace(f"`${name}", "`", 1), 1), encoding="utf-8"
             )
+            assert expected in validate(skills.parent, Path(tmp)), label
+
+    # #49 固化:push-before-commit-links. Hand-written cases first — order is the
+    # whole point, so a file with both instructions in the wrong order is red.
+    assert not unpushed_commit_link_issue("no links here, `git push` optional")
+    assert unpushed_commit_link_issue("貼 commit links") is True
+    assert not unpushed_commit_link_issue("先 `git push`,再貼 commit links")
+    assert unpushed_commit_link_issue("貼 commit links,之後 `git push`") is True
+    # prose "push" is not the step — only the runnable command counts
+    assert unpushed_commit_link_issue("push 後貼 commit links") is True
+
+    # the real-skill layer: every SKILL.md that pastes commit links must carry the
+    # push step *before* it, and deleting that step from the real file must redden.
+    # #41 was the same shape of bug in build; close/retro paste links too.
+    pasters = [
+        src
+        for src in sorted((REPO / "skills").glob("*/SKILL.md"))
+        if COMMIT_LINK_RE.search(src.read_text(encoding="utf-8"))
+    ]
+    assert pasters, "no skill pastes commit links — mutation has nothing to bite"
+    for src in pasters:
+        label = f"skills/{src.parent.name}/SKILL.md"
+        text = src.read_text(encoding="utf-8")
+        expected = (
+            f"{label}: asks for commit links in a ticket comment without asking "
+            f"to `git push` first — an unpushed sha is a 404"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            skills = Path(tmp) / "skills" / src.parent.name
+            skills.mkdir(parents=True)
+            copy = skills / "SKILL.md"
+            copy.write_text(text, encoding="utf-8")
+            assert expected not in validate(skills.parent, Path(tmp)), label
+            # drop the push command -> the guard must bite
+            copy.write_text(PUSH_RE.sub("commit", text), encoding="utf-8")
             assert expected in validate(skills.parent, Path(tmp)), label
 
     # #41 固化:the baton is a command the client pastes into Codex, so the skill

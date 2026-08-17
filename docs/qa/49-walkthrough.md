@@ -157,3 +157,41 @@ branch 還沒 upstream(= push 沒成功)時,守門指令是 `fatal` / exit 128,�
 - **未涵蓋**:無 UI、無 Tauri 原生殼;#49 的行為全在 CLI / GitHub API 上,已全數實跑。
   沒有加機器守門(build comment 自審提過:唯一能寫的是 grep string-presence 測試,
   擋不住真 regression)— 要不要補保險 grep 留給 retro 判。
+
+## 步驟 6 — 固化(client-demo 過關後)
+
+client 過關(前三條)後回本 skill 固化。原本判定「只能寫 string-presence 測試」的顧慮
+用**順序**解掉了:守門不是問「有沒有提到 push」,而是問「`git push` 的位置有沒有在
+commit link 之前」,而且 push 側只認可執行的 `git push`(不認 frontmatter 的
+「push 後產出寫回票」這種摘要),所以刪掉真正那一步就會紅。
+
+`scripts/validate.py` 新增 `unpushed_commit_link_issue()`,進 `validate()` 逐 skill 跑:
+
+```text
+$ python scripts/validate.py --self-check      # 手寫案例 + 真檔 mutation 層
+OK validate self-check green
+$ python scripts/validate.py
+OK validate green
+$ python scripts/install.py --self-check
+[fixture] FAIL skills/bad: missing SKILL.md
+OK install self-check green
+```
+
+### 守門第一次跑就抓到兩個既有offender
+
+上線當下 repo 是紅的 — 同一個 404 失敗模式在另外兩支 skill 裡躺著沒人踩到:
+
+```text
+FAIL skills/close/SKILL.md: asks for commit links in a ticket comment without asking to `git push` first — an unpushed sha is a 404
+FAIL skills/retro/SKILL.md: asks for commit links in a ticket comment without asking to `git push` first — an unpushed sha is a 404
+```
+
+`close` §3 貼結案 comment 的 commit links、還會自己產 dashboard 更新的 commit;
+`retro` §6 貼每條 amendment 的 commit link。client 拍板「順手補」,兩支各補一步 push
+(見決策投影)。補完 repo 回綠。
+
+### 真檔 mutation 層(test-the-test)
+
+self-check 掃出所有提到 commit link 的真 SKILL.md(現在是 build / close / retro),
+每支都驗兩次:原檔綠、把 `git push` 抽掉就紅。所以之後任何人刪掉或搬動 push 步驟、
+或新寫一支會貼 commit link 的 skill 卻忘了 push,`validate.py` 當場咬。

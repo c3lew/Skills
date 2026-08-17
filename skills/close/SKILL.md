@@ -33,6 +33,7 @@ Release 不在此:切片的 build + 換裝 + release note 是 client-demo 過關
 
 ## 3. 結案儀式
 
-1. 結案 comment:做了什麼(commit links)、完工定義逐條打勾、完工動作證據、決策投影(本票有拍板才有)。
-2. `/tracking-viz` 更新 dashboard。
-3. 關票。
+1. **先 push**:`git push`,再用 `git rev-list --count origin/<branch>..HEAD` 確認是 `0`。未 push 的 sha 在 GitHub 上是 404,comment 一貼出去 client 就點得到死連結(#49 同款)。
+2. 結案 comment:做了什麼(commit links)、完工定義逐條打勾、完工動作證據、決策投影(本票有拍板才有)。
+3. `/tracking-viz` 更新 dashboard,dashboard 的 commit 一樣要 push 才關票。
+4. 關票。

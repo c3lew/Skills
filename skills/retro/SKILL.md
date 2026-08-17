@@ -46,4 +46,5 @@ client 逐條「改 / 不改」,點頭的才動文件:
 
 ## 6. 收尾
 
+先 `git push`(未 push 的 sha 在 GitHub 上是 404,#49 同款),再在
 retro issue 補上每條的結果(改 → commit link;不改 → 一句紀錄)後 close,回報一句白話總結:這輪消化了幾件、改了什麼、下次攢到門檻再見。
