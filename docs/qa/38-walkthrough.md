@@ -107,3 +107,31 @@ $ git status --short                        # clean
 - **A 路徑本身沒實跑** — `npx skills add c3lew/Skills` 需要 repo 是 public(或帳號有存取權),
   目前 private,跑不了。那是驗收清單第 1、2 條的事(#39 之後),本票只驗「文件講清楚」。
   連帶地 `-a codex`、`npx skills update` 的實際行為也未經本輪驗證,只驗文件敘述。
+
+## 步驟 7 — 固化(client-demo 過關後)
+
+步驟 2 那條「改 skill → validate → install → 立刻生效」原本只是一次性手動實錄,
+現在進 `install.py --self-check` 常駐:拿 repo 裡**真的**第一個 skill 目錄複製進
+temp repo,install 一次(dest 沒有 probe)→ 在 source 塞 `<!-- QA38PROBE -->` 再 install
+(dest 抓得到)→ 還原再 install(dest 又沒了)。就是 probe 0 → 1 → 0 那條 loop。
+
+```
+$ python scripts/install.py --self-check
+OK install self-check green
+```
+
+test-the-test(兩次 mutation):
+
+```
+# A. install 遇到已存在的 target 就跳過  -> 舊的 stale 案例先紅(既有覆蓋),不算數
+AssertionError: assert not (dest / "good" / "stale.md").exists()
+
+# B. mirror 照做,但把「已裝在 dest 的檔案」bytes 寫回去(= 不覆蓋使用者機器上的版本)
+#    -> 舊案例(stale 清除、idempotency)全綠,只有新案例紅
+AssertionError: build            <- 新 case 唯一抓到
+```
+
+收尾 regression:`validate --self-check` / `validate` / `install --self-check` / `install` 全綠。
+
+第 10 條(README 文字)沒有可固化的自動化 scenario — 是散文,不在 validate 的 lint 範圍,
+不硬做關鍵字比對(README 一改字就假紅)。由 client-demo 的人眼把關。

@@ -113,6 +113,32 @@ def self_check():
         empty_repo.mkdir()
         assert install(empty_repo / "skills", empty_repo, dest) == []
 
+    # the real-skill layer: the dev loop demoed on #38 — edit a skill, reinstall,
+    # the edit is live at dest; revert + reinstall and it's gone again. The cases
+    # above only ever install a fresh fixture, so an install that never refreshed
+    # an already-present skill would have stayed green.
+    with tempfile.TemporaryDirectory() as tmp:
+        repo = Path(tmp) / "repo"
+        skills = repo / "skills"
+        skills.mkdir(parents=True)
+        real = sorted((REPO / "skills").glob("*/SKILL.md"))[0].parent
+        shutil.copytree(real, skills / real.name)
+        src = skills / real.name / "SKILL.md"
+        original = src.read_text(encoding="utf-8")
+        dest = Path(tmp) / "dest"
+        landed = dest / real.name / "SKILL.md"
+
+        install(skills, repo, dest)
+        assert "QA38PROBE" not in landed.read_text(encoding="utf-8")
+
+        src.write_text(original + "\n<!-- QA38PROBE -->\n", encoding="utf-8")
+        install(skills, repo, dest)
+        assert "QA38PROBE" in landed.read_text(encoding="utf-8"), real.name
+
+        src.write_text(original, encoding="utf-8")
+        install(skills, repo, dest)
+        assert "QA38PROBE" not in landed.read_text(encoding="utf-8"), real.name
+
     print("OK install self-check green")
 
 
