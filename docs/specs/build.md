@@ -13,7 +13,7 @@ ticket comment 指路「下一步:`/build #N`(Codex: `$build #N`)」(slice-ticke
 ## 行為
 
 1. 呼叫 `/implement #N`(收編件),流程全依原件。
-2. Delta:收尾在票上留產出 comment(commit links + review findings 處置)+ 交棒 comment「下一步:`/qa #N`(Codex: `$qa #N`)」;票上看得到交棒 comment 才算完成。
+2. Delta:收尾先 `git push`(原件只 commit,未 push 的 sha 在 GitHub 是 404),再在票上留產出 comment(commit links + review findings 處置)+ 交棒 comment「下一步:`/qa #N`(Codex: `$qa #N`)」;未 push 數歸零 + 票上看得到交棒 comment 才算完成。
 
 ## 引用
 
