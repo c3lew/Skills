@@ -29,7 +29,7 @@ Client 白話進件為主;client 自開 issue 也收(標 `needs-triage`)。分�
 
 ## 產出與交棒
 
-分類完的 tickets 進對應產線:bug → `/build` → `/qa`(regression + 重現 scenario)→ 分級閉環;改功能 → 輕量確認或 pm-intake;技術債 → backlog。
+分類完的 tickets 進對應產線(每張票 comment 留交棒行,雙寫格式見 `docs/blueprint.md` 接力棒):bug → `/build` → `/qa`(regression + 重現 scenario)→ 分級閉環;改功能 → 輕量確認或 pm-intake;技術債 → backlog。
 
 ## 引用
 

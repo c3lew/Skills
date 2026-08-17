@@ -26,4 +26,4 @@ GitHub Issues tracker(`gh` CLI):切片 ticket 狀態與 labels、決策投影 co
 
 ## 產出與交棒
 
-靜態 HTML 檔(repo 內或 client 可開處)。Dashboard hero 的「下一步指令」就是產線交棒的入口 — 不自動 spawn 下一環節。
+靜態 HTML 檔(repo 內或 client 可開處)。Dashboard hero 的「下一步指令」就是產線交棒的入口 — 雙寫(見 `docs/blueprint.md` 接力棒),不自動 spawn 下一環節。

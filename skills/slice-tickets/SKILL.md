@@ -33,5 +33,5 @@ description: 把拍板的 spec 切成 vertical slice tickets:薄層 wrap /to-tic
 
 ## 5. 交棒
 
-- 每張 ticket comment:「下一步:`/build #N`」。
-- Spec ticket 收尾 comment:tickets 清單 link + 覆蓋對帳結果 +「下一步:從無 blocker 的票開始 `/build #N`」。
+- 每張 ticket comment:「下一步:`/build #N`(Codex: `$build #N`)」。
+- Spec ticket 收尾 comment:tickets 清單 link + 覆蓋對帳結果 +「下一步:從無 blocker 的票開始 `/build #N`(Codex: `$build #N`)」。

@@ -36,7 +36,7 @@
                  攢夠錯誤紀錄 ──▶ dashboard 提示 ──▶ 你說跑才 /retro
 ```
 
-環節之間靠 **ticket 接力棒**:每個環節收尾在票上留「下一步:`/skill #N`」comment,你複製貼上就開下一棒。
+環節之間靠 **ticket 接力棒**:每個環節收尾在票上留「下一步:`/skill #N`(Codex: `$skill #N`)」comment,你複製貼上就開下一棒。
 
 ## 指令速查
 
@@ -67,7 +67,7 @@
 ## 幾個要懂的詞(完整版見 [CONTEXT.md](CONTEXT.md))
 
 - **驗收清單**:pm-intake 收斂回合你拍板的清單,之後 QA 只認它 — 它是「對不對」的唯一標準。
-- **接力棒**:票上的「下一步:`/skill #N`」comment,產線靠它串起來。
+- **接力棒**:票上的「下一步:`/skill #N`(Codex: `$skill #N`)」comment,產線靠它串起來。
 - **過關**:五條全成立才算 — 你親口 OK、blocking 清零、known issues 有處置、regression 全綠、scenarios 已固化。
 - **決策投影**:每個技術決策發到 tracker 的 append-only comment,dashboard 讀這裡。
 - **Retro 餵食口**:retro 的三個原料 — 拍板錯更正紀錄、tech-debt backlog、QA 漏抓。

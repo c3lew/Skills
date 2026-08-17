@@ -8,7 +8,7 @@
 
 ## 觸發與入口
 
-Spec 拍板後,ticket comment 指路「下一步:`/slice-tickets #N`」。
+Spec 拍板後,ticket comment 指路「下一步:`/slice-tickets #N`(Codex: `$slice-tickets #N`)」。
 
 ## 行為
 
@@ -19,7 +19,7 @@ Spec 拍板後,ticket comment 指路「下一步:`/slice-tickets #N`」。
 ## 產出與交棒
 
 - Vertical slice tickets(各標覆蓋驗收項)。
-- 每張 ticket comment 指路「下一步:`/build #N`」。
+- 每張 ticket comment 指路「下一步:`/build #N`(Codex: `$build #N`)」。
 
 ## 引用
 

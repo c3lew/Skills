@@ -27,7 +27,7 @@
 - **兩軸分流(維護版)**:改功能進件用影響 × 把握判定走輕量版(一輪確認 + 只更新動到的驗收項)或完整 pm-intake,agent 提議、client 確認。
 - **Tech-debt backlog**:agent 觀察到的技術債開 ticket 掛 `tech-debt` + `needs-triage` 攢批,白話三行制定期報 client,client 只決定「現在做 / 之後 / 不做」;執行 AFK,驗收 = regression 全綠(可見行為不變)。
 - **一環節一 session**:生命週期每個環節獨立 session 執行,吃 context smart zone;唯一例外是 pm-intake → to-spec 同 session(spec 收斂吃訪談對話 context)。
-- **Ticket 接力棒**:環節間的交棒機制 — session 收尾把產出 link 與「下一步指令」寫回 ticket comment,下一個 session 以 `/skill #N` 冷啟動;下一棒由 client 手動開,dashboard hero 指路。
+- **Ticket 接力棒**:環節間的交棒機制 — session 收尾把產出 link 與「下一步指令」寫回 ticket comment,下一個 session 以 `/skill #N`(Codex: `$skill #N`)冷啟動;下一棒由 client 手動開,dashboard hero 指路。
 - **引用規範 (discipline)**:抽成獨立文件的行為規則,多個 skill 引用同一份(PM 訪談紀律、技術決策紀律),改一處全體生效。
 - **PM 訪談紀律**:跟 client 談話的規則書 — 兩軸對齊測試、情境問法、每輪 ≤3 題、收斂回合、白話三行制;pm-intake 主用,wayfinder map Notes 引用,mini-intake 為輕量版。
 - **歷史對照**:本系統說的「A/B」— 不同 feature 各跑一套或同 feature 跑兩遍都不採;新 feature 只用新系統跑一次,舊做法的 baseline 取自既有 tracker 實績(訪談輪數、rework、漏到 client 的 works-but-wrong),對照痕跡 + client debrief。

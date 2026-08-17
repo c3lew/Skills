@@ -57,7 +57,7 @@ QA 過後的驗收點:agent **跑給 client 看**,client 確認「是不是我�
 4. regression suite 全綠。
 5. 高價值 scenarios 已固化。
 
-前三條成立後,comment「下一步:`/qa #N` 固化」交 `qa` 把本切片高價值 scenarios 寫進 regression suite;拿到 qa 回報固化完成、suite 全綠,第 4、5 條才成立。五條全部成立才進 §7;任一條不成立就停在對應步驟。
+前三條成立後,comment「下一步:`/qa #N`(Codex: `$qa #N`)— 固化 scenarios」交 `qa` 把本切片高價值 scenarios 寫進 regression suite;拿到 qa 回報固化完成、suite 全綠,第 4、5 條才成立。五條全部成立才進 §7;任一條不成立就停在對應步驟。
 
 ## 7. 過關即發
 
@@ -69,5 +69,5 @@ QA 過後的驗收點:agent **跑給 client 看**,client 確認「是不是我�
 
 ## 8. 收尾
 
-- 過關 → comment「下一步:`/close #N`」— 關票 + dashboard 統一走結案出口(`/close`)。
+- 過關 → comment「下一步:`/close #N`(Codex: `$close #N`)」— 關票 + dashboard 統一走結案出口(`/close`)。
 - 有「不對」未閉環 → ticket 列出回流 tickets 與各自下一步,本票留著等 re-demo。

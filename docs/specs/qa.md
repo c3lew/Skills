@@ -8,7 +8,7 @@ agent 扮演使用者、拿驗收清單實測切片:五階段 pipeline + regress
 
 ## 觸發與入口
 
-`/build`(wrap 原件 `/implement`)完成後,ticket comment 指路「下一步:`/qa #N`」。維護產線的 bug fix 也走這裡(regression + 該 bug 的重現 scenario)。
+`/build`(wrap 原件 `/implement`)完成後,ticket comment 指路「下一步:`/qa #N`(Codex: `$qa #N`)」。維護產線的 bug fix 也走這裡(regression + 該 bug 的重現 scenario)。
 
 ## 輸入
 
@@ -30,7 +30,7 @@ QA 環境 = **Vite dev server + injected fakes 在瀏覽器跑**,給 Playwright 
 ## 產出與交棒
 
 - QA 報告(白話摘要 + blocking / known issues 清單)寫回 ticket,**附 demo 實錄**(每條驗收項一段)與 **QA 環境一鍵重開指令**(單一 script,起 dev server + 灌 fakes;第一次跑 QA 時建好,技術決策系統自拍)。
-- 綠 → 分流:票有可 demo 驗收項 → comment「下一步:`/client-demo #N`」;覆蓋驗收項標「無 — 間接驗證」(純基礎工程切片)→ comment「下一步:`/close #N`」。blocking → 開 bug tickets 回 `/build`,修完重跑。
+- 綠 → 分流:票有可 demo 驗收項 → comment「下一步:`/client-demo #N`(Codex: `$client-demo #N`)」;覆蓋驗收項標「無 — 間接驗證」(純基礎工程切片)→ comment「下一步:`/close #N`(Codex: `$close #N`)」。blocking → 開 bug tickets 回 `/build`,修完重跑。
 
 ## 引用
 

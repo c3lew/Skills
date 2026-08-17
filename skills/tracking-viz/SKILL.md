@@ -13,7 +13,7 @@ Hero 與四宮格各有固定資料來源,只讀 tracker,不讀 spec 正本、�
 
 | 區塊 | 來源 |
 |------|------|
-| Hero「現在在哪 + 下一步」 | 進行中切片 ticket 的最新交棒 comment(產線慣例:收尾寫「下一步:`/skill #N`」)。找不到交棒 comment 才自己從切片狀態推下一棒指令。 |
+| Hero「現在在哪 + 下一步」 | 進行中切片 ticket 的最新交棒 comment(產線慣例:收尾寫「下一步:`/skill #N`(Codex: `$skill #N`)」)。找不到交棒 comment 才自己從切片狀態推下一棒指令。 |
 | 功能進度 | 每張 slice ticket 一列:標題 + 狀態 + 進度。 |
 | 品質現況 | bug tickets 的 blocking / known issue 標記數、QA 報告 comment 的 regression 綠燈數、待 client 決定的 known issue 處置。 |
 | 最近幫你做的決定 | 決策投影 comments(白話三行制:選擇/影響/反悔成本)— 只讀這裡,取最近幾則,濃縮成「日期 + 決策 + 取捨」一行。 |
@@ -39,7 +39,7 @@ Hero 與四宮格各有固定資料來源,只讀 tracker,不讀 spec 正本、�
 照 [`references/dashboard.template.html`](references/dashboard.template.html)(client 拍板的版面)填真資料:版面與 CSS 照抄,示意內容整份換掉。規則:
 
 - 單檔靜態 HTML、無 server、無外部資源;icon 用 template 內建的 inline SVG,不用 emoji。
-- Hero 的「下一步」含可複製的下一棒指令(`<code>/skill #N</code>`)— 這是產線交棒的指路牌,只指路,不自動 spawn 下一環節。
+- Hero 的「下一步」含可複製的下一棒指令,雙寫(`<code>/skill #N</code>` 與 `<code>$skill #N</code>`,Codex 用後者)— 這是產線交棒的指路牌,只指路,不自動 spawn 下一環節。
 - 沒資料的區塊留著並寫白話空狀態(例:「還沒有幫你做過決定」),讓版面穩定。例外:「等你決定」callout 是提醒不是常駐區塊,沒有待決事項就整塊拿掉。
 - 其他環節掛在 dashboard 的一句話資訊(release note 目前版本、監控新錯數、retro 提示 — 攢批門檻規則見 `/retro`)放副標列或品質卡,一樣白話。
 - 寫到目標專案 repo 根的 `dashboard.html`;已存在就整份覆蓋更新。

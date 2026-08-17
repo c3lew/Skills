@@ -30,7 +30,7 @@
 
 - Spec issue:含 Implementation Decisions(正本)、驗收清單(QA oracle)、拍板 prototype link(如有)。
 - 決策投影 comments 發到 tracker。
-- Ticket comment 交棒:「下一步:`/slice-tickets #N`」。
+- Ticket comment 交棒:「下一步:`/slice-tickets #N`(Codex: `$slice-tickets #N`)」。
 
 ## 引用
 

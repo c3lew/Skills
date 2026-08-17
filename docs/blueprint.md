@@ -31,6 +31,9 @@ ui-mockup #8、技術決策層 #9、維護流程 #10、接線圖 #11、組裝 #1
    唯一例外:pm-intake → to-spec 同 session(to-spec 吃訪談對話 context)。
 2. **Ticket 當接力棒**:session 收尾把產出 link +「下一步跑什麼指令」寫回 ticket
    comment,label/state 標記進度;下一個 session 以 `/skill #N` 冷啟動。
+   交棒行**雙寫**,同一行給兩種寫法:「下一步:`/qa #12`(Codex: `$qa #12`)」—
+   Codex 顯式叫 skill 是 `$name`,只寫 slash 貼過去叫不動。這是所有寫給 client
+   的下一棒指令(交棒 comment、`/next` 推薦、dashboard hero)的共同格式。
 3. **手動開下一棒,dashboard 指路**:不自動 spawn 下一環節;dashboard hero 顯示
    「現在在哪 + 下一步指令」,複製貼上即走。
 
@@ -43,7 +46,7 @@ ui-mockup #8、技術決策層 #9、維護流程 #10、接線圖 #11、組裝 #1
 | 2 | 需求訪談 + spec | `pm-intake`(同 session 呼叫 `/to-spec`) | **自建**;to-spec 原件 | spec(Implementation Decisions + 驗收清單 + 拍板 prototype link) |
 | 2a | 長相分岔(訪談中 inline) | `ui-mockup` | **自建薄層** wrap `/prototype` | 拍板 prototype → 入 spec、當 QA 視覺 oracle |
 | 3 | 切票 | `slice-tickets` | **自建薄層** wrap `/to-tickets` | vertical slice tickets,每張標注覆蓋的驗收項 |
-| 4 | 實作(每張 ticket) | `build`(wrap `/implement`:tdd + code-review,補交棒) | **薄層 wrap** | 完成 comment +「下一步:/qa #N」 |
+| 4 | 實作(每張 ticket) | `build`(wrap `/implement`:tdd + code-review,補交棒) | **薄層 wrap** | 完成 comment +「下一步:/qa #N($qa #N)」 |
 | 5 | QA | `qa` | **自建**(AFK) | 綠 →「下一步:demo」;fail → 開 ticket 回 4(blocking 修完才 demo) |
 | 6 | 驗收 | `client-demo` | **自建**(HITL) | 過關 → regression 固化 + **過關即發**(build + 換裝 + release note);「不對」四分類回流 |
 | 7 | 追蹤(隨時) | `tracking-viz` | **自建** | 讀 GitHub Issues 產靜態 HTML dashboard |

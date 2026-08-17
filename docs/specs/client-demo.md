@@ -10,7 +10,7 @@ QA 過後的驗收點:agent **跑給 client 看**(每個情境 → 會發生什�
 
 ## 觸發與入口
 
-`qa` 綠(blocking 清零)後,ticket comment 指路「下一步:`/client-demo #N`」。
+`qa` 綠(blocking 清零)後,ticket comment 指路「下一步:`/client-demo #N`(Codex: `$client-demo #N`)」。
 
 ## 輸入
 
@@ -33,7 +33,7 @@ QA 過後的驗收點:agent **跑給 client 看**(每個情境 → 會發生什�
 
 ## 產出與交棒
 
-- 過關 → regression 固化(交 `qa` 執行)、ticket 關閉、dashboard 更新。
+- 過關 → regression 固化(交 `qa` 執行)、ticket 關閉、dashboard 更新;交棒 comment 雙寫(見 `docs/blueprint.md` 接力棒)。
 - 「不對」→ 對應分類的回流 ticket。
 
 ## 引用

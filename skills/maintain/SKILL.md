@@ -58,8 +58,8 @@ Invariant:任何 refactor — 含 `/improve-codebase-architecture` 拍板的 —
 
 Client 報的即到即分類開票;agent 自撿的照 §5 攢批,client 說了才清。分類完的票進對應產線,每張票 comment 下一步指令當接力棒:
 
-- bug → 「下一步:`/build #N`」,票上附重現 scenario(`/qa` 要跑 regression + 這個 scenario)。
-- 改功能 → 輕量票同上;完整版寫「下一步:`/pm-intake`」。
+- bug → 「下一步:`/build #N`(Codex: `$build #N`)」,票上附重現 scenario(`/qa` 要跑 regression + 這個 scenario)。
+- 改功能 → 輕量票同上;完整版寫「下一步:`/pm-intake`(Codex: `$pm-intake`)」。
 - tech-debt → 留在 backlog,等 §5 的批次拍板。
 
 任何票的關票一律走 `/close #N` — 結案出口(`/close`)核對完工定義(§3 的分級閉環、§5–6 的 regression + 投影都是它對表的正本)才關。

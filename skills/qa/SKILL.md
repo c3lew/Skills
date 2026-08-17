@@ -37,14 +37,14 @@ QA 環境的啟動做成**一鍵重開**:單一 script / 指令(起 dev server +
 
 每條 fail 開 bug ticket(重現步驟 + 對應驗收原句 + 證據)並標 severity:
 
-- **blocking** — 驗收清單 fail,修完才能 demo。ticket comment「下一步:`/build #N`」。
+- **blocking** — 驗收清單 fail,修完才能 demo。ticket comment「下一步:`/build #N`(Codex: `$build #N`)」。
 - **known issue** — 非 blocking,帶著 demo;處置(現在修 / 之後修 / 不修)由 client 在 demo 收尾整批確認。
 
 ## 6. 報告與交棒
 
 QA 報告寫回本 ticket:白話摘要 + blocking / known issues 清單 + 未涵蓋範圍(如 Tauri 原生殼)+ **demo 實錄清單**(每條驗收項對一段,附路徑)+ **一鍵重開指令**(client-demo 直接抄)。
 
-- blocking 清零 → 看票的「覆蓋驗收項」段分流:有可 demo 的驗收項 → comment「下一步:`/client-demo #N`」;標「無 — 由後續票的驗收項間接驗證」(純基礎工程切片,沒東西給 client 看)→ comment「下一步:`/close #N`」,demo 由後續票間接把關。
+- blocking 清零 → 看票的「覆蓋驗收項」段分流:有可 demo 的驗收項 → comment「下一步:`/client-demo #N`(Codex: `$client-demo #N`)」;標「無 — 由後續票的驗收項間接驗證」(純基礎工程切片,沒東西給 client 看)→ comment「下一步:`/close #N`(Codex: `$close #N`)」,demo 由後續票間接把關。
 - 有 blocking → 列出 bug tickets,修完重跑 `/qa #N`。
 
 ## 7. 過關後固化

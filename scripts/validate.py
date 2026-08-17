@@ -9,6 +9,9 @@ exempt — operating this repo is their job, so repo-root refs are correct.
 Bundled discipline copies (skills/*/references/<name> sharing a filename with
 docs/disciplines/<name>) must byte-match the docs original — the docs file is
 the source of truth; skills carry verbatim copies so they survive install.
+Handoff lines (「下一步:`/x #N`」) must dual-write the Codex form on the same
+line (`$x #N`) — Codex calls skills with `$name`, so a slash-only handoff is a
+comment the client cannot paste there.
 Does NOT validate prose content.
 
 Usage:
@@ -32,6 +35,12 @@ LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
 BACKTICK_PATH_RE = re.compile(
     r"`(\.{1,2}/[^`\s]+|[\w.-]+(?:/[\w.-]+)+\.[A-Za-z0-9]{1,5})`"
 )
+# handoff baton: the 「下一步:…」 span a skill writes for the client. Any slash
+# command inside that span must carry its Codex `$name` twin, so the line pastes
+# into either agent. Span ends at 」 (or end of line) — a `/skill` mentioned in
+# the surrounding prose is internal wording, not the baton, and stays untouched.
+HANDOFF_SPAN_RE = re.compile(r"下一步[:︰:][^」\n]*")
+SLASH_CMD_RE = re.compile(r"`/([A-Za-z0-9_-]+)")
 # Only file refs are links an agent can follow. Bare directory refs
 # (`docs/disciplines/`, `.out-of-scope/`) are prose about paths a skill
 # operates on in the *target* repo — not links, so not checked.
@@ -61,6 +70,16 @@ def find_path_refs(text):
     return [r for r in refs if r]
 
 
+def find_slash_only_handoffs(text):
+    """Return skill names whose handoff baton lacks the Codex `$name` twin."""
+    missing = []
+    for span in HANDOFF_SPAN_RE.findall(text):
+        for name in SLASH_CMD_RE.findall(span):
+            if f"`${name}" not in span:
+                missing.append(name)
+    return missing
+
+
 def resolves_in(skill_dir, ref):
     """True if ref points at something that exists *within* skill_dir."""
     target = (skill_dir / ref).resolve()
@@ -88,6 +107,11 @@ def validate(skills_dir, repo):
             for field in ("name", "description"):
                 if not fm.get(field):
                     errors.append(f"{label}/SKILL.md: frontmatter missing '{field}'")
+        for name in find_slash_only_handoffs(text):
+            errors.append(
+                f"{label}/SKILL.md: handoff 「下一步:… `/{name}`」 missing the "
+                f"Codex form `${name}` inside the same 「下一步:…」 baton"
+            )
         repo_scoped = skill_dir.name in REPO_SCOPED_SKILLS
         for ref in find_path_refs(text):
             if resolves_in(skill_dir, ref):
@@ -149,6 +173,19 @@ def self_check():
         "./local.md",
         "references/foo.html",
     ], refs
+
+    # handoff dual-write: slash-only is red, dual-written is green
+    assert find_slash_only_handoffs("下一步:`/qa #12`") == ["qa"]
+    assert find_slash_only_handoffs("下一步:`/qa #12`(Codex: `$qa #12`)") == []
+    # the twin must be inside the baton — a stray `$qa` on the next line doesn't count
+    assert find_slash_only_handoffs("下一步:`/qa #12`\n`$qa #12`") == ["qa"]
+    # the command doesn't have to sit right after 下一步: — words may precede it
+    assert find_slash_only_handoffs("「下一步:從無 blocker 的票開始 `/build #N`」") == ["build"]
+    # prose after the closing 」 is internal wording, not the baton
+    assert find_slash_only_handoffs(
+        "「下一步:`/build #N`(Codex: `$build #N`)」,附 scenario(`/qa` 要跑 regression)"
+    ) == []
+    assert find_slash_only_handoffs("跑 `/qa #12` 驗收") == []
 
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp)
