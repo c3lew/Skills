@@ -99,3 +99,50 @@ Works-but-wrong：0。
 - Blocking：0。
 - Known issues：0。
 - 未涵蓋：無 UI 或原生殼；本票全部行為均為 CLI，已全數實跑。
+
+## 步驟 7 — 固化(client-demo 過關後)
+
+client-demo 過關前三條成立(#43 comment),指回 `qa` 固化。client-demo 點名的高價值
+scenario:**`install.py --self-check` 的 fixture 失敗行必須帶 `[fixture]` 前綴,整體 exit 0**。
+
+| 驗收項 | 固化狀態 | 在哪 |
+|---|---|---|
+| 1 fixture 預期輸出不會被誤讀成真的失敗 | **已固化**(本輪新增)| `install.py` self-check 末段:重跑自己一次(`--no-recurse`),斷言 child stdout 無任何未標示的 `FAIL` 行、且含 `[fixture] FAIL skills/bad: missing SKILL.md`、exit 0 |
+| 2 fixture 沒被擋下時 self-check 仍失敗 | **已固化**(#43 build 時就在)| `install.py` self-check 紅 validate 區塊:`install()` 必須 `SystemExit(1)`,沒擋下就 `AssertionError("install should refuse on red validate")` |
+| 3 `validate.py` 綠 | **已固化**(既有)| `validate.py --self-check` + `validate.py`,每輪 regression 都跑 |
+
+### 為什麼要用 subprocess 重跑自己
+
+受測對象是**終端上實際看到的那幾行**。in-process 斷言看不到 `print`,所以
+以下兩種退化都會靜默通過:把 `print(f"[fixture] {failure}")` 改回 `print(failure)`、
+或把 `contextlib.redirect_stdout(fixture_output)` 拆掉讓 FAIL 直接噴到真 stdout。
+`--no-recurse` 讓 child 不再往下生 grandchild。
+
+### Mutation 驗證(確認 guard 真的會咬)
+
+```text
+$ # 竄改 1:print(f"[fixture] {failure}") -> print(failure)
+exit 1
+AssertionError: FAIL skills/bad: missing SKILL.md
+  (install.py self_check: assert unlabeled_failures(child.stdout) == [])
+
+$ # 竄改 2:with contextlib.redirect_stdout(fixture_output): -> if True:
+exit 1
+AssertionError
+
+$ # 還原後
+python scripts/install.py --self-check
+[fixture] FAIL skills/bad: missing SKILL.md
+OK install self-check green
+exit 0
+```
+
+### 固化後 regression 全綠
+
+```text
+$ python scripts/validate.py --self-check   -> OK validate self-check green, exit 0
+$ python scripts/validate.py                -> OK validate green, exit 0
+$ python scripts/install.py --self-check    -> [fixture] FAIL ... / OK install self-check green, exit 0
+$ python scripts/install.py                 -> 兩個 agent roots 完整換裝, exit 0
+$ git diff --check                          -> 綠
+```

@@ -16,6 +16,7 @@ Usage:
 """
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -51,6 +52,16 @@ def readme_install_issues(text, dests):
     if "~/.codex/skills" in text:
         errors.append("README.md: Codex reads ~/.agents/skills, not ~/.codex/skills (#45)")
     return errors
+
+
+def unlabeled_failures(output):
+    """Lines of --self-check output that read as a real production failure.
+
+    #43: the red-validate fixture below legitimately prints validate's FAIL
+    line. Unlabeled, it reads as this repo being broken and sends the reader
+    off to debug nothing. Anything not tagged `[fixture]` is that mistake.
+    """
+    return [l for l in output.splitlines() if l.startswith("FAIL")]
 
 
 def install(skills_dir, repo, dest):
@@ -212,6 +223,25 @@ def self_check():
         trees = [snapshot(d) for d in dests]
         assert trees[0] == trees[1], "agent roots drifted"
         assert set(trees[0]) == snapshot(REPO / "skills").keys()
+
+    # #43 固化:what the terminal shows is the thing under test, so re-run this
+    # script and read its actual output — an in-process assertion cannot see the
+    # print, and dropping either the `[fixture]` prefix or the redirect above
+    # silently puts a bare FAIL back on screen. --no-recurse stops the child
+    # spawning a grandchild.
+    if "--no-recurse" not in sys.argv:
+        assert unlabeled_failures("FAIL skills/bad: missing SKILL.md") == [
+            "FAIL skills/bad: missing SKILL.md"
+        ]  # the detector bites, so the green below means something
+        child = subprocess.run(
+            [sys.executable, __file__, "--self-check", "--no-recurse"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        assert child.returncode == 0, child.stdout + child.stderr
+        assert unlabeled_failures(child.stdout) == [], child.stdout
+        assert "[fixture] FAIL skills/bad: missing SKILL.md" in child.stdout, child.stdout
 
     print("OK install self-check green")
 
