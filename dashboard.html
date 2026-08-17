@@ -56,14 +56,14 @@
 <div class="wrap">
 
 <h1>Skills 產線</h1>
-<div class="sub">專案儀表板 · 更新於 8/17 · 資料來自工作紀錄 · 目前用的版本:「一行裝好」前 5 個功能已上線</div>
+<div class="sub">專案儀表板 · 更新於 8/17 · 資料來自工作紀錄 · 目前用的版本:6 個功能全部上線並已換裝你的電腦</div>
 
 <div class="hero">
-  <div class="where">現在在哪:「<strong>在乾淨的電腦上一行指令裝好</strong>」<strong>已經結案了</strong> — 六條驗收標準逐條放實跑紀錄給你看,你全部點頭,新版也換裝到你自己的電腦上,兩種助理現在讀到的都是最新版。整包工作只剩<strong>最後一個功能</strong>:「在另一種助理上完整跑通一次」。</div>
+  <div class="where">現在在哪:最後一個功能「<strong>在另一種助理上完整跑通一次</strong>」<strong>已經結案了</strong> — 實際在第二種助理上推一張真的工作單走完「動手做 → 檢查」兩棒,留下的紀錄逐段放給你看,你點頭過關,新版也換裝到你電腦上。<strong>這整包工作(一行裝好 + 兩種助理都能跑)六個功能全部驗收完畢。</strong></div>
   <div class="release"><strong>這次換裝了什麼:</strong>每件工作結尾那行「下一步請執行 ○○」,以前如果 ○○ 打錯字或被改名,沒人會發現,你照著貼就叫不動任何東西 — 現在自動檢查會當場變紅並指出是哪一份檔案;另外自我檢查途中那行看起來像出錯、其實是故意造的假案例,現在會標明「這是假的」,不會再嚇你一跳。<span class="rb">反悔的話</span>:裝回上一版就好,舊版還留著,一個指令的事。</div>
   <div class="next">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <div><strong>下一步:</strong>問一句<code>/next</code>(另一種助理:<code>$next</code>)就會告訴你該開哪一棒<br>照現在的進度會是最後一個功能:讓另一種助理也能從頭到尾跑完一張工作單。</div>
+    <div><strong>下一步:</strong>問一句<code>/next</code>(另一種助理:<code>$next</code>)就會告訴你該開哪一棒<br>大工作做完了,剩下的是四張小單子(見右邊「小毛病」),照現在的進度會先處理你判「現在修」的那張:交接說明裡附的連結,在東西還沒上傳前點下去是壞的。</div>
   </div>
 </div>
 
@@ -75,14 +75,14 @@
     <div class="slice-row"><span class="slice-name">說明書分清楚「用的人」跟「改的人」各走哪條路</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">公開前先掃一遍不該外流的內容</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">在乾淨的電腦上一行指令裝好</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
-    <div class="slice-row"><span class="slice-name">在另一種助理上完整跑通一次</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
+    <div class="slice-row"><span class="slice-name">在另一種助理上完整跑通一次</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
   </div>
 
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>品質現況</h2>
     <div class="qa-tiles">
       <div class="tile"><div class="num" style="color:var(--ok)">0</div><div class="lbl">必須先修</div></div>
-      <div class="tile"><div class="num" style="color:var(--warn)">2</div><div class="lbl">小毛病(帶著走)</div></div>
+      <div class="tile"><div class="num" style="color:var(--warn)">4</div><div class="lbl">小毛病(帶著走)</div></div>
       <div class="tile"><div class="num" style="color:var(--ok)">6</div><div class="lbl">既有功能全數正常</div></div>
     </div>
     <ul class="list" style="margin-top:14px">
@@ -91,12 +91,15 @@
       <li><span class="when">帶著走</span><span>你問「接下來做什麼」時,如果那件工作上沒有留下現成的交接說明,助理會改照一張對照表回答 — 那張表還沒有電腦自動把關,少寫一種寫法不會被擋下來。你先前決定這條之後再修。</span></li>
       <li><span class="when">已修好</span><span>自我檢查跑完的時候,中間會先印一行看起來像出錯的字 — 那其實是它自己故意造的假案例。現在那行前面會標明「這是假的」,不會再嚇你一跳。</span></li>
       <li><span class="when">帶著走</span><span>「檢查有沒有做錯 → 自動開一張修正單」這條路,在另一種助理上還沒真的被觸發過一次(那一輪剛好全部通過,沒東西可開)。你決定之後再補跑一次驗證。</span></li>
+      <li><span class="when">要修</span><span>每件工作結尾那行交接說明會附一個連結,指向這次改了什麼 — 但東西還沒上傳到網路上之前,你點下去會是「找不到頁面」。你判這條現在就修,因為每張工作單都會重複踩到。</span></li>
+      <li><span class="when">帶著走</span><span>「檢查」這道環節的說明書寫死了一種只有第一種助理才有的看網頁工具;第二種助理用的是另一套。這輪跑的工作單不碰網頁所以沒撞到,等到有畫面的功能才會遇到。你決定之後再修。</span></li>
     </ul>
   </div>
 
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>最近幫你做的決定</h2>
     <ul class="list">
+      <li><span class="when">8/17</span><span>「交接那行指到的功能到底存不存在」這條新檢查,放在「整份專案一起檢查」的時候跑,不放進「單一功能自己檢查」裡 — 因為要看得到全部功能才答得出來。你這邊看到的東西沒有差別,照樣一個指令跑完;想搬回去也只是搬幾行。</span></li>
       <li><span class="when">8/17</span><span>安裝指令接受「要多帶幾個字」才會裝到全電腦到處能用,不自己寫一套安裝程式 — 你要記的那行長一點,其他不變,說明書早就寫的是這行。當初把落點寫錯的原因也記下來了:只讀了人家的說明書、沒有真的打一次就寫進需求文件。以後這種「會過時的外部事實」要先實跑再寫。</span></li>
       <li><span class="when">8/17</span><span>那三份會叫人去看不存在檔案的說明,修法是讓自動檢查自己認得「這句在講你自己的專案、不是我帶著走的檔案」,而不是去改文件的措辭來閃過檢查 — 文件原文一個字沒動,以後寫類似說明也不用為了過檢查遷就用字。想改回來很容易,規則就一小段。</span></li>
       <li><span class="when">8/17</span><span>自動檢查的範圍從「只看每個功能的主檔案」擴到「每一個會跟著裝過去的說明檔」 — 之前這個洞是隱形的,連續兩次驗收都沒抓到,因為驗收用的就是這支有盲區的檢查。</span></li>
@@ -116,7 +119,8 @@
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>接下來的驗收點</h2>
     <ul class="list">
       <li><span class="when">已結案</span><span>「在乾淨的電腦上一行裝好」 — 六條逐條演給你看,你全部點頭,新版也已經裝到你電腦上了。</span></li>
-      <li><span class="when">最後</span><span>「在另一種助理上完整跑通一次」 — 一樣實際跑給你看。</span></li>
+      <li><span class="when">已結案</span><span>「在另一種助理上完整跑通一次」 — 紀錄逐段放給你看,你點頭過關,新版已換裝。這是這包工作的最後一個功能。</span></li>
+      <li><span class="when">接下來</span><span>沒有排定的大驗收了。剩下四張小單子,修完一樣會跑給你看再收 — 最近的一張是「交接連結點下去是壞的」那條。</span></li>
     </ul>
   </div>
 </div>
