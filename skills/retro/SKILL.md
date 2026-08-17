@@ -40,7 +40,7 @@ description: 系統自我升級的唯一入口:AFK 掃三餵食口(拍板錯更�
 
 client 逐條「改 / 不改」,點頭的才動文件:
 
-- 改 Skills repo 的 `docs/disciplines/` 或 `skills/` 檔案;動到 `docs/disciplines/` 就同步更新各 skill 的 `references/` 副本(byte 一致),然後 `python scripts/validate.py` 綠、`python scripts/install.py` 換裝。
+- 改 Skills repo 的 `docs/disciplines/` 或 `skills/` 檔案;動到 `docs/disciplines/` 就同步更新各 skill 的 `references/` 副本(byte 一致),然後 `python scripts/validate.py` 綠、`python scripts/install.py` 換裝(一次裝進 Claude Code 與 Codex 兩邊,少一邊就會有 agent 讀到舊版)。
 - 每條落地在 retro issue 發一則決策投影 comment(格式見規則書)。
 - 「不改」的在 retro issue 留一句紀錄,之後不再提。
 

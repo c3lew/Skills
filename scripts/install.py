@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Idempotent install: copy skills/* to the user-level skills directory.
+"""Idempotent install: copy skills/* to every agent's user-level skills dir.
 
 Runs validate first; refuses to install on a red repo. Each skill directory
 is mirrored (delete target, copy fresh), so running twice yields no diff and
 stale files never linger.
 
+Two destinations, because the line is called from two agents: Claude Code
+reads ~/.claude/skills, Codex reads ~/.agents/skills (the cross-agent root
+that `npx skills add -a codex` writes to). Installing to one only leaves the
+other agent unable to call the line.
+
 Usage:
-    python scripts/install.py               # install to ~/.claude/skills/
+    python scripts/install.py               # install to both agent roots
     python scripts/install.py --self-check  # run built-in assertions
 """
 import os
@@ -18,7 +23,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate import validate
 
 REPO = Path(__file__).resolve().parents[1]
-DEFAULT_DEST = Path.home() / ".claude" / "skills"
+DEFAULT_DESTS = (
+    Path.home() / ".claude" / "skills",  # Claude Code
+    Path.home() / ".agents" / "skills",  # Codex (cross-agent root)
+)
 
 
 def install(skills_dir, repo, dest):
@@ -55,12 +63,13 @@ def snapshot(root):
 
 
 def main():
-    installed = install(REPO / "skills", REPO, DEFAULT_DEST)
-    if not installed:
-        print("OK nothing to install (no skills/ yet)")
-    else:
-        for name in installed:
-            print(f"OK installed {name} -> {DEFAULT_DEST / name}")
+    for dest in DEFAULT_DESTS:
+        installed = install(REPO / "skills", REPO, dest)
+        if not installed:
+            print("OK nothing to install (no skills/ yet)")
+        else:
+            for name in installed:
+                print(f"OK installed {name} -> {dest / name}")
     return 0
 
 
@@ -138,6 +147,14 @@ def self_check():
         src.write_text(original, encoding="utf-8")
         install(skills, repo, dest)
         assert "QA38PROBE" not in landed.read_text(encoding="utf-8"), real.name
+
+    # both agents get the same tree: dropping either root is the failure mode
+    # (#40 — Codex reads ~/.agents/skills, Claude Code reads ~/.claude/skills)
+    assert {tuple(d.parts[-2:]) for d in DEFAULT_DESTS} == {
+        (".claude", "skills"),
+        (".agents", "skills"),
+    }, DEFAULT_DESTS
+    assert all(d.parent.parent == Path.home() for d in DEFAULT_DESTS), DEFAULT_DESTS
 
     print("OK install self-check green")
 

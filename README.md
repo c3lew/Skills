@@ -9,15 +9,15 @@
 一行裝好,不用 clone、不用 Python:
 
 ```bash
-npx skills add c3lew/Skills           # 裝到 Claude Code 全域(~/.claude/skills/)
-npx skills add c3lew/Skills -a codex  # 裝到 Codex 全域(~/.codex/skills/)
-npx skills update                     # 之後拉新版
+npx skills add c3lew/Skills -g -a claude-code -a codex -y   # 兩個 agent 一起裝,全域
+npx skills update -g -y                                     # 之後拉新版
 ```
 
-- **預設就是全域**,所有專案吃到同一版 — 跟開發路徑的 `install.py` 行為一致。
+- `-g` **不能省** — 不加的話 CLI 裝成 project-level(丟在你當下目錄的 `.agents/skills/`),換個專案就叫不到。
+- 裝到哪:Claude Code → `~/.claude/skills/`(symlink)、Codex → `~/.agents/skills/`(本體)。兩邊指同一份,所有專案吃到同一版。
+- 只要一個 agent 就砍掉另一個 `-a`(agent 名是 `claude-code` / `codex`,一個 `-a` 帶一個名字,逗號分隔會被擋)。
 - 裝完直接在 Claude Code 打 `/next`,或在 Codex 打 `$next`。
 - 用的是公用 CLI [vercel-labs/skills](https://github.com/vercel-labs/skills),本 repo 沒有自己的安裝器。
-- repo 目前是 private,這條路要等轉 public(或你的 GitHub 帳號有存取權)才通。
 
 ### B. 開發者 — 我要改這個 repo 裡的 skill
 
@@ -25,10 +25,10 @@ npx skills update                     # 之後拉新版
 
 ```bash
 python scripts/validate.py   # 結構 lint,紅就先修
-python scripts/install.py    # 抄進 ~/.claude/skills/(它會先跑 validate,紅就拒裝)
+python scripts/install.py    # 抄進兩個 agent 的全域目錄(它會先跑 validate,紅就拒裝)
 ```
 
-先跑 `validate.py` 是為了看清楚錯在哪 — 直接跑 `install.py` 也安全,它自己會 validate,紅就拒裝。裝完新內容馬上在 `~/.claude/skills/` 生效,同一個 session 重開就吃得到。這條路完全不碰 GitHub,改一行測一次的迭代速度不受影響。
+先跑 `validate.py` 是為了看清楚錯在哪 — 直接跑 `install.py` 也安全,它自己會 validate,紅就拒裝。它會同時抄進 `~/.claude/skills/`(Claude Code)和 `~/.agents/skills/`(Codex),裝完馬上生效,同一個 session 重開就吃得到。這條路完全不碰 GitHub,改一行測一次的迭代速度不受影響。
 
 > 兩條路裝到同一個位置,後裝的蓋前面的。在本 repo 開發時用 B,別把自己的 working copy 用 A 蓋掉。
 
