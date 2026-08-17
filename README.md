@@ -2,6 +2,36 @@
 
 這個 repo 是一套 Claude Code skills(**source of truth 在這裡**,安裝到 `~/.claude/skills/` 全專案共用),讓一個人 + agent 的開發流程長出軟體公司才有的東西:PM 訪談、QA、client 驗收、發佈、維護、retro。你扮演 **client**(只談看得到的行為),技術決策系統自己拍、自己留紀錄。
 
+## 安裝:兩條路,先看你是哪一種人
+
+### A. 使用者 — 我只想用這套產線(含未來在別台機器上的自己)
+
+一行裝好,不用 clone、不用 Python:
+
+```bash
+npx skills add c3lew/Skills           # 裝到 Claude Code 全域(~/.claude/skills/)
+npx skills add c3lew/Skills -a codex  # 裝到 Codex 全域(~/.codex/skills/)
+npx skills update                     # 之後拉新版
+```
+
+- **預設就是全域**,所有專案吃到同一版 — 跟開發路徑的 `install.py` 行為一致。
+- 裝完直接在 Claude Code 打 `/next`,或在 Codex 打 `$next`。
+- 用的是公用 CLI [vercel-labs/skills](https://github.com/vercel-labs/skills),本 repo 沒有自己的安裝器。
+- repo 目前是 private,這條路要等轉 public(或你的 GitHub 帳號有存取權)才通。
+
+### B. 開發者 — 我要改這個 repo 裡的 skill
+
+改完**立刻生效,不用 push**、不用等 npx:
+
+```bash
+python scripts/validate.py   # 結構 lint,紅就先修
+python scripts/install.py    # 抄進 ~/.claude/skills/(它會先跑 validate,紅就拒裝)
+```
+
+先跑 `validate.py` 是為了看清楚錯在哪 — 直接跑 `install.py` 也安全,它自己會 validate,紅就拒裝。裝完新內容馬上在 `~/.claude/skills/` 生效,同一個 session 重開就吃得到。這條路完全不碰 GitHub,改一行測一次的迭代速度不受影響。
+
+> 兩條路裝到同一個位置,後裝的蓋前面的。在本 repo 開發時用 B,別把自己的 working copy 用 A 蓋掉。
+
 ## 迷路了?一個指令
 
 ```
