@@ -12,7 +12,9 @@ docs/disciplines/<name>) must byte-match the docs original — the docs file is
 the source of truth; skills carry verbatim copies so they survive install.
 Handoff lines (「下一步:`/x #N`」) must dual-write the Codex form on the same
 line (`$x #N`) — Codex calls skills with `$name`, so a slash-only handoff is a
-comment the client cannot paste there.
+comment the client cannot paste there. Repo-wide (main() only, not validate()):
+every baton must name a skill that exists under skills/, because that pasted
+command has to resolve to an installed skill dir on the other agent.
 Does NOT validate prose content.
 
 Usage:
@@ -42,6 +44,9 @@ BACKTICK_PATH_RE = re.compile(
 # the surrounding prose is internal wording, not the baton, and stays untouched.
 HANDOFF_SPAN_RE = re.compile(r"下一步[:︰:][^」\n]*")
 SLASH_CMD_RE = re.compile(r"`/([A-Za-z0-9_-]+)")
+# 「下一步:`/skill #N`」 is the template a skill quotes when describing the
+# convention, not a command anyone pastes — there is no skills/skill.
+PLACEHOLDER_SKILLS = {"skill"}
 # Only file refs are links an agent can follow. Bare directory refs
 # (`docs/disciplines/`, `.out-of-scope/`) are prose about paths a skill
 # operates on in the *target* repo — not links, so not checked. Same for
@@ -88,6 +93,33 @@ def find_slash_only_handoffs(text):
             if f"`${name}" not in span:
                 missing.append(name)
     return missing
+
+
+def handoff_target_issues(skills_dir):
+    """Every baton must name a skill that exists — repo-wide check.
+
+    #41 proved the baton is a *command the client pastes into the other agent*:
+    「下一步:`/qa #43`(Codex: `$qa #43`)」 pasted into a fresh Codex session
+    resolved to ~/.agents/skills/qa/. A typo or a renamed skill dir turns that
+    line into a dead command on the ticket, and validate() cannot see it — it
+    lints one skill dir at a time and the target lives in a sibling.
+    """
+    if not skills_dir.is_dir():
+        return []
+    present = {p.name for p in skills_dir.iterdir() if p.is_dir()}
+    errors = []
+    for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
+        text = skill_md.read_text(encoding="utf-8")
+        for span in HANDOFF_SPAN_RE.findall(text):
+            for name in SLASH_CMD_RE.findall(span):
+                if name in PLACEHOLDER_SKILLS or name in present:
+                    continue
+                errors.append(
+                    f"skills/{skill_md.parent.name}/SKILL.md: handoff 「下一步:… "
+                    f"`/{name}`」 points at skills/{name}, which does not exist "
+                    f"— the client pastes that line into an agent"
+                )
+    return errors
 
 
 def resolves_in(skill_dir, ref):
@@ -157,7 +189,7 @@ def validate(skills_dir, repo):
 
 
 def main():
-    errors = validate(REPO / "skills", REPO)
+    errors = validate(REPO / "skills", REPO) + handoff_target_issues(REPO / "skills")
     for e in errors:
         print(f"FAIL {e}")
     if errors:
@@ -232,6 +264,60 @@ def self_check():
                 text.replace(span, span.replace(f"`${name}", "`", 1), 1), encoding="utf-8"
             )
             assert expected in validate(skills.parent, Path(tmp)), label
+
+    # #41 固化:the baton is a command the client pastes into Codex, so the skill
+    # it names has to exist. Repo-level, so it lives outside validate() — a
+    # single-skill install (install.py's fixtures) legitimately has no siblings.
+    assert handoff_target_issues(REPO / "skills") == [], handoff_target_issues(
+        REPO / "skills"
+    )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        skills = Path(tmp) / "skills"
+        (skills / "a").mkdir(parents=True)
+        baton = skills / "a" / "SKILL.md"
+
+        baton.write_text(
+            "---\nname: a\ndescription: d\n---\n下一步:`/gone #1`(Codex: `$gone #1`)",
+            encoding="utf-8",
+        )
+        assert handoff_target_issues(skills) == [
+            "skills/a/SKILL.md: handoff 「下一步:… `/gone`」 points at skills/gone, "
+            "which does not exist — the client pastes that line into an agent"
+        ], handoff_target_issues(skills)
+
+        # the placeholder baton is the convention being quoted, not a command
+        baton.write_text(
+            "---\nname: a\ndescription: d\n---\n下一步:`/skill #N`(Codex: `$skill #N`)",
+            encoding="utf-8",
+        )
+        assert handoff_target_issues(skills) == [], handoff_target_issues(skills)
+
+    # the real-skill layer: the fixtures above are hand-written, so they stay
+    # green even if every baton in the repo pointed nowhere. Take an actual
+    # baton naming an actual sibling, delete that sibling, and it must redden.
+    real = next(
+        (src, name)
+        for src in sorted((REPO / "skills").glob("*/SKILL.md"))
+        for span in HANDOFF_SPAN_RE.findall(src.read_text(encoding="utf-8"))
+        for name in SLASH_CMD_RE.findall(span)
+        if name not in PLACEHOLDER_SKILLS
+    )
+    src, target = real
+    with tempfile.TemporaryDirectory() as tmp:
+        skills = Path(tmp) / "skills"
+        for d in (REPO / "skills").iterdir():
+            if d.is_dir():
+                (skills / d.name).mkdir(parents=True)
+        (skills / src.parent.name / "SKILL.md").write_text(
+            src.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        assert handoff_target_issues(skills) == [], handoff_target_issues(skills)
+        (skills / target).rmdir()
+        got = handoff_target_issues(skills)
+        assert got and all(
+            f"points at skills/{target}" in e for e in got
+        ), (target, got)
 
     # dot-directory paths are target-repo prose, never links into the skill
     assert find_path_refs("`.out-of-scope/dark-mode.md` `.claude/settings.json`") == []
