@@ -74,13 +74,20 @@ def self_check():
         good = skills / "good"
         good.mkdir(parents=True)
         (good / "SKILL.md").write_text(
-            "---\nname: good\ndescription: d\n---\nbody", encoding="utf-8"
+            "---\nname: good\ndescription: d\n---\nsee [x](extra.md)", encoding="utf-8"
         )
         (good / "extra.md").write_text("extra", encoding="utf-8")
 
         # install lands the skill at the destination
         assert install(skills, repo, dest) == ["good"]
         assert (dest / "good" / "SKILL.md").is_file()
+
+        # the cross-machine check: what landed at dest still validates with a
+        # repo root that holds nothing — every ref resolved from the copied
+        # skill dir alone, which is what another machine actually gets.
+        assert validate(dest, Path(tmp) / "no-such-repo") == [], validate(
+            dest, Path(tmp) / "no-such-repo"
+        )
 
         # idempotent: second run leaves an identical tree
         first = snapshot(dest)
