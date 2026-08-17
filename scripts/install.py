@@ -29,6 +29,30 @@ DEFAULT_DESTS = (
 )
 
 
+def readme_install_issues(text, dests):
+    """README's A-path must document the command + landing points the code uses.
+
+    #45 was exactly this drift: the written destinations were not where the CLI
+    actually lands. That line is what a user copies — wrong there is a failed
+    install on a clean machine, and no code-only test can see it.
+    """
+    errors = []
+    add = next((l for l in text.splitlines() if l.startswith("npx skills add")), None)
+    if add is None:
+        errors.append("README.md: no `npx skills add` line — the A-path command is gone")
+    else:
+        for flag in (" -g", "-a claude-code", "-a codex"):
+            if flag not in add:
+                errors.append(f"README.md: install command missing '{flag.strip()}'")
+    for dest in dests:
+        shown = "~/" + "/".join(dest.parts[-2:]) + "/"
+        if shown not in text:
+            errors.append(f"README.md: landing point '{shown}' not documented")
+    if "~/.codex/skills" in text:
+        errors.append("README.md: Codex reads ~/.agents/skills, not ~/.codex/skills (#45)")
+    return errors
+
+
 def install(skills_dir, repo, dest):
     """Mirror each skill dir into dest. Returns installed skill names."""
     errors = validate(skills_dir, repo)
@@ -158,6 +182,23 @@ def self_check():
         (".agents", "skills"),
     }, DEFAULT_DESTS
     assert all(d.parent.parent == Path.home() for d in DEFAULT_DESTS), DEFAULT_DESTS
+
+    # the doc layer: DEFAULT_DESTS is where the *dev* path lands, README is what a
+    # user copies for the *npx* path. #45 was the two disagreeing — asserted here
+    # against the real README, then mutated so a silent doc drift reddens.
+    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    assert readme_install_issues(readme, DEFAULT_DESTS) == [], readme_install_issues(
+        readme, DEFAULT_DESTS
+    )
+    assert readme_install_issues(readme.replace(" -g", "", 1), DEFAULT_DESTS) == [
+        "README.md: install command missing '-g'"
+    ]
+    assert readme_install_issues(
+        readme.replace("~/.agents/skills/", "~/.codex/skills/"), DEFAULT_DESTS
+    ) == [
+        "README.md: landing point '~/.agents/skills/' not documented",
+        "README.md: Codex reads ~/.agents/skills, not ~/.codex/skills (#45)",
+    ]
 
     with tempfile.TemporaryDirectory() as tmp:
         dests = [Path(tmp) / "claude", Path(tmp) / "agents"]

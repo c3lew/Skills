@@ -389,3 +389,57 @@ judge 對第 6 條先判 fail(只有 no-op 證據),補上 R2 Step 5 後段的竄
   用 `08f6deb` 驗過。
 - 環境限制非產品行為:fake HOME 需另外複製 `.claude/.credentials.json`、`.codex/auth.json`
   才能登入 CLI;codex 讀本機 session 摘要那段報錯。
+
+---
+
+## 第三輪 — 過關後固化(client-demo 前三條成立,指回 qa)
+
+client 在 #40 逐條點頭、blocking 清零、known issues 為零之後,把本切片的高價值
+scenarios 寫進 regression suite。這一輪**不重跑安裝實測**,只動 suite。
+
+### R3 Step 1 — 盤點:哪幾條已經在 suite 裡、哪幾條進不去
+
+| 驗收項 | 固化狀態 | 在哪 |
+|--------|---------|------|
+| 1 + 2 雙落點(`~/.claude/skills/` + `~/.agents/skills/`,不是 `~/.codex/`)| **已固化**(#40 build 時寫的)| `install.py` self-check:`DEFAULT_DESTS` 兩個落點斷言 + 兩棵樹 snapshot 必須相同 |
+| 3 裝完內部引用全部讀得到 | **已固化**(#46 修時寫的)| `validate.py` self-check:拿真的 `references/*.md` 竄改必須變紅;`install.py` self-check:拿一個**空的 repo root** 對安裝後的樹重跑 validate(= 別台機器只拿到 skill 目錄的情況)|
+| #45 的 bug class:**文件寫的落點/指令與程式不符** | **本輪新增** | `install.py` 的 `readme_install_issues()` + self-check |
+| 4 / 5 `/next`、`$next` 真的在兩個 agent 裡跑起來 | **不固化** | 要 live CLI + 登入 + 網路,不進 suite(理由見下)|
+| 6 `npx skills update` 抓新版 | **不固化** | upstream CLI(vercel-labs/skills)的行為 + 網路,不是本 repo 的程式 |
+
+### R3 Step 2 — 新增的 check(#45 bug class)
+
+#45 不是 code bug,是**寫下來的落點跟實況不符** — 而 README 的那行指令正是使用者會
+複製去乾淨機器上跑的東西。程式端有 `DEFAULT_DESTS`,文件端沒有任何東西綁住它,兩邊
+可以無聲漂開。
+
+`scripts/install.py` 新增 `readme_install_issues(text, dests)`:README 的 `npx skills add`
+那行必須帶 `-g`、`-a claude-code`、`-a codex`,`DEFAULT_DESTS` 的兩個落點都要寫在 README
+裡,而且 `~/.codex/skills` 不准出現(那就是 #45 講錯的那個路徑)。
+
+跑真 README 綠,竄改必須紅:
+
+```
+$ python -c "... readme_install_issues ..."
+原文  : []
+去 -g : ["README.md: install command missing '-g'"]
+改落點: ["README.md: landing point '~/.agents/skills/' not documented",
+         'README.md: Codex reads ~/.agents/skills, not ~/.codex/skills (#45)']
+```
+
+### R3 Step 3 — suite 全綠
+
+```
+$ python scripts/validate.py && python scripts/validate.py --self-check && python scripts/install.py --self-check
+OK validate green
+OK validate self-check green
+FAIL skills/bad: missing SKILL.md      <- 這行是「紅 repo 必須拒裝」那條斷言自己印的,不是失敗
+OK install self-check green
+```
+
+### 沒固化的兩條,為什麼
+
+- **第 4、5 條(`/next` / `$next` 真的跑)**:要起兩個 CLI、要登入憑證、要網路,一次幾十秒
+  起跳,而且失敗多半來自環境不是來自 repo — 放進每次都要跑的 suite 只會製造假紅。
+  它們的可測部分(skill 檔案裝到位、內容可讀、引用不斷)已經被 1/2/3 條的 check 蓋掉。
+- **第 6 條(`npx skills update`)**:行為在 upstream CLI 手上,本 repo 改不動也不該替它測。
