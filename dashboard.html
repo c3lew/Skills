@@ -54,13 +54,13 @@
 <div class="wrap">
 
 <h1>Skills 產線</h1>
-<div class="sub">專案儀表板 · 更新於 8/17 · 資料來自工作紀錄 · 目前用的版本:「一行裝好」前 2 個功能已上線</div>
+<div class="sub">專案儀表板 · 更新於 8/17 · 資料來自工作紀錄 · 目前用的版本:「一行裝好」前 3 個功能已上線</div>
 
 <div class="hero">
-  <div class="where">現在在哪:「交接說明同時給兩種寫法」你已經驗收通過,也裝上你這台電腦了。現在交接的那行字會同時寫出兩種助理各自的寫法,而且少寫一半電腦會自己擋下來。</div>
+  <div class="where">現在在哪:「說明書分清楚『用的人』跟『改的人』各走哪條路」你已經驗收通過,也裝上你這台電腦了。說明書開頭現在分成兩塊 — 只想用的人一行指令裝好,要改東西的人照原本的方式改完馬上生效。那條「改完馬上生效」的流程,現在電腦每次都會自己驗一遍。</div>
   <div class="next">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <div><strong>下一步:</strong>做下一個功能 —「說明書分清楚『用的人』跟『改的人』各走哪條路」。開下一棒:<code>/build #38</code>(另一種助理:<code>$build #38</code>)<br>另一條路也開通了:「公開前先掃一遍不該外流的內容」現在可以開始,但要等你親口說可以才會真的公開。</div>
+    <div><strong>下一步:</strong>做下一個功能 —「公開前先掃一遍不該外流的內容」。開下一棒:<code>/build #39</code>(另一種助理:<code>$build #39</code>)<br>掃完會把清單給你看,要不要真的公開,得你親口說可以才會做。</div>
   </div>
 </div>
 
@@ -69,7 +69,7 @@
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>功能進度</h2>
     <div class="slice-row"><span class="slice-name">擋掉會在別台電腦壞掉的設定</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">交接說明同時給兩種寫法</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
-    <div class="slice-row"><span class="slice-name">說明書分清楚「用的人」跟「改的人」各走哪條路</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
+    <div class="slice-row"><span class="slice-name">說明書分清楚「用的人」跟「改的人」各走哪條路</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">公開前先掃一遍不該外流的內容</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
     <div class="slice-row"><span class="slice-name">在乾淨的電腦上一行指令裝好</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
     <div class="slice-row"><span class="slice-name">在另一種助理上完整跑通一次</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
@@ -79,11 +79,12 @@
     <h2><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>品質現況</h2>
     <div class="qa-tiles">
       <div class="tile"><div class="num" style="color:var(--ok)">0</div><div class="lbl">必須先修</div></div>
-      <div class="tile"><div class="num" style="color:var(--warn)">1</div><div class="lbl">小毛病(帶著走)</div></div>
+      <div class="tile"><div class="num" style="color:var(--warn)">2</div><div class="lbl">小毛病(帶著走)</div></div>
       <div class="tile"><div class="num" style="color:var(--ok)">4</div><div class="lbl">既有功能全數正常</div></div>
     </div>
     <ul class="list" style="margin-top:14px">
       <li><span class="when">帶著走</span><span>你問「接下來做什麼」時,如果那件工作上沒有留下現成的交接說明,助理會改照一張對照表回答 — 那張表還沒有電腦自動把關,少寫一種寫法不會被擋下來。你先前決定這條之後再修。</span></li>
+      <li><span class="when">帶著走</span><span>自我檢查跑完的時候,中間會先印一行看起來像出錯的字 — 那其實是它自己故意造的假案例,一切正常。只是看了會嚇一跳,你決定之後再改成不嚇人的寫法。</span></li>
     </ul>
     <div class="ask"><strong>等你決定:</strong>「公開前先掃一遍不該外流的內容」已經可以開始做了,但要不要真的把這份專案公開,得你親口說可以 — 公開之後被別人抄走就收不回來了。</div>
   </div>
@@ -91,6 +92,7 @@
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>最近幫你做的決定</h2>
     <ul class="list">
+      <li><span class="when">8/17</span><span>說明書裡不寫沒實際查證過的指令 — 原本想順手多寫一個「只裝在這個專案」的用法,查不到根據就整句刪掉。寧可少寫,也不要你照著打卻打不通。</span></li>
       <li><span class="when">8/17</span><span>「交接那行字要寫兩種寫法」這條規矩,直接抄在每個功能檔裡,不另外抽一份共用的 — 抽共用的反而會讓要跟著同步的副本變更多;真正守門的是自動檢查,已經有了。</span></li>
       <li><span class="when">8/17</span><span>新加的自動檢查塞進原本那支檢查程式裡,不另外開一套 — 你只要記一個指令就能跑完全部;之後真要換成正式的測試工具,搬過去是小工程。</span></li>
       <li><span class="when">8/17</span><span>只檢查「指名到某個檔案」的設定,不檢查「只寫到資料夾」的那種 — 少了一種很少見的漏網情況,換來不會亂報一堆假警報。</span></li>
@@ -102,9 +104,9 @@
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>接下來的驗收點</h2>
     <ul class="list">
-      <li><span class="when">下一個</span><span>「說明書分清楚兩條路」 — 給你看改好的說明書,你自己讀一遍是不是看得懂。</span></li>
-      <li><span class="when">接著</span><span>「公開前的掃描清單」 — 這份要你逐條看過並親口放行,才會真的公開。</span></li>
-      <li><span class="when">最後</span><span>「在乾淨的電腦上一行裝好」和「在另一種助理上跑通一次」 — 這兩個會實際做給你看。</span></li>
+      <li><span class="when">下一個</span><span>「公開前的掃描清單」 — 這份要你逐條看過並親口放行,才會真的公開。</span></li>
+      <li><span class="when">接著</span><span>「在乾淨的電腦上一行裝好」 — 會實際打那行指令做給你看。</span></li>
+      <li><span class="when">最後</span><span>「在另一種助理上完整跑通一次」 — 一樣實際跑給你看。</span></li>
     </ul>
   </div>
 </div>
