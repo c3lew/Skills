@@ -35,6 +35,10 @@ QA 環境的啟動做成**一鍵重開**:單一 script / 指令(起 dev server +
 
 ## 5. 分類與開票
 
+**同型全掃**:抓到一條 fail,先把它當成一把尺,掃過同一份 artifact 的**所有**同型句子 / 數字 / 值,一次全部列進報告再開票 — 不是只回報眼前撞到的那一條。修一條、下一輪換個 reader 再抓一條同形狀的,那是同一個 bug 被拆成 N 輪,不是 N 個 bug。
+
+散文本身就是交付物的切片(凍結例外清單的理由、研究文件的結論),判準見 [`references/written-evidence.md`](references/written-evidence.md)。
+
 每條 fail 開 bug ticket(重現步驟 + 對應驗收原句 + 證據)並標 severity:
 
 - **blocking** — 驗收清單 fail,修完才能 demo。ticket comment「下一步:`/build #N`(Codex: `$build #N`)」。

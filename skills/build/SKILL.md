@@ -22,3 +22,9 @@ description: 薄層 wrap /implement:tdd、code-review、commit 全依原件,只�
 順序是硬要求:push 沒綠不准貼 commit link — comment 一貼出去,link 就得當場點得開。
 
 完成標準:未 push 的 commit 數是 `0`,且 `gh issue view N --comments` 看得到交棒 comment,才結束 session。
+
+## 3. 書面證據(delta)
+
+這片的交付物如果包含**本身就是證據的散文**(凍結例外清單的理由、研究文件的結論、
+會被別人拿來對帳的量測宣稱),寫它的時候照 [`references/written-evidence.md`](references/written-evidence.md):
+不用無界全稱詞、guard 蓋整個主張、guard 住在預設會跑的地方。純 code 的切片不適用。
