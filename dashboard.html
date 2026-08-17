@@ -57,12 +57,11 @@
 <div class="sub">專案儀表板 · 更新於 8/17 · 資料來自工作紀錄 · 目前用的版本:「一行裝好」前 4 個功能已上線</div>
 
 <div class="hero">
-  <div class="where">現在在哪:「<strong>在乾淨的電腦上一行指令裝好</strong>」已經在一台全新的電腦上<strong>實際裝過一次</strong>來驗,不是用講的。裝是裝起來了,15 個功能都到位,兩種助理也都叫得動 — 但同時驗出兩件事,一件已經修好,一件在等你點頭。</div>
+  <div class="where">現在在哪:「<strong>在乾淨的電腦上一行指令裝好</strong>」已經在一台全新的電腦上<strong>實際裝過一次</strong>來驗,不是用講的 — 15 個功能都到位,兩種助理也都叫得動。驗的時候冒出的兩件事現在<strong>都處理完了</strong>:裝完會叫人去看不存在檔案的那三份說明已經修好也驗過;那兩句跟實況對不上的驗收標準你也點頭改成正確版本了,現在標準跟真實情況是同一件事。</div>
   <div class="next">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <div><strong>下一步:</strong>你先看下面那件要你決定的事,點頭之後開下一棒重驗:<code>/qa #40</code>(另一種助理:<code>$qa #40</code>)<br>重驗會把整台電腦的安裝再實際跑一次給你看,過了才算這個功能做完。</div>
+    <div><strong>下一步:</strong>開下一棒重驗:<code>/qa #40</code>(另一種助理:<code>$qa #40</code>)<br>會照改好的標準,把整台全新電腦的安裝再實際跑一次給你看。過了這關,這個功能就只剩演給你看、你點頭。</div>
   </div>
-  <div class="ask"><strong>等你決定:</strong>當初講好的兩句驗收標準,實際打下去發現跟真實情況對不上 —(一)那行指令照字面打,只會裝到「你當下所在的資料夾」看得到,換個資料夾就叫不到;要全電腦到處都能用,指令後面得多帶幾個字。(二)另一種助理的檔案不是放在當初以為的位置,而是放在兩種助理共用的那個位置(它確實讀得到,已經實際跑過)。<br>這不是程式壞了,是當初寫這兩句話的時候只看了人家的說明書、沒有真的打一次。要請你點頭把這兩句話改成符合實況的版本 — 句子在工作紀錄第 45 號裡,可以直接抄。</div>
 </div>
 
 <div class="grid2">
@@ -79,12 +78,12 @@
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>品質現況</h2>
     <div class="qa-tiles">
-      <div class="tile"><div class="num" style="color:var(--bad)">1</div><div class="lbl">必須先修</div></div>
+      <div class="tile"><div class="num" style="color:var(--ok)">0</div><div class="lbl">必須先修</div></div>
       <div class="tile"><div class="num" style="color:var(--warn)">2</div><div class="lbl">小毛病(帶著走)</div></div>
       <div class="tile"><div class="num" style="color:var(--ok)">6</div><div class="lbl">既有功能全數正常</div></div>
     </div>
     <ul class="list" style="margin-top:14px">
-      <li><span class="when">必須先修</span><span>那兩句對不上實況的驗收標準 — 就是上面「等你決定」那件事。你點頭改完句子就消掉,沒有程式要改。</span></li>
+      <li><span class="when">已解決</span><span>那兩句對不上實況的驗收標準,你已經點頭改成正確版本,原始的需求文件也同步改好了 — 下次重驗會照新的標準跑,不會再拿舊句子對。沒有程式要改。</span></li>
       <li><span class="when">已修好</span><span>有三份說明檔案,裝到別台電腦之後會叫你去看一個沒被一起裝過去的檔案 — 照著讀就是「找不到檔案」。已經修掉,而且順手讓自動檢查以後會自己抓到同一種問題:把當初那句話種回去,檢查當場就變紅並指出是哪一份檔案。</span></li>
       <li><span class="when">帶著走</span><span>你問「接下來做什麼」時,如果那件工作上沒有留下現成的交接說明,助理會改照一張對照表回答 — 那張表還沒有電腦自動把關,少寫一種寫法不會被擋下來。你先前決定這條之後再修。</span></li>
       <li><span class="when">帶著走</span><span>自我檢查跑完的時候,中間會先印一行看起來像出錯的字 — 那其實是它自己故意造的假案例,一切正常。只是看了會嚇一跳,你決定之後再改成不嚇人的寫法。</span></li>
@@ -94,6 +93,7 @@
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>最近幫你做的決定</h2>
     <ul class="list">
+      <li><span class="when">8/17</span><span>安裝指令接受「要多帶幾個字」才會裝到全電腦到處能用,不自己寫一套安裝程式 — 你要記的那行長一點,其他不變,說明書早就寫的是這行。當初把落點寫錯的原因也記下來了:只讀了人家的說明書、沒有真的打一次就寫進需求文件。以後這種「會過時的外部事實」要先實跑再寫。</span></li>
       <li><span class="when">8/17</span><span>那三份會叫人去看不存在檔案的說明,修法是讓自動檢查自己認得「這句在講你自己的專案、不是我帶著走的檔案」,而不是去改文件的措辭來閃過檢查 — 文件原文一個字沒動,以後寫類似說明也不用為了過檢查遷就用字。想改回來很容易,規則就一小段。</span></li>
       <li><span class="when">8/17</span><span>自動檢查的範圍從「只看每個功能的主檔案」擴到「每一個會跟著裝過去的說明檔」 — 之前這個洞是隱形的,連續兩次驗收都沒抓到,因為驗收用的就是這支有盲區的檢查。</span></li>
       <li><span class="when">8/17</span><span>公開時附上一份大方的使用授權書 — 沒有這份,別人在法律上連拿去用都不行。代價是你放棄限制別人怎麼用它;想收回來,已經拿走的人不受影響。</span></li>
@@ -111,7 +111,7 @@
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>接下來的驗收點</h2>
     <ul class="list">
-      <li><span class="when">就差你</span><span>「在乾淨的電腦上一行裝好」 — 你把那兩句話點頭改完,重驗一次就會實際打那行指令、在一台全新的電腦上裝給你看。</span></li>
+      <li><span class="when">馬上</span><span>「在乾淨的電腦上一行裝好」 — 照改好的標準重驗一次,然後實際打那行指令、在一台全新的電腦上裝給你看。</span></li>
       <li><span class="when">最後</span><span>「在另一種助理上完整跑通一次」 — 一樣實際跑給你看。</span></li>
     </ul>
   </div>
