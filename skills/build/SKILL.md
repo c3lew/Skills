@@ -1,6 +1,6 @@
 ---
 name: build
-description: 薄層 wrap /implement:tdd、code-review、commit 全依原件,只補收尾 delta — 產出寫回票 + 固定留「下一步:/qa #N($qa #N)」交棒 comment。當 ticket 指路「/build #N」、或 ready-for-agent 的切片/bug 票要開工時使用。
+description: 薄層 wrap /implement:tdd、code-review、commit 全依原件,只補收尾 delta — 產出寫回票 + 固定留「下一步:`/qa #N`(Codex: `$qa #N`)」交棒 comment。當 ticket 指路「/build #N」、或 ready-for-agent 的切片/bug 票要開工時使用。
 ---
 
 # build
