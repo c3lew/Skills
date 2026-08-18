@@ -21,7 +21,7 @@ QA 過後的驗收點:agent **跑給 client 看**(每個情境 → 會發生什�
 
 ## 行為
 
-1. **Demo checkpoint**:agent 照驗收清單逐條給 client 看(每條 = 什麼情況 → 你會看到什麼),**預設素材 = QA 實錄**(標明是 QA 實跑的錄影)— 不為 demo 重搭環境;配一頁白話 demo script + QA 報告摘要,開頭白話告知 known issues。client 想摸、或想試實錄沒演的情況 → 用一鍵重開指令起 QA 同款環境(弄不出條件的情境靠 fakes)。可點的 link 照給。
+1. **Demo checkpoint**:agent 照驗收清單逐條給 client 看(每條 = 什麼情況 → 你會看到什麼),**預設素材 = QA 實錄**(標明是 QA 實跑的錄影)— 不為 demo 重搭環境;配一頁白話 demo script + QA 報告摘要,開頭白話告知 known issues;這一頁在 Claude 端做成 Artifact(先載 `artifact-design`,同票 re-demo 沿用同路徑重發、URL 不變),Codex 端沒有 Artifact 工具就寫成 ticket comment,內容相同。client 想摸、或想試實錄沒演的情況 → 用一鍵重開指令起 QA 同款環境(弄不出條件的情境靠 fakes)。可點的 link 照給。
 2. Client 說「不對」→ agent 當場提**四分類**建議(白話解釋差別,client 確認,agent 只建議不硬拍):
    - spec 理解錯 → 回 pm-intake 改 spec
    - 實作錯 → bug ticket 走 QA loop

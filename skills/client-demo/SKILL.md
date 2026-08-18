@@ -24,6 +24,10 @@ QA 過後的驗收點:agent **跑給 client 看**,client 確認「是不是我�
 2. 白話 demo script:照驗收清單逐條走,每條寫「什麼情況 → 你會看到什麼」。
 3. QA 報告摘要 — **開頭先白話告知 known issues**,client 帶著預期看,不是看到一半嚇到。
 
+**這一頁做成 Artifact(Claude 限定)**:先載 `artifact-design` skill 拍版面,再把上面三樣寫成一頁 HTML 用 `Artifact` 發佈,URL 給 client — client 拿到的是一頁自己看得懂、隨時能回頭點的東西,不是聊天室裡一長串字。內容不變(白話 script 逐條、known issues 在最上面、可點 link、QA 實錄連結),Artifact 只換呈現。同一張票 re-demo 用**同一個檔案路徑**重發,URL 不變。
+
+沒有 `Artifact` 工具的 agent(Codex)→ 照舊把同樣內容寫成 ticket comment,不擋 demo。
+
 然後 agent 照 script **逐條放 QA 實錄給 client 看**(標明「這是 QA 實跑的錄影」),每條看完 client 點頭「這是我要的」才走下一條 — 不為 demo 重搭環境。實錄沒演到的情況、或 client 想再看一次不同走法 → 用 QA 報告附的一鍵重開指令起同款環境當場演(弄不出條件的情境靠 fakes,說明「這是模擬的情況」)。agent 只演示不代答,「算不算過」永遠 client 說。
 
 **切回親手操作**的兩種情況:驗收項本身是操作感(快捷鍵、拖拉手感、原生殼行為 tray / hotkey)→ 本機真 app;或 client 主動說想摸 → 一鍵重開的環境給他玩 — 這時 agent 陪跑答疑,不代操作。
