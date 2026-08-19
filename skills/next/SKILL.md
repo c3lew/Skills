@@ -29,6 +29,7 @@ description: 產線路由入口:讀現場(交棒 comment、tickets、repo 地基
 | implement 完成的票在等驗 | `/qa #N` |
 | QA blocking 清零在等驗收 | `/client-demo #N` |
 | 過關 / fix 驗完在等結案 | `/close #N` |
+| 有票但沒有交棒 comment、也沒有 `ready-for-agent`(手開的、或裸跑 `/triage` 分完類的) | `/maintain #N` 補分類 + 補交棒 |
 | 上線後 client 報問題 / 丟想法 / 要清 backlog | `/maintain` |
 | dashboard 提示「該 retro 了」 | `/retro`(client 說跑才跑) |
 | 只是想看現況、或 dashboard 過期 | `/tracking-viz` |

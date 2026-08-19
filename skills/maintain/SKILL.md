@@ -1,6 +1,6 @@
 ---
 name: maintain
-description: 上線後的進件入口:薄層 wrap /triage,client 白話報的 bug / 改功能 / 想法走原件 state machine 分類,補四 delta(tech-debt 攢批、改功能兩軸分流、分級閉環、refactor 結案儀式)+ bug mini-intake + session 開頭 error log 順掃。當上線後 client 丟問題或想法、client 自開 issue、或 client 說要清 tech-debt backlog 時使用;執行不在此 — 分類完指路 /build。
+description: 上線後的進件入口:薄層 wrap /triage,client 白話報的 bug / 改功能 / 想法走原件 state machine 分類,補四 delta(tech-debt 攢批、改功能兩軸分流、分級閉環、refactor 結案儀式)+ bug mini-intake + session 開頭 error log 順掃。當上線後 client 丟問題或想法、client 自開 issue、或 client 說要清 tech-debt backlog 時使用;手開或裸跑 /triage 掉出產線的票用 /maintain #N 撿回來。執行不在此 — 分類完指路 /build。
 ---
 
 # maintain
@@ -17,6 +17,8 @@ description: 上線後的進件入口:薄層 wrap /triage,client 白話報的 bu
 先掃本機結構化 error log(位置見專案 CONTEXT.md / spec)。**新錯 = 還沒有對應 ticket 的錯**(對比現有 agent-自撿 tickets 去重),每個開一張 agent-自撿 ticket(bug + `needs-triage`,票上註明「agent-自撿」)。掃完回報一句「本次掃到 N 個新錯」— dashboard(tracking-viz)從 issues 取這個數。找不到 log 檔就回報一句、繼續往下。
 
 ## 2. 進件分類
+
+**入口是本檔,不是原件**:直接跑 `/triage` 會少掉本檔的四個 delta,而且原件收尾不留交棒 comment — 票分完類就掉出產線,`/next` 找不到接力棒。已經這樣掉出去的票(你手開的、或裸跑 `/triage` 過的)用 **`/maintain #N`** 撿回來:讀那張票補跑 §2 分類,補上分級閉環標記(§3)、重現 scenario(bug 才有),再照 §7 貼交棒 comment。票的內容不重寫,只補產線缺件。
 
 用「不對」四分類的日常版分流:**bug** ≈ 實作錯(現在的行為是壞的)、**改功能** ≈ 新想法(想要不一樣的行為);agent 觀察到的技術債 → **tech-debt**(§5)。client 自開的 issue 標 `needs-triage` 一併收進 `/triage` 的 buckets。
 

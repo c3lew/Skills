@@ -8,7 +8,7 @@
 
 ## 觸發與入口
 
-Client 白話進件為主;client 自開 issue 也收(標 `needs-triage`)。分類重用「不對」四分類的日常版:bug ≈ 實作錯、改功能 ≈ 新想法。
+Client 白話進件為主;client 自開 issue 也收(標 `needs-triage`)。**本檔是進件唯一入口** — 直接跑原件 `/triage` 會少掉四個 delta,且原件不留交棒 comment,票會掉出產線;已掉出去的票(手開的、裸跑 `/triage` 過的)以 `/maintain #N` 補分類 + 補交棒撿回,`/next` 路由表也有對應的一行。Claude 端另有 UserPromptSubmit hook 在打 `/triage` 時提醒改跑本檔(`scripts/hooks/triage-to-maintain.py`,只提醒不擋;Codex 沒有 hook,靠這兩條兜)。分類重用「不對」四分類的日常版:bug ≈ 實作錯、改功能 ≈ 新想法。
 
 ## 四個 delta(相對 `/triage` 原件)
 
