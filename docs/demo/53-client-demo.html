@@ -173,9 +173,30 @@ footer{border-top:1px solid var(--line);padding-top:20px;color:var(--muted);font
 <div class="notice">
   <h2>先講清楚:哪些是真的跑過的</h2>
   <p>QA 這一輪把<strong>底下每一塊零件</strong>都實跑驗過了 — 三個工作區真的互相看不到對方的檔、三張真的一張一張合回主線、合完的主線上整批驗證全綠、中文和 emoji 沒有壞碼、貼回票上的那條路真的貼上 GitHub。</p>
-  <p><strong>但最上面那一層沒有跑過</strong>:你點頭之後,每個工作區裡真的去做那張票(build + QA)。QA 生不出等價物 — 那需要三張真的票、你真的點頭、三個 agent 真的做完。所以下面第 1 條和第 3 條,你會看到「只驗到零件」和「沒跑過」的標記,那不是壞掉,是<strong>沒被執行過</strong>。</p>
-  <p>擋著不能上線的問題:<strong>0 條</strong>。另外有 2 個小問題帶著給你看,在最後一段。</p>
+  <p>QA 唯一補不上的是最上面那一層 — 你點頭之後,每個工作區裡真的去做那張票。<strong>那一層在這次 demo 當場補跑了</strong>:拿 #61 + #62 兩張真的票真的跑了一輪 <code>/build-batch</code>,詳見下面「真跑一輪」那段。三條驗收項現在都有實跑證據。</p>
+  <p>擋著不能上線的問題:<strong>0 條</strong>。小問題 3 個,帶著給你看,在最後一段。</p>
 </div>
+
+<section>
+  <span class="eyebrow">Demo 當場補跑</span>
+  <h2>真跑一輪:#61 + #62</h2>
+  <p>不是模擬,是這個專案上真的發生過的一輪 — 兩張本來就要修的票,順手變成這一片的實測材料。</p>
+  <pre><code>開工 #61 §9 清場檢查在有 subagent worktree 的機器上永遠誤報 — 工作區 .git/batch-worktrees/61(branch batch/61)
+開工 #62 §9 貼批次總結那段沒給可直接複製的 gh 指令 — 工作區 .git/batch-worktrees/62(branch batch/62)
+
+完成 #62 §9 貼批次總結那段沒給可直接複製的 gh 指令 — build + QA 綠
+完成 #61 §9 清場檢查在有 subagent worktree 的機器上永遠誤報 — build + QA 綠
+
+2 張已合併,下一步:`/client-demo #51`(Codex: `$client-demo #51`) — 一次 demo 這批</code></pre>
+  <ul class="plain">
+    <li><strong>兩條 lane 真的平行、不互等</strong> — #62 先綠先報,沒等 #61。</li>
+    <li><strong>票上真的留下紀錄</strong> — 每張票上都有開工、產出(改了什麼 + commit link)、QA 報告、完成,全部是 lane 自己貼的。</li>
+    <li><strong>母票 #51 上真的收到批次總結</strong> — <a href="https://github.com/c3lew/Skills/issues/51#issuecomment-5338590629">這一則</a>,不是造的樣本。</li>
+    <li><strong>一張一張合回主線</strong> — <code>6d44012</code> 先、<code>cd108a9</code> 後,每張合完當場收掉自己的工作區。兩張都改同一份文件的同一節,沒撞在一起(改的是不同段落)。</li>
+    <li><strong>合完整批再驗一次,全綠</strong> — 而且順便用上了 #61 這次修好的清場檢查:工作區 0 殘留、兩條 branch 照留,判準第一次在真的批次上跑,答對。</li>
+  </ul>
+  <p class="caption">兩條 lane 裡各自的 code-review 和獨立 judge 都有抓到東西:#62 那條抓掉一段寫錯的說明(實測會 hang),#61 那條被 judge 打回一次「判準只看工作區、不看 branch」,補完才過。</p>
+</section>
 
 <section>
   <span class="eyebrow">你可以自己摸</span>
@@ -207,7 +228,7 @@ OK triage-to-maintain self-check green</code></pre>
     <div class="item-head">
       <span class="num">1</span>
       <h3>點頭 → 三張各自在獨立工作區開工,終端機每張各報一行</h3>
-      <span class="chip part"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 12V7"/><path d="M12 12l4 3"/></svg>只驗到零件</span>
+      <span class="chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>實跑驗過</span>
     </div>
     <dl class="script">
       <dt>什麼情況</dt><dd>三張票在名單上,你說「開」。</dd>
@@ -221,7 +242,7 @@ OK triage-to-maintain self-check green</code></pre>
       <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>「工作區真的互相看不到對方」怎麼驗的</summary>
       <div class="body">
         <p>QA 在一份拋棄式的專案副本上真的開了三個工作區,各自改各自的檔案、各自送出。第三個工作區裡去撈「所有人的檔案」,只撈得到自己那一個 — 另外兩個的檔案根本不存在。</p>
-        <p><strong>但是</strong>:上面那三行字是程式印的「指示」,真正開工作區的 git 指令是照著那行字手打的。「跑這個指令就會得到那個工作區」這條因果,要等真的跑一次才連得起來。</p>
+        <p>「跑這個指令就會得到那個工作區」這條因果,QA 那輪還沒連起來(印字串跟開工作區是分開跑的)— <strong>這次 demo 當場補跑一輪把它連上了</strong>,見上面「真跑一輪」。</p>
       </div>
     </details>
   </div>
@@ -255,7 +276,7 @@ OK triage-to-maintain self-check green</code></pre>
     <div class="item-head">
       <span class="num">3</span>
       <h3>整批結束 → 每張票上都有產出紀錄,spec 票上留一則批次總結</h3>
-      <span class="chip gap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12h7"/></svg>沒跑過</span>
+      <span class="chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>實跑驗過</span>
     </div>
     <dl class="script">
       <dt>什麼情況</dt><dd>整批做完,你隔天回來翻票。</dd>
@@ -276,10 +297,9 @@ OK triage-to-maintain self-check green</code></pre>
 下一步:`/client-demo #51`(Codex: `$client-demo #51`)</code></pre>
     <p class="caption">三張票的驗收項合起來會自動去重,重複的只列一次。</p>
     <details>
-      <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>這條為什麼標「沒跑過」</summary>
+      <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>這條的證據在哪</summary>
       <div class="body">
-        <p>上面那則總結是<strong>真的貼上 GitHub 過一次</strong>(在 <a href="https://github.com/c3lew/Skills/issues/53#issuecomment-5338114051">#53 這則 comment</a>),撈回來一字不差 — 所以「字貼得上去」這條路是通的。</p>
-        <p>但貼的是 QA 造的假資料、貼在 #53 而不是真的母票 #51;而「每張票上的產出紀錄」是各工作區裡的 build 貼的,這一輪根本沒跑 build。所以整條驗收項的實際成果,零實錄。</p>
+        <p>QA 那輪只驗到「字貼得上 GitHub 且一字不差」,貼的是造的樣本、貼錯票。<strong>這次 demo 補跑的那一輪是真的</strong>:#61、#62 兩張票上各有 lane 自己貼的產出與 QA 報告,母票 #51 上有<a href="https://github.com/c3lew/Skills/issues/51#issuecomment-5338590629">真的批次總結</a>,結尾帶下一步指令。</p>
       </div>
     </details>
   </div>
@@ -287,8 +307,8 @@ OK triage-to-maintain self-check green</code></pre>
 
 <section>
   <span class="eyebrow">帶著看的小問題</span>
-  <h2>2 個 known issue,都不擋上線</h2>
-  <p>兩個都已經開好票了。下面是我的建議處置,你整批看過,有意見的挑出來講。</p>
+  <h2>3 個 known issue,都不擋上線</h2>
+  <p>前兩個在這次 demo 當場修掉了(它們就是補跑那一輪的材料)。第三個是那一輪新挑出來的,還沒動。</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>票</th><th>是什麼</th><th>建議</th></tr></thead>
@@ -296,12 +316,17 @@ OK triage-to-maintain self-check green</code></pre>
         <tr>
           <td class="tk"><a href="https://github.com/c3lew/Skills/issues/61">#61</a></td>
           <td>整批收尾時會做一次「清乾淨了沒」的檢查,但這台機器上永遠報「沒清乾淨」— 因為 Claude Code 自己有幾份常駐的工作副本住在同一個專案裡,被誤算進去了。</td>
-          <td><strong>現在修</strong> — 每跑一次批次就被送去查一個不存在的問題;反過來真的有殘留時也看不出來,等於這道檢查是壞的。</td>
+          <td><strong>已修</strong> — 判準改成只問 <code>.git/batch-worktrees/</code> 底下有沒有東西,再加一行確認 branch 還留著。六種現場都實測過,而且剛剛在真的批次上跑,答對。</td>
         </tr>
         <tr>
           <td class="tk"><a href="https://github.com/c3lew/Skills/issues/62">#62</a></td>
           <td>操作手冊裡三處同型的指令,兩處寫得可以直接複製貼上,最後一處要 agent 自己拼。</td>
-          <td><strong>現在修</strong> — 功能是通的,但「照文件逐字跑」正是先前那個亂碼 bug 的來源;而且這兩張剛好可以拿來當下面那件事的實測材料。</td>
+          <td><strong>已修</strong> — 補成一行可以整段複製的指令。過程中還抓掉一段本來要寫進文件、但實測是錯的說明。</td>
+        </tr>
+        <tr>
+          <td class="tk"><a href="https://github.com/c3lew/Skills/issues/63">#63</a></td>
+          <td>貼批次總結的指令裡,票號要在兩個地方各寫一次。改一個忘另一個,總結會安靜地貼到別張票上,而且不會報錯。</td>
+          <td><strong>之後修</strong> — 票已開。要動程式的輸出介面,不適合塞進這一輪;而且真的貼錯票你翻票時看得出來,不是無聲的資料損壞。</td>
         </tr>
       </tbody>
     </table>
@@ -310,13 +335,9 @@ OK triage-to-maintain self-check green</code></pre>
 
 <section class="ask">
   <span class="eyebrow">要你決定</span>
-  <h2>那個沒跑過的一層,現在補嗎?</h2>
-  <p>第 1 條和第 3 條缺的是同一件事:<strong>真的跑一次 <code>/build-batch</code></strong> — 拿真的票、你真的點頭、工作區裡真的做完 build + QA。這是這張票最核心的一層,也是自動檢查怎麼樣都補不到的一層。</p>
-  <ul class="plain">
-    <li><strong>我推薦:現在就拿 #61 + #62 真跑一次。</strong> 這兩張本來就要修,順手變成這一片的實測材料 — 一次做完兩件事。代價是這一輪 demo 會拉長,而且它們改的是同一份文件,可能撞在一起 — 撞車處理是後面 #55 才做的,真撞上我會停下來手動解掉、留紀錄。</li>
-    <li><strong>或者:換兩張不會撞的票</strong>(例如 #42 + #47),乾淨地驗這一層,#61 / #62 之後另外修。</li>
-    <li><strong>或者:先過關</strong>,那一層等下一片(#54 一張沒過 QA)順便一起驗。你接受「這一層目前只有零件級證據」就行。</li>
-  </ul>
+  <h2>還差你一句話</h2>
+  <p>三條驗收項現在都有實跑證據,擋路的問題 0 條,3 個小問題都有處置。<strong>剩下的只有你親口說「這是我要的」</strong> — 只有你點頭這片才算過。</p>
+  <p>點頭之後我會接著做三件事,不用你再下指令:把這一片值得長期守住的檢查固化成自動測試、build 一版換裝到你機器上、在儀表板留一行白話紀錄。</p>
 </section>
 
 <footer>
