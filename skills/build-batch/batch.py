@@ -127,8 +127,16 @@ def _titled(number, titles):
     return f"#{number} {titles.get(number, '')}".rstrip()
 
 
-def format_lane_start(numbers, titles):
-    """一張一行「開工」— client 從終端機看得到哪張在哪個工作區跑。"""
+def format_lane_start(numbers, titles, running=(), cap=CAP):
+    """一張一行「開工」— client 從終端機看得到哪張在哪個工作區跑。
+
+    開哪幾張走 `refill`,不是把 `numbers` 照單全開:`numbers` 是「要開 → 排隊」
+    整份名單,`running` 是 §6.1 接續下來、已經在跑的 lane。名額扣在這裡而不是
+    留給 agent 在文件上心算 —— 接續兩條、名單又是滿的 3 張時,心算的版本會開出
+    5 條同時在跑,而那個畫面跟正常的一模一樣。印幾行就開幾個 worktree。
+    """
+    numbers = refill(running, numbers, cap)[0]
+
     def line(n):
         lane = lane_of(n)
         return (f"開工 {_titled(n, titles)} — 工作區 {lane['worktree']}"
@@ -186,6 +194,9 @@ def format_lane_refill(running, queue, titles, cap=CAP):
 
 def format_lane_resume(numbers, titles):
     """重跑時接續既有 lane 的那幾行 — 不重開,不再 `git worktree add`。"""
+    if not numbers:
+        return "沒有既有 lane — 這是乾淨的一批,照 §6.2 開頭那幾條開下去"
+
     def line(n):
         lane = lane_of(n)
         return (f"接續 {_titled(n, titles)} — 既有工作區 {lane['worktree']}"
@@ -206,7 +217,7 @@ def format_lane_interrupted(numbers, titles, spec):
     return "\n".join(line(n) for n in numbers)
 
 
-LANE_PATH_RE = re.compile(re.escape(LANE_ROOT) + r"/(\d+)")
+LANE_PATH_RE = re.compile(re.escape(LANE_ROOT) + r"/(\d+)(?![\w.-])")
 
 
 def lane_numbers(worktrees):
@@ -275,7 +286,7 @@ def main():
     if mode == "plan":
         print(format_plan(plan_batch(data["tickets"]), titles))
     elif mode == "start":
-        print(format_lane_start(numbers, titles))
+        print(format_lane_start(numbers, titles, data.get("running", [])))
     elif mode == "done":
         print(format_lane_done(numbers, titles))
     elif mode == "refill":
@@ -658,11 +669,16 @@ JSON''')
     assert lane_numbers("worktree D:\\repo\\.git\\batch-worktrees\\47\n"
                         "worktree D:/repo/.git/batch-worktrees/47") == [47]
     assert lane_numbers("") == []
+    # 票號要整段對齊 — `47-old`、`47.bak` 這種殘骸不是 lane 47
+    assert lane_numbers("worktree D:/repo/.git/batch-worktrees/47-old") == []
+    assert lane_numbers("worktree D:/repo/.git/batch-worktrees/47/sub") == [47]
 
     # 接續一行:既有工作區與 branch 都指得出來,而且明說不重開
     assert format_lane_resume([47], {47: "名單"}) == (
         "接續 #47 名單 — 既有工作區 .git/batch-worktrees/47"
         "(branch batch/47)還在,不重開")
+    # 沒有既有 lane 時不是印一行空白給 client
+    assert format_lane_resume([], {}).startswith("沒有既有 lane")
     # 中斷一行:「中斷,可續」的原句 + 留下什麼 + 怎麼續(兩端指令都在)
     stopped = format_lane_interrupted([47], {47: "名單"}, 51)
     assert stopped.startswith("中斷,可續 #47 名單 — 未合併,"), stopped
@@ -670,10 +686,29 @@ JSON''')
     assert ("`/build-batch #51`" in stopped
             and "`$build-batch #51`" in stopped), stopped
 
-    # SKILL.md:§6 的接續偵測問的是 §9 同一個母體(打錯就是撈不到任何既有 lane,
-    # 一路綠著把同一張票重開一次)
-    assert "git worktree list --porcelain" in text
-    assert f"{LANE_ROOT}/47" in text, LANE_ROOT
+    # 開頭那幾條也扣名額:接續 2 條 + 名單 3 張,只准再開 1 張。這條是 code
+    # review 抓到的洞 —— 原本 §6.2 叫 agent「自己扣掉接續的那幾條」,而算錯開出
+    # 5 條同時在跑的畫面跟正常的一模一樣。
+    opening = format_lane_start([47, 48, 42], {}, running=[61, 62]).splitlines()
+    assert len(opening) == 1 and opening[0].startswith("開工 #47"), opening
+    # 名單比 cap 長 -> 只開前 cap 張,其餘留在佇列(沒印到就是沒開)
+    assert len(format_lane_start([1, 2, 3, 4, 5], {}).splitlines()) == CAP
+    # 名額已經滿 -> 一行都不印,agent 就一個 worktree 都不會開
+    assert format_lane_start([47], {}, running=[61, 62, 63]) == ""
+    # #52/#53 的既有用法不變:沒接續、名單沒超過 cap,就是照單開
+    assert format_lane_start([47, 48], {47: "名單", 48: "點頭"}).splitlines() == [
+        "開工 #47 名單 — 工作區 .git/batch-worktrees/47(branch batch/47)",
+        "開工 #48 點頭 — 工作區 .git/batch-worktrees/48(branch batch/48)",
+    ]
+
+    # SKILL.md §6.1:接續偵測問的母體跟 §10 清場判準是同一個(打錯就是撈不到
+    # 任何既有 lane,一路綠著把同一張票重開一次)。母體字串要出現兩次 —— §6.1
+    # 一次、§10 一次;只錨「有沒有這串」的話,§6.1 整段砍掉照樣綠。
+    assert text.count(f"grep -F /{LANE_ROOT}/") >= 2, text.count(
+        f"grep -F /{LANE_ROOT}/")
+    assert "### 6.1 先接續上一次中斷的 lane" in text
+    # 開工那段要收 running(接續的 lane),不然名額扣不到
+    assert '"mode": "start", "numbers": [47, 48, 42, 50], "running": []' in text
 
     # #53 固化:新加的每一段一樣要把資料餵進這支檔。哪天有人把「開工」改成
     # 在 SKILL.md 裡 echo 一行中文,那就是 #58 原封不動再來一次。
