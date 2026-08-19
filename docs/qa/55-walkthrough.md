@@ -1,6 +1,6 @@
 # QA walkthrough — #55 build-batch 4/6:撞車 — agent 自己解,解不掉停下來講清楚
 
-第 6 輪。前五輪各被獨立 judge 打回一次,打回的都修進受測物了:
+第 6 輪(judge 判 PASS,無 blocking;它列的三條 nice-to-have 也一併修進去了 — 見步驟 5 末尾)。前五輪各被獨立 judge 打回一次,打回的都修進受測物了:
 
 - 第 1 輪:§7a 查「跟誰撞」的指令安靜回空的。
 - 第 2 輪:「agent 自己解掉」是 QA 代打、「票上留一行紀錄」只 `echo` 沒真的貼票;另外
@@ -373,17 +373,17 @@ Auto-merging notes.md
 ++ awk '{print $1}'
 + first=47
 ++ git merge-base batch/47 batch/48
-+ base=6bcbb11181cb2330d532b64586c3548b3b65521d
-++ git diff --name-status -M 6bcbb11181cb2330d532b64586c3548b3b65521d batch/48
++ base=c563d05771e10ef987d96a1f36bee434f2fa0566
+++ git diff --name-status -M c563d05771e10ef987d96a1f36bee434f2fa0566 batch/48
 ++ awk -v f=notes.md '$1 ~ /^R/ && $3 == f {print $2}'
 + old=
 + for n in $merged
-++ git diff --name-only -M 6bcbb11181cb2330d532b64586c3548b3b65521d batch/47 -- notes.md
+++ git diff --name-only -M c563d05771e10ef987d96a1f36bee434f2fa0566 batch/47 -- notes.md
 + '[' -n notes.md ']'
 + echo '#47'
 #47
 + for n in $merged
-++ git diff --name-only -M 6bcbb11181cb2330d532b64586c3548b3b65521d batch/42 -- notes.md
+++ git diff --name-only -M c563d05771e10ef987d96a1f36bee434f2fa0566 batch/42 -- notes.md
 + '[' -n notes.md ']'
 + echo '#42'
 #42
@@ -392,11 +392,11 @@ Auto-merging notes.md
 ++ grep -F '47 加的'
 ++ cut '-d ' -f1
 ++ tr -d '^'
-+ sha=df3d7f6aee84810ce471d2d5fe93373693cf879e
-+ git branch --list 'batch/*' --contains df3d7f6aee84810ce471d2d5fe93373693cf879e
++ sha=83779ce02d882e21bac6721c8e3f7adca2903613
++ git branch --list 'batch/*' --contains 83779ce02d882e21bac6721c8e3f7adca2903613
 + batch/47
 + git log '-S- [ ] 待補說明' '--format=%h %s' -1 HEAD --not MERGE_HEAD -- notes.md
-1f80636 42
+c04277f 42
 + set +x
 
 ########## 乙、圖檔(binary)撞車 — 而且還沒輪到的 49 也動過它
@@ -416,12 +416,12 @@ Binary files differ
 ++ awk '{print $1}'
 + first=47
 ++ git merge-base batch/47 batch/48
-+ base=4fcdc4dc4dc1a3e0dc023e2dff63243db31d699e
-++ git diff --name-status -M 4fcdc4dc4dc1a3e0dc023e2dff63243db31d699e batch/48
++ base=d2eeb112f4df6c15fec66ac17169d2f2b2de939c
+++ git diff --name-status -M d2eeb112f4df6c15fec66ac17169d2f2b2de939c batch/48
 ++ awk -v f=logo.bin '$1 ~ /^R/ && $3 == f {print $2}'
 + old=
 + for n in $merged
-++ git diff --name-only -M 4fcdc4dc4dc1a3e0dc023e2dff63243db31d699e batch/47 -- logo.bin
+++ git diff --name-only -M d2eeb112f4df6c15fec66ac17169d2f2b2de939c batch/47 -- logo.bin
 + '[' -n logo.bin ']'
 + echo '#47'
 #47
@@ -440,12 +440,12 @@ DU notes.md
 ++ awk '{print $1}'
 + first=47
 ++ git merge-base batch/47 batch/48
-+ base=39f8432b8dc9873d564d70223c95464d0a8633bd
-++ git diff --name-status -M 39f8432b8dc9873d564d70223c95464d0a8633bd batch/48
++ base=4c048dbcbb6e577c485c731e66b391a8805444c4
+++ git diff --name-status -M 4c048dbcbb6e577c485c731e66b391a8805444c4 batch/48
 ++ awk -v f=notes.md '$1 ~ /^R/ && $3 == f {print $2}'
 + old=
 + for n in $merged
-++ git diff --name-only -M 39f8432b8dc9873d564d70223c95464d0a8633bd batch/47 -- notes.md
+++ git diff --name-only -M 4c048dbcbb6e577c485c731e66b391a8805444c4 batch/47 -- notes.md
 + '[' -n notes.md ']'
 + echo '#47'
 #47
@@ -467,12 +467,12 @@ doc.md
 ++ awk '{print $1}'
 + first=47
 ++ git merge-base batch/47 batch/48
-+ base=8e7b3d5dc8bfa982fc4d2e535c40bf17619aac57
-++ git diff --name-status -M 8e7b3d5dc8bfa982fc4d2e535c40bf17619aac57 batch/48
++ base=4ee09a8c49100c372564cfc1d1fa425f023a9a45
+++ git diff --name-status -M 4ee09a8c49100c372564cfc1d1fa425f023a9a45 batch/48
 ++ awk -v f=doc.md '$1 ~ /^R/ && $3 == f {print $2}'
 + old=notes.md
 + for n in $merged
-++ git diff --name-only -M 8e7b3d5dc8bfa982fc4d2e535c40bf17619aac57 batch/47 -- doc.md notes.md
+++ git diff --name-only -M 4ee09a8c49100c372564cfc1d1fa425f023a9a45 batch/47 -- doc.md notes.md
 + '[' -n notes.md ']'
 + echo '#47'
 #47
@@ -493,12 +493,12 @@ doc.md
 ++ awk '{print $1}'
 + first=47
 ++ git merge-base batch/47 batch/48
-+ base=94e3324aa1daf2d36812ad69c3d4963187e499d6
-++ git diff --name-status -M 94e3324aa1daf2d36812ad69c3d4963187e499d6 batch/48
++ base=8f6b2586369d04f89bbfab43c92b993506707c26
+++ git diff --name-status -M 8f6b2586369d04f89bbfab43c92b993506707c26 batch/48
 ++ awk -v f=notes.md '$1 ~ /^R/ && $3 == f {print $2}'
 + old=
 + for n in $merged
-++ git diff --name-only -M 94e3324aa1daf2d36812ad69c3d4963187e499d6 batch/47 -- notes.md
+++ git diff --name-only -M 8f6b2586369d04f89bbfab43c92b993506707c26 batch/47 -- notes.md
 + '[' -n '' ']'
 + return 0
 + echo '(上一行沒有輸出 = 這批已合的沒人動過它)'
@@ -531,6 +531,11 @@ doc.md
   合的那一張,印出來是「**#48 補交棒 comment 跟主線上既有的內容撞在 notes.md**」— 那是真話,
   主線那側就是 hotfix 改的。
 
+第 6 輪 judge 另外提了三條非 blocking,都修了:多候選走 `git blame` 時,`--contains` 印出來的
+branch **只認候選名單裡的那一條**(它會把上一批殘留的 branch 也列出來,而且衝突區塊常把沒人動過
+的舊行包進去、blame 回這批之前的 commit);§7a 一次只問一個檔案,撞到幾個就跑幾次、一個檔案一則
+紀錄;rename 還原出來的舊路徑帶空白時要包引號(`${old:+"$old"}`)。
+
 ## 步驟 6 — 清場
 
 ```text
@@ -553,7 +558,6 @@ reg.sh
 + cd 'D:/Self Project/Skills/.git/batch-worktrees/55'
 + git status --porcelain
  M skills/build-batch/SKILL.md
- M skills/build-batch/batch.py
 + git worktree list --porcelain
 + grep -F /.git/batch-worktrees/
 worktree D:/Self Project/Skills/.git/batch-worktrees/54

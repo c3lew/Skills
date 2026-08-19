@@ -133,14 +133,14 @@ git diff --name-only --diff-filter=U
 ```bash
 merged="47 42"          # 這批已經合進主線的,照 §7 的順序
 current=batch/48        # 正在合的那張
-file=<撞到的檔案>
+file=<撞到的檔案>       # 一次只問一個檔案 — 撞到幾個就跑幾次,一個檔案一則紀錄
 
 first=$(echo $merged | awk '{print $1}')
 base=$(git merge-base "batch/$first" "$current")     # 這批共同的起點
 # 正在合的那張如果把檔案改名了,對面動的是舊名字 — 兩個名字都要查
 old=$(git diff --name-status -M "$base" "$current" | awk -v f="$file" '$1 ~ /^R/ && $3 == f {print $2}')
 for n in $merged; do
-  if [ -n "$(git diff --name-only -M "$base" "batch/$n" -- "$file" $old)" ]; then echo "#$n"; fi
+  if [ -n "$(git diff --name-only -M "$base" "batch/$n" -- "$file" ${old:+"$old"})" ]; then echo "#$n"; fi
 done
 ```
 
@@ -157,7 +157,9 @@ done
   git branch --list 'batch/*' --contains <那一行的 sha>   # 換算成 lane
   ```
 
-  分得出來就用那一張。分不出來(圖檔沒有行可以 blame、那顆 commit 不在候選裡)就把候選**全部**放進 `numbers`,印出來會照實講「跟這批裡同樣改過這個檔案的 #A、#B 撞在一起」— 列出候選是誠實的,隨便挑一張講死,client 就會被指去看一張根本沒撞的票。
+  `--contains` 印出來的東西**只認候選名單裡的那一條** — 它問的是「哪些 branch 含這顆 commit」,上一批殘留的 branch 也會被列出來。衝突區塊還常常把沒人動過的舊行一起包進去,那時候 blame 回的是這批之前的 commit,`--contains` 就會吐出一整排 branch(QA 第 6 輪 judge 實測),那不是答案。
+
+  分得出來(而且那條在候選名單裡)就用那一張。分不出來(圖檔沒有行可以 blame、blame 回的 commit 不在候選裡)就把候選**全部**放進 `numbers`,印出來會照實講「跟這批裡同樣改過這個檔案的 #A、#B 撞在一起」— 列出候選是誠實的,隨便挑一張講死,client 就會被指去看一張根本沒撞的票。
 
 **不要**用「最近一次動到這個檔案的 merge 是誰」或 `git log -S'<那段內容>'` 去認票:前者會回報中間那張乾淨的票;後者問的是「這個字串的出現次數在哪顆 commit 變了」,兩張票剛好各自加了同一句 boilerplate(`- [ ] 待補說明` 這種)就會回報錯的那張,而且錯得完全看不出來(QA 步驟 5 有並排實測)。上面那個迴圈問的是「已合的哪張碰過這個檔案」,不是內容鑑識,所以沒有這種失手。
 
