@@ -43,6 +43,20 @@ hook 掛了比壞碼更慘)— 這條沒有 encoding 可以搞錯,放哪都行�
 `scripts/validate.py` 的 `stream_encoding_issues` 兩條都會抓,而且抓位置:
 `reconfigure` 寫在 `__main__` 之外照樣紅。
 
+### 跨 skill 借判斷:走安裝根目錄,不走相對連結
+
+一個 skill 要重用另一個 skill 已經測過的判斷(`/next` 的批次那一列借 `build-batch`
+的 `batch.py` 算「彼此不卡」),路徑寫成安裝根目錄底下的兄弟 skill:
+
+```
+python <build-batch skill dir>/batch.py
+```
+
+不要寫 `../build-batch/batch.py` — 那是 `scripts/validate.py` 擋的相對連結,install
+只抄自己那個目錄,裝單一 skill 的機器上當場斷。同時一定要寫「那支檔不在時怎麼辦」的
+退路(`/next` 是退回推單張 `/build #N`):借來的判斷可能根本沒裝,而重寫一份判斷比
+沒有更糟 — 兩份會各說各話。
+
 ### Domain docs
 
 This repository uses a single-context layout. See `docs/agents/domain.md`.

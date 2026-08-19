@@ -115,6 +115,25 @@ def unpushed_commit_link_issue(text):
     return push is None or push.start() > link.start()
 
 
+# #57 固化:批次判斷(`/build-batch` 的 plan_batch)整個吃切票那關宣告的 blocking
+# 邊。一整批票一條邊都沒宣告有兩種來源,票面上長得一模一樣:真的彼此不卡(平行切片,
+# 常態),或切票時漏標。漏標的那批會被算成全部能同時開 — 兩張改同一個檔案的票並排
+# 跑起來,撞在 merge 階段,而 client 從頭到尾沒被問過。所以呼叫 `/to-tickets` 發佈
+# 票的 skill 一定要帶「一張 blocking 邊都沒宣告就回報 client」這一步:切票那關是
+# 唯一還問得到人的地方。
+# 母體只認**呼叫**那個字 — 光提到 `/to-tickets`(交棒行、路由表的一列)的 skill
+# 一張票都沒發佈,要它帶這句話是假陽性。
+TO_TICKETS_CALL_RE = re.compile(r"呼叫 `/to-tickets")
+ZERO_EDGE_AUDIT_RE = re.compile("一張 blocking 邊都沒宣告")
+
+
+def missing_blocking_audit_issue(text):
+    """True if a ticket-publishing skill never reports a zero-edge batch."""
+    if not TO_TICKETS_CALL_RE.search(text):
+        return False
+    return ZERO_EDGE_AUDIT_RE.search(text) is None
+
+
 def handoff_target_issues(skills_dir):
     """Every baton must name a skill that exists — repo-wide check.
 
@@ -229,6 +248,13 @@ def validate(skills_dir, repo):
             errors.append(
                 f"{label}/SKILL.md: asks for commit links in a ticket comment "
                 f"without asking to `git push` first — an unpushed sha is a 404"
+            )
+        if missing_blocking_audit_issue(text):
+            errors.append(
+                f"{label}/SKILL.md: publishes tickets via `/to-tickets` but never "
+                f"reports 「一張 blocking 邊都沒宣告」 to the client — a batch that "
+                f"lost every edge looks exactly like one that has none, and "
+                f"/build-batch then opens all of them in parallel"
             )
         for name in find_slash_only_handoffs(text):
             errors.append(
@@ -382,6 +408,42 @@ def self_check():
             # drop the push command -> the guard must bite
             copy.write_text(PUSH_RE.sub("commit", text), encoding="utf-8")
             assert expected in validate(skills.parent, Path(tmp)), label
+
+    # #57 固化:zero-blocking-edge audit. Hand-written cases first — only a skill
+    # that publishes tickets is on the hook, and carrying the line is the fix.
+    assert not missing_blocking_audit_issue("這片沒有在切票")
+    assert missing_blocking_audit_issue("呼叫 `/to-tickets <spec ref>` 切票") is True
+    # 只是提到那個指令(交棒、路由表)不算發佈票 — 那張 skill 沒東西可以對帳
+    assert not missing_blocking_audit_issue("沒有 spec 就指回 `/to-tickets`")
+    assert not missing_blocking_audit_issue(
+        "呼叫 `/to-tickets`;一張 blocking 邊都沒宣告時回報 client")
+
+    # the real-skill layer: the cases above are hand-written strings, so they stay
+    # green even if no shipped skill ever asked the question. Take the actual
+    # ticket-publishing skills, delete the audit line, and validate must redden —
+    # an empty 母體 fails here rather than passing vacuously.
+    slicers = [
+        src
+        for src in sorted((REPO / "skills").glob("*/SKILL.md"))
+        if TO_TICKETS_CALL_RE.search(src.read_text(encoding="utf-8"))
+    ]
+    assert slicers, "no skill publishes tickets via `/to-tickets` — mutation has nothing to bite"
+    for src in slicers:
+        label = f"skills/{src.parent.name}/SKILL.md"
+        text = src.read_text(encoding="utf-8")
+        m = ZERO_EDGE_AUDIT_RE.search(text)
+        assert m, label
+        with tempfile.TemporaryDirectory() as tmp:
+            skills = Path(tmp) / "skills" / src.parent.name
+            skills.mkdir(parents=True)
+            copy = skills / "SKILL.md"
+            copy.write_text(text, encoding="utf-8")
+            got = [e for e in validate(skills.parent, Path(tmp)) if "blocking" in e]
+            assert got == [], (label, got)
+            # drop the audit line -> the guard must bite, naming this file
+            copy.write_text(text.replace(m.group(0), "", 1), encoding="utf-8")
+            got = [e for e in validate(skills.parent, Path(tmp)) if "blocking" in e]
+            assert got and all(e.startswith(label) for e in got), (label, got)
 
     # #41 固化:the baton is a command the client pastes into Codex, so the skill
     # it names has to exist. Repo-level, so it lives outside validate() — a
