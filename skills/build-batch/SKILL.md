@@ -120,16 +120,22 @@ git worktree remove .git/batch-worktrees/47
 
 ### 7a. 撞車:先查出「跟誰撞」
 
-`git merge` 紅了就是撞車。因為是一張一張合,衝突一次只會發生在一張票上 — 正在合的那張,跟這批裡先合進去、動到同一個檔案的那張。兩張都要查出來:少了任何一張,票上的紀錄跟終端機那句都寫不出來。
+`git merge` 紅了就是撞車。因為是一張一張合,衝突一次只會發生在一張票上 — 正在合的那張,跟這批裡先合進去、動到同一段的那張。兩張都要查出來:少了任何一張,票上的紀錄跟終端機那句都寫不出來。
 
 ```bash
-git diff --name-only --diff-filter=U                 # 撞在哪些檔案
-git log --merges --full-history --format=%s -1 -- <撞到的檔案>   # Merge branch 'batch/<另一張>'
+git diff --name-only --diff-filter=U                    # 撞在哪些檔案
+git diff -- <撞到的檔案>                                 # 衝突兩側各是什麼內容
+git log -S'<主線那側的那段內容>' --format=%h -1 HEAD --not MERGE_HEAD -- <撞到的檔案>
+git branch --list 'batch/*' --contains <上一行給的 sha>   # 那顆 commit 屬於哪條 lane
 ```
 
-第二行問的是「主線上最近一次動到這個檔案的 merge 是哪條 lane」,那條 lane 的票號就是另一張。`--full-history` 不能省:少了它,git 的 history simplification 會把「跟其中一個 parent 同樹」的 merge commit 整個省略掉 — 而合 lane 的 merge 剛好每個都是這種形狀,指令會安靜地回空的,agent 就以為「查不出來」而多停一次(QA 第 1 輪實測)。
+第三行問的是「主線這側那段文字是哪一顆 commit 寫進來的」,第四行把那顆 commit 換算成 lane,branch 名字後半就是另一張的票號。
 
-真的查不出來(例如那個檔案是主線本來就有、不是這批動的)就不要猜票號,直接走 §7c 停下來,終端機照實講「跟主線既有內容撞」。
+**不要**改用「最近一次動到這個檔案的 merge」去猜:同一個檔案這批裡常有第三張乾淨地動過(改的是別的段落),那個問法會回報第三張的票號 — 撞的明明是另一張,client 讀到的卻是錯的票。`-S` 問的是「那段文字」而不是「那個檔案」,所以第三張插在中間也不會被誤認(QA 步驟 4 有並排實測)。
+
+`--not MERGE_HEAD` 把正在合的那張排掉,剩下的才是主線這側;`--contains` 用 git 自己的 commit 歸屬回答,不靠 parse merge 訊息。
+
+查不出來(那段內容不是這批任何一條 lane 寫的,例如檔案是主線本來就有的)就不要猜票號,直接走 §7c 停下來 — `conflict-stopped` 的 `numbers` 只給正在合的那一張,印出來的話會照實講「跟主線上既有的內容撞」。
 
 ### 7b. 解得掉:自己解,不打擾 client
 

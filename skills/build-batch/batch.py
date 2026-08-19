@@ -153,6 +153,18 @@ def _files(files):
     return "、".join(files)
 
 
+def _how(how):
+    """`how` 是 agent 現寫的自由文字,而它會被貼上票 — 擋掉貼 diff 這種寫法。
+
+    紀錄是寫給非技術 client 讀的一句話。貼進衝突標記或整段 diff,那一行就從
+    「白話紀錄」變成「請你自己看 git」,而這正是這片要消掉的東西。
+    """
+    if not how or "\n" in how or "<<<<<<<" in how or ">>>>>>>" in how:
+        raise SystemExit("`how` 要是一句白話、單行、不含衝突標記 — 它會原封不動"
+                         f"貼上票給 client 讀,got {how!r}")
+    return how
+
+
 def format_conflict_resolved(numbers, titles, files, how):
     """撞車解掉之後,兩張票上各留的那一行白話紀錄。
 
@@ -162,7 +174,26 @@ def format_conflict_resolved(numbers, titles, files, how):
     """
     a, b = _two(numbers)
     return (f"撞車已解:{_titled(a, titles)} 跟 {_titled(b, titles)} 都改到 "
-            f"{_files(files)} — {how}。合併照常繼續,不用你處理。")
+            f"{_files(files)} — {_how(how)}。合併照常繼續,不用你處理。")
+
+
+def _stopped_headline(numbers, titles, files):
+    """停下那句的第一行。兩張撞是常態,一張是 §7a 查不出另一張的逃生路。
+
+    §7a 有一條「那段內容不是這批任何一條 lane 寫的」的分支 — 那時候另一張票號
+    是查不到的,而猜一個貼上票比不講更糟(client 會拿它當事實)。所以那條路
+    照實只講正在合的那張 + 跟主線既有內容撞,不是讓 agent 撞牆之後自己現編一句。
+    """
+    if len(numbers) == 2:
+        a, b = numbers
+        who = f"{_titled(a, titles)} 跟 {_titled(b, titles)} 都改到 {_files(files)}"
+    elif len(numbers) == 1:
+        who = (f"{_titled(numbers[0], titles)} 跟主線上既有的內容撞在 "
+               f"{_files(files)}")
+    else:
+        raise SystemExit("conflict-stopped wants 1 or 2 tickets(查得出另一張就給"
+                         f"兩張,查不出來就只給正在合的那張), got {list(numbers)}")
+    return f"撞車停下:{who},自己解不掉 — 這批合併停在這裡,等你決定。"
 
 
 def format_conflict_stopped(numbers, titles, files, merged, pending):
@@ -172,10 +203,8 @@ def format_conflict_stopped(numbers, titles, files, merged, pending):
     哪兩張撞在哪個檔案、什麼已經進主線了、什麼還原地等著。所以已合/未合兩份清單
     跟撞車那句一起印 — 少了它們,client 得自己去問 git 才敢決定。
     """
-    a, b = _two(numbers)
     lines = [
-        f"撞車停下:{_titled(a, titles)} 跟 {_titled(b, titles)} 都改到 "
-        f"{_files(files)},自己解不掉 — 這批合併停在這裡,等你決定。",
+        _stopped_headline(numbers, titles, files),
         "",
         f"已經合進主線的({len(merged)} 張):",
     ]
@@ -291,9 +320,12 @@ CONFLICT_LINES = (
     (re.compile(re.escape("worktree 與 branch 都留著")),
      "SKILL.md §7c: 停下時未合的 lane 要保留 worktree 與 branch — 這句不見了,"
      "client 決定之後那些 lane 就接不回去了"),
-    (re.compile(re.escape("git log --merges --full-history")),
-     "SKILL.md §7a: 查「跟誰撞」的那行少了 `--full-history` — 沒有它 git 會把合 lane 的 "
-     "merge commit 簡化掉,指令安靜回空的,agent 會誤判成查不出來(QA 第 1 輪實測)"),
+    (re.compile(re.escape("git log -S")),
+     "SKILL.md §7a: 查「跟誰撞」要用 `git log -S'<那段內容>'` 問「這段文字是誰寫的」— "
+     "改回問「誰動過這個檔案」會在第三張乾淨動過同檔時報出錯的票號給 client(QA 實測)"),
+    (re.compile(re.escape("git branch --list 'batch/*' --contains")),
+     "SKILL.md §7a: 把 commit 換算成 lane 要用 `git branch --contains` — 靠 parse merge "
+     "訊息認票,訊息換個寫法就整條啞掉"),
     (re.compile(re.escape("git merge --abort")),
      "SKILL.md §7c: 停下之前要把沒合完的 merge 退掉 — 少了它,client 接手的是一個"
      "帶衝突標記的 index"),
@@ -645,6 +677,13 @@ JSON''')
         "",
         "沒有猜、沒有強推,也沒有把任何一邊蓋掉。",
     ], stopped
+    # 停下那句一樣是給非技術 client 讀的 — 第一行不准漏術語出來。後面幾行留著
+    # branch 名與 lane 路徑是刻意的:那是 client(或他找來的人)要回到那個工作區
+    # 唯一能貼進終端機的東西,不是術語裝飾。
+    headline = stopped.splitlines()[0]
+    for jargon in ("conflict", "merge", "index", "rebase", "abort"):
+        assert jargon not in headline.lower(), (jargon, headline)
+
     # 未合 lane 的路徑同樣由 lane_of 算 — client 照著它就能回到那個工作區
     for n in (48, 49):
         assert lane_of(n)["worktree"] in stopped and lane_of(n)["branch"] in stopped
@@ -652,13 +691,41 @@ JSON''')
     first = format_conflict_stopped([48, 47], {}, ["a.py"], [], [48])
     assert "已經合進主線的(0 張):\n  (無)" in first, first
 
+    # §7a 查不出另一張(那段內容不是這批寫的)-> 只給一張,照實講跟主線既有內容撞。
+    # 文件叫 agent 走這條路,工具就要收得下來 — 收不下來 agent 只能自己現編一句貼上票。
+    solo = format_conflict_stopped([48], {48: "點頭"}, ["docs/notes.md"], [47], [48])
+    assert solo.splitlines()[0] == (
+        "撞車停下:#48 點頭 跟主線上既有的內容撞在 docs/notes.md,自己解不掉 — "
+        "這批合併停在這裡,等你決定。"), solo
+    assert "#47" not in solo.splitlines()[0], solo  # 查不出來就不猜票號
+    for jargon in ("conflict", "merge", "index", "rebase", "abort"):
+        assert jargon not in solo.splitlines()[0].lower(), (jargon, solo)
+    # 0 張或 3 張還是當場停
+    for bad in ([], [48, 47, 46]):
+        try:
+            format_conflict_stopped(bad, {}, ["a.py"], [], [])
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError(f"expected SystemExit for numbers={bad}")
+
+    # `how` 是 agent 現寫的自由文字,會原封不動貼上票 — 貼 diff / 衝突標記要當場停
+    for bad_how in ("", "第一行\n第二行", "<<<<<<< HEAD", "a\n>>>>>>> batch/48"):
+        try:
+            format_conflict_resolved([48, 47], {}, ["a.py"], bad_how)
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError(f"expected SystemExit for how={bad_how!r}")
+
     # #55 固化:撞車的處置有一半是散文(呼叫哪個原件、停下時什麼留著),
     # 函式測不到 — 拿真的 SKILL.md 咬,拿掉任何一句要紅。
     assert conflict_lines_issue(text) is None, conflict_lines_issue(text)
     for original, label in (
         ("`/resolving-merge-conflicts`", "§7b 呼叫原件解"),
         ("worktree 與 branch 都留著", "§7c 未合的 lane 留著"),
-        ("git log --merges --full-history", "§7a 查跟誰撞要 --full-history"),
+        ("git log -S", "§7a 認票問的是那段內容不是那個檔案"),
+        ("git branch --list 'batch/*' --contains", "§7a 用 commit 歸屬換算 lane"),
         ("git merge --abort", "§7c 退掉沒合完的 merge"),
     ):
         assert original in text, label
