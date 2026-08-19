@@ -26,6 +26,7 @@ Usage:
 import ast
 import re
 import sys
+from collections import defaultdict
 from textwrap import indent
 from pathlib import Path
 
@@ -235,6 +236,8 @@ def runs(body):
     Cut: a branch whose test is a constant the other way (`if False:`),
     everything after a `raise`/`return`, and the body of a def — a def only
     runs when something calls it, which `live_nodes` resolves separately.
+    A *class* body is not cut: unlike a def it runs the moment the `class`
+    statement does, so `class W: run = dump` really does bind `run` (#75).
     An `except` handler counts as dead too: it is the error path, not the
     path a script prints its output on.
     """
@@ -251,11 +254,20 @@ def runs(body):
                 out += runs(stmt.orelse)
         elif isinstance(stmt, ast.Try):
             out += runs(stmt.body) + runs(stmt.orelse) + runs(stmt.finalbody)
-        elif isinstance(stmt, (ast.For, ast.AsyncFor, ast.While, ast.With,
-                               ast.AsyncWith)):
+        elif isinstance(stmt, (ast.For, ast.AsyncFor)):
+            # the header runs too, and it is where `for f in [dump]` binds
+            # its target — the body is cut separately so it is not carried
+            # along here (#75). Position is copied over: callers may report
+            # or unparse whatever `runs` hands back.
+            out.append(ast.copy_location(
+                type(stmt)(target=stmt.target, iter=stmt.iter,
+                           body=[], orelse=[], type_comment=None), stmt))
+            out += runs(stmt.body) + runs(stmt.orelse)
+        elif isinstance(stmt, (ast.While, ast.With, ast.AsyncWith)):
             out += runs(stmt.body) + runs(getattr(stmt, "orelse", []))
-        elif isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef,
-                               ast.ClassDef)):
+        elif isinstance(stmt, ast.ClassDef):
+            out += runs(stmt.body)
+        elif isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
         else:
             out.append(stmt)
@@ -267,6 +279,72 @@ def runs(body):
 def names_in(expr):
     """Every identifier `expr` reads — `Name.id` and `Attribute.attr` alike."""
     return {getattr(n, "id", getattr(n, "attr", None)) for n in ast.walk(expr)}
+
+
+def own_scope(node):
+    """Every node under `node` that belongs to *its* scope.
+
+    `ast.walk` would descend into a nested def, and a nested def's `return`
+    is its own — attributing it to the enclosing one would let a live
+    `outer()` drag in a name only `inner` ever hands back, which widens the
+    live set in the direction that makes the guard go quiet (#75).
+    """
+    stack = list(ast.iter_child_nodes(node))
+    while stack:
+        n = stack.pop()
+        yield n
+        if not isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef,
+                              ast.Lambda, ast.ClassDef)):
+            stack += list(ast.iter_child_nodes(n))
+
+
+def bound_pairs(target, value):
+    """`(name, source expression)` for one binding target, destructured.
+
+    A tuple or list target against a same-length tuple or list value pairs up
+    positionally (`a, b = dump, other` binds `a` to `dump` alone); anything
+    else hands the whole right-hand side to each name it binds, which is the
+    only reading available for `a, b = pair()`.
+    """
+    if isinstance(target, (ast.Tuple, ast.List)):
+        elts = value.elts if (isinstance(value, (ast.Tuple, ast.List))
+                              and len(value.elts) == len(target.elts)) else None
+        for i, elt in enumerate(target.elts):
+            yield from bound_pairs(elt, elts[i] if elts else value)
+    elif isinstance(target, ast.Name):
+        yield target.id, value
+
+
+def bindings_in(node):
+    """`{name: names it was bound to}` for the one statement `node` (#75).
+
+    The claim is one claim — calling this name calls whatever the right-hand
+    side named — and every statement that makes it gets the same reach:
+    `f = dump`, `f: object = dump`, `a, b = dump, dump`, `for f in [dump]`,
+    and `class W: run = dump` (a class body runs where it stands, so `runs`
+    hands its assignments through here like any other). Reading only a bare
+    `Assign` target, as #73 shipped, left the rest writing the same thing and
+    getting shouted at for it.
+
+    ponytail: a `with ... as f` is the same claim again and is *not*
+    collected. Leaving it out costs a false red — a legitimate script told to
+    pin a stream it already writes — which is the direction that makes noise,
+    not the direction that makes the guard go quiet. The 6 shapes that are
+    covered are the `--binding` sweep's; this is not one of them.
+    """
+    if isinstance(node, ast.Assign):
+        pairs = [(t, node.value) for t in node.targets]
+    elif isinstance(node, ast.AnnAssign) and node.value is not None:
+        pairs = [(node.target, node.value)]
+    elif isinstance(node, (ast.For, ast.AsyncFor)):
+        pairs = [(node.target, node.iter)]
+    else:
+        return {}
+    out = defaultdict(set)
+    for target, value in pairs:
+        for name, src in bound_pairs(target, value):
+            out[name] |= names_in(src)
+    return out
 
 
 def live_nodes(tree):
@@ -281,9 +359,13 @@ def live_nodes(tree):
     what pulls a def's body in is its name in a *call* position: the `func` of
     a `Call` (`dump()`, `W().go()`), or an argument handed to something that
     calls it (`run(dump)`). A name bound to another name carries the same
-    reach once that binding is itself called, which is how an alias
+    reach once that binding is itself called, however that binding is
+    written — `=`, an annotated `=`, a tuple unpack, a `for` target or a
+    class attribute, all collected by `bindings_in` — which is how an alias
     (`f = dump; f()`) and a handler dict (`H = {"a": dump}; H["a"]()`) reach
-    the body without ever naming `dump` at a call (#71).
+    the body without ever naming `dump` at a call (#71, #75). A def that
+    returns a name carries it the same way, so a factory
+    (`def get(): return dump` + `get()()`) reaches it too.
 
     A bare mention does not count and must not: `x = [dump]`, a local
     `dump = 1` that happens to shadow the def, an unrelated `c.dump` — none of
@@ -291,29 +373,34 @@ def live_nodes(tree):
     #70 took away, since one colliding name anywhere live would exempt the
     whole file (#73).
 
-    ponytail: two approximations remain — two defs sharing a name are one
-    node, and a name handed to a call is assumed called by it. Both widen the
-    live set, which is the direction that makes this guard go *silent* on a
-    script printing unpinned 中文, so they are kept to the two shapes above
+    ponytail: three approximations remain — two defs sharing a name are one
+    node, a name handed to a call is assumed called by it, and a live def's
+    return value is carried whether or not the result is itself called. All
+    three widen the live set, which is the direction that makes this guard go
+    *silent* on a script printing unpinned 中文, so each is kept to a shape
     where a call is the ordinary reading of the code; the four dead-`dump`
     shapes `self_check` pins under #73 stay dead. Dead code is cut by `runs`.
     """
     defs = {n.name: n for n in ast.walk(tree)
             if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    returned = defaultdict(set)  # what a def hands back to its callers
+    for name, node in defs.items():
+        for n in own_scope(node):
+            if isinstance(n, ast.Return) and n.value is not None:
+                returned[name] |= names_in(n.value)
     live, body = set(), runs(tree.body)
     while True:
-        invoked, bound = set(), {}
+        invoked = set()
+        bound = defaultdict(set, {k: set(v) for k, v in returned.items()})
         for stmt in body:
             for n in ast.walk(stmt):
                 if isinstance(n, ast.Call):
                     invoked |= names_in(n.func)
                     for arg in list(n.args) + [k.value for k in n.keywords]:
                         invoked |= names_in(arg)
-                elif isinstance(n, ast.Assign):
-                    for target in n.targets:
-                        if isinstance(target, ast.Name):
-                            bound.setdefault(target.id, set())
-                            bound[target.id] |= names_in(n.value)
+                else:
+                    for name, srcs in bindings_in(n).items():
+                        bound[name] |= srcs
         todo = list(invoked)
         while todo:  # an invoked binding invokes whatever it was bound to
             for name in bound.get(todo.pop(), ()):
@@ -987,6 +1074,44 @@ def self_check():
                         + runnable + reach + "\n    print('要開')\n")
             bad.write_text(indirect, encoding="utf-8")
             assert stream_encoding_issues(repo) == [], indirect
+        # #75: the same binding claim, in the other shapes it gets written
+        # in — each really does run `dump`, so a red here is the guard
+        # shouting at a script that already writes its bytes. Three knobs
+        # carry them: `bindings_in` collects the tuple unpack, the annotated
+        # assignment and the `for` target (narrow it back to a bare `Assign`
+        # and those three turn red); `runs` no longer cutting a class body is
+        # what makes `class W: run = dump` an `Assign` anyone can collect;
+        # and the `returned` seed in `live_nodes` is what carries `get()()`.
+        for reach in ("a, b = dump, dump\n    a()",
+                      "f: object = dump\n    f()",
+                      "for f in [dump]:\n        f()",
+                      "get()()",
+                      "W.run()"):
+            shape = (f"def dump():\n    {out_bypass}.write(b'x')\n\n\n"
+                     f"def get():\n    return dump\n\n\n"
+                     f"class W:\n    run = dump\n\n\n"
+                     + runnable + reach + "\n    print('要開')\n")
+            bad.write_text(shape, encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], shape
+        # ...and each of those three knobs stops where #73 put the line: bind
+        # the name and never call it and `dump` is still dead. Without this
+        # half the widening is only checked in the direction that makes noise,
+        # not the direction that makes the guard go silent.
+        for label, tail in (
+                ("`for` target bound, never called",
+                 runnable + "for f in [dump]:\n        pass\n    print('要開')\n"),
+                ("class attribute bound, never called",
+                 "class W:\n    run = dump\n\n\n" + runnable + "print('要開')\n"),
+                ("factory returns it, nothing calls the factory",
+                 "def get():\n    return dump\n\n\n" + runnable + "print('要開')\n"),
+                ("a *nested* def returns it, only the outer one runs",
+                 "def outer():\n    def inner():\n        return dump\n"
+                 "    return 1\n\n\n" + runnable + "outer()\n    print('要開')\n"),
+        ):
+            still_dead = f"def dump():\n    {out_bypass}.write(b'x')\n\n\n" + tail
+            bad.write_text(still_dead, encoding="utf-8")
+            assert len(stream_encoding_issues(repo)) == 1, label
+
         # #73: and a bare *mention* stays dead. Widen the rule back to "the
         # name appears live" and one colliding local — or an unrelated
         # attribute — exempts the whole file, which is #70's switch again.
