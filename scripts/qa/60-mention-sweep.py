@@ -20,6 +20,7 @@ docstring、字串常數、f-string、變數名)都是同一形狀。這支把�
     ... --prev                                                # 對照組:上一輪 QA 的 HEAD(188c7d8)
     ... --prev73                                              # 對照組:#73 修之前(e56789c)
     ... --prev75                                              # 對照組:#75 修之前(39003a3)
+    ... --prev79                                              # 對照組:#79 修之前(8beebc5)
 """
 import subprocess
 import sys
@@ -280,7 +281,7 @@ if __name__ == "__main__":
 
 # 對照組能指的歷史點:#60 動手前(--old),與上一輪 QA 的 HEAD(--prev,#71 修之前)。
 BASELINES = {"--old": "d3cc9ed^", "--prev": "188c7d8", "--prev73": "e56789c",
-             "--prev75": "39003a3"}
+             "--prev75": "39003a3", "--prev79": "8beebc5"}
 
 
 def guard_module(repo, old):
