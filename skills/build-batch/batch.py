@@ -29,6 +29,21 @@ CAP = 3  # 平行上限,client 拍板寫死
 BASH_BLOCK_RE = re.compile("```bash(.*?)```", re.S)
 INLINE_PYTHON_RE = re.compile("(?:python[0-9]?|py) +-c(?![a-zA-Z0-9])")
 
+# #52 過關固化:名單以外,client 螢幕上還會出現 §4/§5 這兩句,而且他是照著這兩句
+# 點頭的。它們是 SKILL.md 的散文,一個 assert 都碰不到 — 改壞會無聲漂掉,下一個
+# client 看到的東西就不是他驗過的那個。所以在這裡咬住。
+CLIENT_LINES = (
+    (re.compile(re.escape("沒必要開批次,用 `/build #") + r"\d+"
+                + re.escape("`(Codex: `$build #") + r"\d+"
+                + re.escape("`)就好")),
+     "SKILL.md §4: 只有 1 張能跑時指路單張 /build 的那句不見了(client 在 #52 "
+     "demo 點頭的原句)"),
+    (re.compile(re.escape("這幾張要一起推嗎?")),
+     "SKILL.md §5: 名單印完問點頭的那句「這幾張要一起推嗎?」不見了"),
+    (re.compile(re.escape("**說不** → 乾淨結束")),
+     "SKILL.md §5: 說不之後乾淨結束、沒有殘留的承諾不見了"),
+)
+
 
 def plan_batch(tickets, cap=CAP):
     """Split tickets into (ready, queued, blocked).
@@ -108,6 +123,17 @@ def skill_command_issue(text):
     if any(INLINE_PYTHON_RE.search(b) for b in blocks):
         return ("SKILL.md: an inline `python -c` prints for the client — "
                 "outside this self-check and outside the __main__ pin (#58)")
+    return None
+
+
+def client_lines_issue(text):
+    """SKILL.md 還有沒有對 client 講 §4/§5 那兩句(#52 demo 過關的原句)。
+
+    `skill_command_issue` 守「名單有沒有走進程式」,這條守「名單以外那兩句還在不在」。
+    """
+    for pattern, message in CLIENT_LINES:
+        if not pattern.search(text):
+            return message
     return None
 
 
@@ -239,6 +265,19 @@ JSON''')
     # 繞過:§3 留著,另外多一段自己印的指令
     got = skill_command_issue(text + fence("python3 -c 'print(1)'"))
     assert got and "python -c" in got, got
+
+    # #52 過關固化:§4/§5 對 client 講的兩句。真的 SKILL.md 要過,拿掉任何一句要咬。
+    assert client_lines_issue(text) is None, client_lines_issue(text)
+    for original, label in (
+        ("沒必要開批次,用 `/build #47`(Codex: `$build #47`)就好", "§4 指路單張"),
+        ("這幾張要一起推嗎?", "§5 問點頭"),
+        ("**說不** → 乾淨結束", "§5 說不"),
+    ):
+        assert original in text, label
+        assert client_lines_issue(text.replace(original, "", 1)), label
+    # 指路那句要帶兩端的指令,只留 Claude 端不算
+    assert client_lines_issue(
+        text.replace("(Codex: `$build #47`)", "", 1)), "§4 Codex 端"
 
     print("OK batch self-check green")
 
