@@ -62,7 +62,7 @@ cap 寫死 3,不做設定。blocker 已關的票會被放行;blocker 還開著�
 - **說不** → 乾淨結束。什麼都沒開、什麼都沒改,不用回收。
 - **說好** → 往下走 §6。從這一刻起才會動到檔案。
 
-本版只走全綠路徑。**有票 QA 沒過、merge 撞車、能開的超過 3 張要排隊** — 這三件事都還沒接上,遇到就停下來把現況講給 client 聽,不要自己發明處置。
+本版只走全綠路徑。**有票 QA 沒過、能開的超過 3 張要排隊** — 這兩件事還沒接上,遇到就停下來把現況講給 client 聽,不要自己發明處置。merge 撞車已經接上了(§7a–§7c):解得掉 agent 自己解,解不掉停下整個合併階段講清楚哪兩張撞在哪個檔案。
 
 ## 6. 平行開工
 
@@ -118,7 +118,63 @@ git worktree remove .git/batch-worktrees/47
 
 `git push` 要當場綠再合下一張。這條 lane 到這裡就結束了,工作區當場回收 — 三份完整 checkout 沒必要一路佔到整批跑完。**branch 留著**到票結案。
 
-撞車不在本版範圍 — 停下來把哪兩張撞在哪個檔案講給 client 聽,不要硬推。
+### 7a. 撞車:先查出「跟誰撞」
+
+`git merge` 紅了就是撞車。因為是一張一張合,衝突一次只會發生在一張票上 — 正在合的那張,跟這批裡先合進去、動到同一個檔案的那張。兩張都要查出來:少了任何一張,票上的紀錄跟終端機那句都寫不出來。
+
+```bash
+git diff --name-only --diff-filter=U                 # 撞在哪些檔案
+git log --merges --format=%s -1 -- <撞到的檔案>       # Merge branch 'batch/<另一張>'
+```
+
+第二行問的是「主線上最近一次動到這個檔案的 merge 是哪條 lane」,那條 lane 的票號就是另一張。查不出來(例如那個檔案是主線本來就有、不是這批動的)就不要猜票號,直接走 §7c 停下來,終端機照實講「跟主線既有內容撞」。
+
+### 7b. 解得掉:自己解,不打擾 client
+
+呼叫既有的 `/resolving-merge-conflicts` 原件解。它是唯一的解法來源 — 不自己 `-X ours` / `-X theirs` 挑一邊蓋過去,不強推,不砍 branch 重來。那三招都不是解衝突,是把其中一張票的工作丟掉,而且丟掉的當下沒有人看得見。
+
+解掉之後把 merge commit 收掉、`git push`,然後在**兩張**相關的票上各留同一行白話紀錄:
+
+```bash
+note=$(python <skill dir>/batch.py <<'JSON'
+{"mode": "conflict-resolved", "numbers": [48, 47],
+ "titles": {"48": "...", "47": "..."},
+ "files": ["<撞到的檔案>"], "how": "<一句白話:怎麼解的>"}
+JSON
+)
+echo "$note" | gh issue comment 48 --body-file -
+echo "$note" | gh issue comment 47 --body-file -
+```
+
+`numbers` 第一個是正在合的那張,第二個是先合進去的那張;`how` 用 client 看得懂的話寫「兩邊各加了什麼、最後怎麼擺」,不要貼 diff。
+
+貼完就回 §7 繼續合下一張 — 撞車解掉不是需要 client 決定的事,不停、不問。
+
+### 7c. 解不掉:停下整個合併階段
+
+`/resolving-merge-conflicts` 也收不掉的時候(兩張票對同一段做了互斥的決定,誰對誰錯要 client 說了算),停下整個合併階段。停之前先把工作區弄乾淨 — 把這次沒合完的 merge 退掉,主線留在「上一張合完」的樣子,不要留一個帶衝突標記的 index 給 client:
+
+```bash
+git merge --abort
+```
+
+已經合成功並 push 的留在主線,不 revert、不 reset;還沒合的 lane **worktree 與 branch 都留著**,不 `git worktree remove`、不刪 branch — client 決定怎麼處理之後,那些 lane 要能原地接著跑。
+
+然後印給 client,同一份也貼到撞在一起的那兩張票上:
+
+```bash
+note=$(python <skill dir>/batch.py <<'JSON'
+{"mode": "conflict-stopped", "numbers": [48, 47],
+ "titles": {"48": "...", "47": "...", "42": "...", "49": "..."},
+ "files": ["<撞到的檔案>"], "merged": [42, 47], "pending": [48, 49]}
+JSON
+)
+echo "$note"
+echo "$note" | gh issue comment 48 --body-file -
+echo "$note" | gh issue comment 47 --body-file -
+```
+
+`merged` 是已經合進主線的(照合的順序),`pending` 是還沒合的(含撞車失敗的那張)。印完就結束,§8 之後都不跑 — 這批沒有全部進主線,整批驗證與 demo 都還不成立。
 
 ## 8. 整批驗證
 
