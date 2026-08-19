@@ -384,6 +384,12 @@ JSON''')
         assert command in text, command
     assert LANE_ROOT.startswith(".git/"), LANE_ROOT  # 不進 git status,不用 gitignore
 
+    # #53 client-demo 過關固化:§9 的清場判準問的母體也是 LANE_ROOT。它跟上面三行
+    # 不同 — 打錯不是 checkout 到錯的地方,是 grep 撈不到任何東西、判成「收乾淨了」,
+    # 一路綠到底(#61 修的就是母體選錯的前一版)。所以路徑也對著 lane_of 咬。
+    assert f"grep -F /{LANE_ROOT}/" in text, LANE_ROOT
+    assert "git branch --list 'batch/*'" in text  # 只驗 worktree 等於只驗一半(#61)
+
     # #52 過關固化:§4/§5 對 client 講的兩句。真的 SKILL.md 要過,拿掉任何一句要咬。
     assert client_lines_issue(text) is None, client_lines_issue(text)
     for original, label in (
