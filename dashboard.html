@@ -59,11 +59,11 @@
 <div class="sub">專案儀表板 · 更新於 8/19 · 資料來自工作紀錄 · 目前用的版本:6 個功能全部上線,加「同時開好幾張單子」的前五塊,<strong>連第六塊在內全部已換裝你的電腦</strong></div>
 
 <div class="hero">
-  <div class="where">現在在哪:兩包功能都做完、也都收尾了,現在在<strong>一張一張清掉累積的小毛病</strong>。今天清掉<strong>第一張</strong>:守門的自動檢查以前只擋得住「把那句話<strong>刪掉</strong>」,擋不住「把那句話的<strong>意思反過來寫</strong>、關鍵字留著」。現在有這個洞的<strong>兩道檢查都補好了</strong> — 而且不是拿假句子試,是<strong>把真的說明書當場改成相反的意思</strong>(「發佈前回報你」改成「不用問你」、「先上傳」改成「不要上傳」),檢查兩次都當場變紅,還指名是哪一份檔案。把那句話整行刪掉也照樣變紅,原本擋得住的沒有變弱。<strong>剩 7 張小毛病</strong>。</div>
+  <div class="where">現在在哪:兩包功能都做完、也都收尾了,現在在<strong>一張一張清掉累積的小毛病</strong>。這一輪清掉的是<strong>守門檢查的一個側門</strong>:有一道檢查專門守「程式會不會在你的中文終端機上印出亂碼」,但它以前只看程式<strong>最外層</strong>有沒有「開始執行」那段 —— 只要那段被往內縮一格(包在別的東西底下),整支程式就<strong>連看都不看直接放行</strong>。前門鎖著、側門開著。現在改成<strong>整支程式從頭翻到尾</strong>,包幾層都找得到。<strong>剩 11 張小毛病</strong>。</div>
   <div class="release"><strong>這次不用換裝:</strong>改的是<strong>專案自己的檢查程式</strong>,不是會裝到你電腦上的那一份 — 你這邊不用做任何事,現在裝著的版本還是最新的。<span class="rb">反悔的話</span>:這次只動了檢查程式,退掉就是一個指令的事。</div>
   <div class="next">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <div><strong>下一步:</strong>接著清<strong>同一批的第二張</strong> — 走<code>/build #60</code>(另一種助理:<code>$build #60</code>)。那張是同一個毛病的另一種版本:守「文字編碼有沒有設好」的那道檢查,只要在註解裡提到那個字就會放行。兩張當初是<strong>同一批一起點頭要現在做的</strong>。不確定要開哪一棒的時候,問一句<code>/next</code>(<code>$next</code>)也行。</div>
+    <div><strong>下一步:</strong>回頭<strong>重測同一批的另一張</strong> — 走<code>/qa #60</code>(另一種助理:<code>$qa #60</code>)。那張上次測到一半就是被這次修掉的側門擋下來的,現在側門補好了,把它重測一遍就能收掉。不確定要開哪一棒的時候,問一句<code>/next</code>(<code>$next</code>)也行。</div>
   </div>
 </div>
 
@@ -88,11 +88,15 @@
     <h2><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>品質現況</h2>
     <div class="qa-tiles">
       <div class="tile"><div class="num" style="color:var(--ok)">0</div><div class="lbl">必須先修</div></div>
-      <div class="tile"><div class="num" style="color:var(--warn)">7</div><div class="lbl">小毛病(帶著走)</div></div>
-      <div class="tile"><div class="num" style="color:var(--ok)">7</div><div class="lbl">既有功能全數正常</div></div>
+      <div class="tile"><div class="num" style="color:var(--warn)">11</div><div class="lbl">小毛病(帶著走)</div></div>
+      <div class="tile"><div class="num" style="color:var(--ok)">9</div><div class="lbl">既有功能全數正常</div></div>
     </div>
     <ul class="list" style="margin-top:14px">
-      <li><span class="when">今天</span><span>結案前把所有自動檢查重跑一次:<strong>7 道全綠</strong>(上面那格的數字就是這個)。之前的儀表板寫 9,是把當時另外兩項也算進去的舊算法;這次改成「今天真的跑過、有看到綠燈的道數」,不是有東西壞掉。</span></li>
+      <li><span class="when">今天</span><span>收尾前把所有自動檢查重跑一次:<strong>9 道全綠</strong>(上面那格的數字就是這個)—— 6 支程式各自的自我檢查,加 3 支<strong>反過來刁難自己的掃描</strong>。數字比上次多 2,是這輪多跑了兩支掃描,不是新增了功能。</span></li>
+      <li><span class="when">已結案</span><span>守「會不會在你的中文終端機上印出亂碼」的那道檢查,只看程式<strong>最外層</strong>有沒有「開始執行」那段 —— 那段只要被<strong>往內縮一格</strong>,整支程式就連看都不看直接放行,一支會印亂碼的程式就這樣無聲過關。已經修好:現在整支程式從頭翻到尾。這次<strong>沒有只驗撞到的那兩種寫法</strong> —— 把「往內縮一格」的所有可能寫法一次列成 <strong>22 種情況</strong>全跑過,全部抓得到;拿修之前那版跑同一批,有 <strong>10 種是無聲放行</strong>的,所以修掉的是一整族,不是單一一條。順手確認寫對的程式<strong>不會被誤判成錯的</strong>。</span></li>
+      <li><span class="when">帶著走</span><span>同一道檢查,在找「開始執行」那段時<strong>只認一種寫法</strong> —— 同樣意思換個寫法(把左右對調、拆成兩行寫)它就找不到,一樣整支放行。這不是這次弄壞的,是從一開始就在的。<strong>已開單子</strong>,等你決定什麼時候修。</span></li>
+      <li><span class="when">帶著走</span><span>同一道檢查有一條「跳過暫存資料夾」的規則,誤傷到一種<strong>常見的程式主檔名</strong>,那種檔案永遠不會被檢查到。目前專案裡沒有這種檔,所以現在沒有破口,是一個空著的盲點。<strong>已開單子</strong>。</span></li>
+      <li><span class="when">帶著走</span><span>一支程式裡如果寫了<strong>兩段</strong>「開始執行」,這道檢查<strong>只看第一段</strong> —— 第一段寫對了,第二段寫錯也放行。同樣是老問題,這次還順手改善了其中一種情況。<strong>已開單子</strong>。</span></li>
       <li><span class="when">已結案</span><span>守門的自動檢查以前只擋得住「把那句話<strong>刪掉</strong>」,擋不住「把那句話的<strong>意思反過來寫</strong>、關鍵字留著」— 也就是有人把切單子那份說明改成「都沒標先後順序就直接發出去,不用問你」,檢查照樣全綠,而那道檢查存在的唯一理由就是守住「先問你一句」。這種寫法一共<strong>兩道,兩道都有同一個洞</strong>(另一道守「貼連結前要先上傳」),<strong>已經一起修好</strong>。驗的方式是把<strong>真的兩份說明書</strong>當場改成相反的意思,檢查兩次都當場變紅並指名檔案;整行刪掉也照樣變紅。已知的天花板:把相反的意思寫得離否定詞很遠(「…直接發出去,收工後再回報你」)還是漏得掉,那種要靠人看過稿才擋得住,已經寫在程式旁邊備註。</span></li>
       <li><span class="when">已結案</span><span>整批跑完會做一次「臨時工作區有沒有清乾淨」的檢查,但它把整台電腦上所有工作區都算進來,包含助理自己長期用的那幾份 — 所以永遠報「沒清乾淨」,反過來真的有殘留時也看不出來。已經修好、當場演給你看、你點頭收掉,而且這次真的跑批次時它第一次就答對。</span></li>
       <li><span class="when">已結案</span><span>說明書裡「把總結貼到單子上」有三個地方,只有貼給你看的那則沒寫成可以整行複製的指令。已經補齊三處一致;順手還抓掉一段本來要寫進去、但實測是錯的說明。</span></li>
@@ -114,6 +118,8 @@
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>最近幫你做的決定</h2>
     <ul class="list">
+      <li><span class="when">8/19</span><span>那道檢查改成<strong>整支程式從頭翻到尾</strong>找「開始執行」那段,不是只看最外層 —— 因為往內縮一格是<strong>正常人寫程式就會不小心踩到</strong>的形狀,不是刻意繞過。副作用是連「寫在函式裡、其實不會執行」的那種也會被算進去,理論上算誤判;<strong>決定不加例外</strong>,守門寧可偏嚴,而且整個專案實跑沒有任何一支被誤判成錯的。</span></li>
+      <li><span class="when">8/19</span><span>驗收的方式不是「把撞到的那兩種寫法補上就好」,而是把<strong>同一個形狀的所有寫法一次列完</strong>(22 種)再一起跑 —— 因為修一條、下次換個人來看又抓到一條同形狀的,那是同一個問題被拆成好幾輪,不是好幾個問題。這一輪照這個做法,順手又挖出<strong>三條同一個根的老毛病</strong>,全部開了單子。</span></li>
       <li><span class="when">8/19</span><span>那兩道檢查改成看「<strong>整句主張還在不在</strong>」,不是看「某個關鍵字在不在」— 因為要繞過它從來不必刪字,把字留著、動作反過來寫就好。你這邊看到的差別:以後有人把說明書改成意思相反的版本,檢查會當場變紅,不會安靜放行。</span></li>
       <li><span class="when">8/19</span><span>認「否定」的字只收<strong>兩個字以上</strong>的詞(不要、不用、切勿…),單字的「別」「免」不收 — 因為「<strong>個別</strong>問你」「為<strong>避免</strong>上傳失敗」這種正常句子裡就有那個字,收進來會把寫對的說明書判成錯的。代價是講得更繞的反寫抓不到,那條靠人看稿。</span></li>
       <li><span class="when">8/19</span><span>兩道檢查<strong>一起改、同一次送出</strong>,不是先修一道 — 兩道是同一個毛病的兩份,分兩次修等於同一個問題被算成兩件事,下次換個人來看又會再抓一次。</span></li>
@@ -157,6 +163,7 @@
       <li><span class="when">已結案</span><span>「有一張沒過怎麼辦 / 兩張改到同一處 / 做完一張補一張」三小塊 — 一次同時開三張跑完,三條逐條演給你看,你全部點頭,新版已換裝;會場上點名的高風險情況也都固化成自動檢查了。</span></li>
       <li><span class="when">已結案</span><span>最後一小塊「接進日常流程」 — 這塊沒有東西要演給你看(它是把既有功能接上日常流程的內部接線,對錯由電腦自動檢查把關),所以照約定不排驗收會,由之後的功能在用到它的時候順帶驗證。測試逐條全過,沒有必須先修的問題。</span></li>
       <li><span class="when">已結案</span><span>「守門的檢查繞得過」這張 — 這種問題是<strong>助理自己撿到的</strong>(不是你回報的),照約定<strong>不用排驗收會</strong>:測試全綠 + 一段白話回報就收掉。這次的白話回報就是上面品質那格那條。</span></li>
+      <li><span class="when">已結案</span><span>「守門檢查有個側門」這張 —— 一樣是<strong>助理自己撿到的</strong>,照約定<strong>不用排驗收會</strong>:測試全綠 + 一段白話回報就收掉。白話回報就是上面品質那格那條。</span></li>
       <li><span class="when">接下來</span><span>兩包功能到這裡都完整了、總單子也都結掉了,<strong>目前沒有排定的驗收會</strong>。下一個要驗收的東西,等你決定先推哪一張單子之後才會排。</span></li>
     </ul>
   </div>
