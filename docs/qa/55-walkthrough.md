@@ -1,13 +1,18 @@
 # QA walkthrough — #55 build-batch 4/6:撞車 — agent 自己解,解不掉停下來講清楚
 
-第 3 輪。前兩輪各被獨立 judge 打回一次,打回的東西都修進受測物或補進證據了:
+第 4 輪。前三輪各被獨立 judge 打回一次,打回的東西都修進受測物或補進證據了:
 
 - 第 1 輪:§7a 查「跟誰撞」的指令安靜回空的(blocking,已修)。
 - 第 2 輪:「agent 自己解掉」是 QA 用 `printf` 代打、「票上留一行紀錄」只 `echo` 沒真的貼票
   (兩條 blocking,本輪都改成真的跑);另外 judge 抓到 §7a 會在「第三張乾淨動過同一個檔案」
   的情況報出錯的票號、以及「查不出另一張票」那條逃生路在工具端是死路(兩條都修進受測物)。
 
-本輪的證據全部重新產生,不沿用前兩輪的檔案。
+- 第 3 輪:§7a 只寫了「兩邊都改到同一段」那條認票路,遇到 modify/delete(一張刪檔、
+  另一張改同一個檔案)問不出東西,agent 會掉進「查不出來」的逃生路,對 client 講一句假話
+  (「跟主線上既有的內容撞」),而且第二張票號整個消失(blocking,已修:§7a 加一條
+  `--diff-filter=D` 的認票路,並寫明只有 `--contains` 空掉才算查不出來)。
+
+本輪的證據全部重新產生,不沿用前幾輪的檔案。
 
 環境:受測物在 `D:/Self Project/Skills/.git/batch-worktrees/55`(branch `batch/55`)。
 本票是 skill 文件 + CLI 純函式 + 一串 client 端真的會貼進終端機的 git 指令,沒有 UI、
@@ -41,7 +46,7 @@ bash …/scratchpad/reg.sh        # 步驟 1:regression
 bash …/scratchpad/qa55e-1.sh    # 步驟 2:撞車 + §7a 認票(跑完停在 conflict,等 agent 解)
 bash …/scratchpad/qa55e-2.sh    # 步驟 3:驗解出來的結果 + 貼票 + 流程繼續
 bash …/scratchpad/qa55f.sh      # 步驟 4:解不掉 → 停下
-bash …/scratchpad/qa55g.sh      # 步驟 5:§7a 的兩條邊界
+bash …/scratchpad/qa55g.sh      # 步驟 5:§7a 的三條邊界
 bash …/scratchpad/clean.sh      # 步驟 6:清場
 ```
 
@@ -295,28 +300,41 @@ worktree …/scratchpad/qa55f/.git/batch-worktrees/49
 - **「不猜、不強推、不 `--force`」**:整段沒有 `--force`、`-X ours/theirs`、`reset --hard`。
   這條同時被 `batch.py` 的 `forced_merge_issue` 咬在文件那一面(見步驟 6 的 regression)。
 
-## 步驟 5 — §7a 的兩條邊界
+## 步驟 5 — §7a 的三條邊界
 
-**甲**:第三張(42)乾淨地動過同一個檔案。**乙**:主線那側那段內容根本不是這批寫的
-(主線自己的 commit 改的)。
+**甲**:第三張(42)乾淨地動過同一個檔案。**丙**:一張刪檔、另一張改同一個檔案
+(modify/delete)。**乙**:主線那側那段內容根本不是這批寫的(主線自己的 commit 改的)。
 
 ```text
 Auto-merging notes.md
 + git log --merges --full-history --format=%s -1 -- notes.md
 Merge branch 'batch/42'
 ++ git log '-S47 加的待辦' --format=%h -1 HEAD --not MERGE_HEAD -- notes.md
-+ sha=60c2db9
-+ git branch --list 'batch/*' --contains 60c2db9
++ sha=1f0bc4b
++ git branch --list 'batch/*' --contains 1f0bc4b
++ batch/47
++ set +x
++ git diff --name-only --diff-filter=U
+notes.md
++ git status --short
+DU notes.md
++ git diff -- notes.md
+* Unmerged path notes.md
+++ git log --diff-filter=D --format=%h -1 HEAD --not MERGE_HEAD -- notes.md
++ sha=e19dff7
++ echo sha=e19dff7
+sha=e19dff7
++ git branch --list 'batch/*' --contains e19dff7
 + batch/47
 + set +x
 + git diff --name-only --diff-filter=U
 notes.md
 ++ git log -S主線自己改的待辦 --format=%h -1 HEAD --not MERGE_HEAD -- notes.md
-+ sha=fe3625a
-+ echo sha=fe3625a
-sha=fe3625a
-+ git branch --list 'batch/*' --contains fe3625a
-++ git branch --list 'batch/*' --contains fe3625a
++ sha=ddcb124
++ echo sha=ddcb124
+sha=ddcb124
++ git branch --list 'batch/*' --contains ddcb124
+++ git branch --list 'batch/*' --contains ddcb124
 ++ wc -c
 + echo 上一行的輸出字數:0
 上一行的輸出字數:0
@@ -335,7 +353,12 @@ sha=fe3625a
 
 - 甲:舊問法(`git log --merges --full-history -1`)回 **`Merge branch 'batch/42'`** — 錯的票號,
   client 會被指去看一張根本沒撞的票;現在文件裡的問法回 **`batch/47`**,對的。
-- 乙:`git branch --contains` 回空的(`wc -c` = 0,是真的空不是被截),照 §7a 就不猜票號 →
+- 丙:`git status --short` 是 `DU`,`git diff -- notes.md` 只吐一行 `* Unmerged path notes.md` —
+  主線那側被刪掉了,**沒有內容可以拿去 `-S`**。這時候照 §7a 改問「誰刪的」
+  (`--diff-filter=D`)→ **`batch/47`**,票號照樣報得準。(第 3 輪 judge 抓到的就是這條:
+  當時 §7a 只寫了 `-S` 那一條,agent 問不出來就會掉進「查不出來」的逃生路,對 client 講
+  「跟主線上既有的內容撞」— 那是假的,撞的是這批裡刪檔的 #47,而且第二張票號整個消失。)
+- 乙:`git branch --contains` 回空的(`wc -c` = 0,是真的空不是被截),這才算真的查不出來 →
   `conflict-stopped` 的 `numbers` 只給正在合的那一張,印出來是「**#48 補交棒 comment 跟主線上
   既有的內容撞在 notes.md**」。工具收得下這條路(第 2 輪 judge 抓到的死路:當時 `_two` 硬性
   要求兩張票,照文件走的 agent 會撞 `SystemExit`,然後只能自己現編一句貼上票)。
@@ -346,6 +369,7 @@ sha=fe3625a
 + rm -rf …/scratchpad/qa55e …/scratchpad/qa55e-remote.git …/scratchpad/qa55f …/scratchpad/qa55f-remote.git
 + ls …/scratchpad
 + grep -E '^qa55|^probe'
+probe3.sh
 qa55e-1.out
 qa55e-1.sh
 qa55e-2.out
@@ -386,6 +410,6 @@ scratchpad 只剩本輪四支 `.sh` 與它們的 `.out`(重跑用),臨時 repo �
 
 覆蓋驗收項一條,pass。無 blocking。
 
-未涵蓋:`/resolving-merge-conflicts` 原件本身的解題品質(本輪它真的被叫起來解了一次,但
+未涵蓋:rename/rename 這種撞法(§7a 兩條認票路都沒對它實測過);`/resolving-merge-conflicts` 原件本身的解題品質(本輪它真的被叫起來解了一次,但
 「它解得多好」是它自己的驗收範圍,不是本票的);以及在真的多 lane GitHub 批次裡跑完整條
 §6→§9(本票只驗撞車那一段,整條路是 #53 的範圍)。

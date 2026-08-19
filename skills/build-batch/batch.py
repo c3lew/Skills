@@ -323,6 +323,10 @@ CONFLICT_LINES = (
     (re.compile(re.escape("git log -S")),
      "SKILL.md §7a: 查「跟誰撞」要用 `git log -S'<那段內容>'` 問「這段文字是誰寫的」— "
      "改回問「誰動過這個檔案」會在第三張乾淨動過同檔時報出錯的票號給 client(QA 實測)"),
+    (re.compile(re.escape("git log --diff-filter=D")),
+     "SKILL.md 7a: modify/delete(DU)那條認票路不見了 — 主線那側被刪掉的檔案沒有內容"
+     "可以 -S,少了它 agent 會誤判成「查不出來」,對 client 講「跟主線上既有的內容撞」,"
+     "而那是假的:撞的是這批裡刪掉檔案的那張(QA 第 3 輪實測)"),
     (re.compile(re.escape("git branch --list 'batch/*' --contains")),
      "SKILL.md §7a: 把 commit 換算成 lane 要用 `git branch --contains` — 靠 parse merge "
      "訊息認票,訊息換個寫法就整條啞掉"),
@@ -725,6 +729,7 @@ JSON''')
         ("`/resolving-merge-conflicts`", "§7b 呼叫原件解"),
         ("worktree 與 branch 都留著", "§7c 未合的 lane 留著"),
         ("git log -S", "§7a 認票問的是那段內容不是那個檔案"),
+        ("git log --diff-filter=D", "§7a modify/delete 的認票路"),
         ("git branch --list 'batch/*' --contains", "§7a 用 commit 歸屬換算 lane"),
         ("git merge --abort", "§7c 退掉沒合完的 merge"),
     ):
