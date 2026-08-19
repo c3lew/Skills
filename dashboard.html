@@ -56,14 +56,14 @@
 <div class="wrap">
 
 <h1>Skills 產線</h1>
-<div class="sub">專案儀表板 · 更新於 8/19 · 資料來自工作紀錄 · 目前用的版本:6 個功能全部上線,加「同時開好幾張單子」的前五塊,<strong>連第六塊在內全部已換裝你的電腦</strong></div>
+<div class="sub">專案儀表板 · 更新於 8/20 · 資料來自工作紀錄 · 目前用的版本:6 個功能全部上線,加「同時開好幾張單子」的前五塊,<strong>連第六塊在內全部已換裝你的電腦</strong></div>
 
 <div class="hero">
-  <div class="where">現在在哪:兩包功能都做完、也都收尾了,現在在<strong>一張一張清掉累積的小毛病</strong>。這一輪清掉的是<strong>守門檢查的一個側門</strong>:有一道檢查專門守「程式會不會在你的中文終端機上印出亂碼」,但它以前只看程式<strong>最外層</strong>有沒有「開始執行」那段 —— 只要那段被往內縮一格(包在別的東西底下),整支程式就<strong>連看都不看直接放行</strong>。前門鎖著、側門開著。現在改成<strong>整支程式從頭翻到尾</strong>,包幾層都找得到。<strong>剩 11 張小毛病</strong>。</div>
+  <div class="where">現在在哪:兩包功能都做完、也都收尾了,現在在<strong>一張一張清掉累積的小毛病</strong>。這一輪清掉的是<strong>守門檢查會誤會好程式</strong>的一個毛病:有一道檢查專門守「程式會不會在你的中文終端機上印出亂碼」,它得先判斷「這段程式到底會不會真的跑到」。它原本只認得<strong>一種</strong>「把一個功能換個名字、再叫那個名字」的寫法 —— 同樣意思換個寫法(一次指派兩個、順便標註型別、用迴圈變數、由另一個功能交出來),它就當成「這段沒在跑」,於是<strong>明明寫對的程式被它攔下來亂叫</strong>。現在這四種寫法都認得了。<strong>剩 16 張小毛病</strong>。</div>
   <div class="release"><strong>這次不用換裝:</strong>改的是<strong>專案自己的檢查程式</strong>,不是會裝到你電腦上的那一份 — 你這邊不用做任何事,現在裝著的版本還是最新的。<span class="rb">反悔的話</span>:這次只動了檢查程式,退掉就是一個指令的事。</div>
   <div class="next">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <div><strong>下一步:</strong>回頭<strong>重測同一批的另一張</strong> — 走<code>/qa #60</code>(另一種助理:<code>$qa #60</code>)。那張上次測到一半就是被這次修掉的側門擋下來的,現在側門補好了,把它重測一遍就能收掉。不確定要開哪一棒的時候,問一句<code>/next</code>(<code>$next</code>)也行。</div>
+    <div><strong>下一步:</strong>回頭<strong>重測這一批的總單子</strong> — 走<code>/qa #60</code>(另一種助理:<code>$qa #60</code>)。這批小毛病都是從那張總單子上長出來的,這輪修完之後把它整個重測一遍,就能看出還剩哪些沒收。不確定要開哪一棒的時候,問一句<code>/next</code>(<code>$next</code>)也行。</div>
   </div>
 </div>
 
@@ -88,12 +88,17 @@
     <h2><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>品質現況</h2>
     <div class="qa-tiles">
       <div class="tile"><div class="num" style="color:var(--ok)">0</div><div class="lbl">必須先修</div></div>
-      <div class="tile"><div class="num" style="color:var(--warn)">11</div><div class="lbl">小毛病(帶著走)</div></div>
-      <div class="tile"><div class="num" style="color:var(--ok)">9</div><div class="lbl">既有功能全數正常</div></div>
+      <div class="tile"><div class="num" style="color:var(--warn)">16</div><div class="lbl">小毛病(帶著走)</div></div>
+      <div class="tile"><div class="num" style="color:var(--ok)">12</div><div class="lbl">既有功能全數正常</div></div>
     </div>
     <ul class="list" style="margin-top:14px">
-      <li><span class="when">今天</span><span>收尾前把所有自動檢查重跑一次:<strong>9 道全綠</strong>(上面那格的數字就是這個)—— 6 支程式各自的自我檢查,加 3 支<strong>反過來刁難自己的掃描</strong>。數字比上次多 2,是這輪多跑了兩支掃描,不是新增了功能。</span></li>
-      <li><span class="when">已結案</span><span>守「會不會在你的中文終端機上印出亂碼」的那道檢查,只看程式<strong>最外層</strong>有沒有「開始執行」那段 —— 那段只要被<strong>往內縮一格</strong>,整支程式就連看都不看直接放行,一支會印亂碼的程式就這樣無聲過關。已經修好:現在整支程式從頭翻到尾。這次<strong>沒有只驗撞到的那兩種寫法</strong> —— 把「往內縮一格」的所有可能寫法一次列成 <strong>22 種情況</strong>全跑過,全部抓得到;拿修之前那版跑同一批,有 <strong>10 種是無聲放行</strong>的,所以修掉的是一整族,不是單一一條。順手確認寫對的程式<strong>不會被誤判成錯的</strong>。</span></li>
+      <li><span class="when">今天</span><span>收尾前把所有自動檢查重跑一次:<strong>12 道全綠</strong>(上面那格的數字就是這個)—— 6 支程式各自的自我檢查,加 6 組<strong>反過來刁難自己的掃描</strong>(一共 38 種情況,全部答對)。數字比上次多 3,是這輪多跑了三組掃描,不是新增了功能。</span></li>
+      <li><span class="when">已結案</span><span>同一道檢查在判斷「這段程式會不會真的跑到」時,只認得<strong>一種</strong>「把一個功能換個名字、再叫那個名字」的寫法 —— 換成一次指派兩個、順便標註型別、用迴圈變數、或由另一個功能交出來,它就當成「這段沒在跑」,<strong>把明明寫對的程式攔下來亂叫</strong>。已經修好:四種寫法全認得,<strong>六種情況全部答對</strong>(修之前六種爛五種)。這次一樣<strong>沒有只驗撞到的那三種</strong> —— 另外列了 <strong>31 種同類寫法</strong>一起跑,順手挖出兩族老毛病(見下面兩條)。也特別驗了<strong>反方向</strong>:放寬之後,那些「換了名字但根本沒叫」的程式<strong>要繼續被攔下來</strong> —— 11 種情況 10 種正確,唯一一種是事先講好的取捨。</span></li>
+      <li><span class="when">帶著走</span><span>同一道檢查判斷「會不會跑到」的時候,漏看了<strong>寫在條件那一行上的東西</strong> —— 例如「如果這件事成立就…」的<strong>那個條件本身</strong>就會執行,它卻整行跳過。這是很常見的寫法,漏看的後果是<strong>把寫對的程式判成錯的</strong>。這次順手把同一族的五種寫法一次列完了。不是這輪弄壞的,是本來就在的。<strong>已開單子</strong>。</span></li>
+      <li><span class="when">帶著走</span><span>「換個名字再叫」這件事,還有六種寫法它認不得,一樣會<strong>把寫對的程式判成錯的</strong>。最莫名其妙的一種:同一件事<strong>寫成一行是好的、拆成兩行就被判錯</strong> —— 換行不該改變對錯。<strong>已開單子</strong>。</span></li>
+      <li><span class="when">帶著走</span><span>同一道檢查的另一個豁免條件,只要把某個名字<strong>當成資料傳給任何一個指令</strong>(就算那個指令根本不會去執行它),它就當作「有在跑」而放行 —— 一行字就能讓守門閉嘴。<strong>已開單子</strong>。</span></li>
+      <li><span class="when">帶著走</span><span>同一道檢查判斷「這支程式會不會印東西給你看」時只認一種寫法,換五種等價寫法(先換個名字再印、走另一條輸出管道…)它就當成「這支不印東西」而整支放行 —— 一支印滿中文、完全沒設定編碼的程式會就這樣過關。<strong>已開單子</strong>。</span></li>
+      <li><span class="when">已結案</span><span>上一輪修這道檢查時,把「會不會跑到」放得太寬:只要<strong>名字在別的地方被提到</strong>(哪怕只是剛好同名的另一個東西),就當作有在跑而整支放行 —— 等於一行字就能把守門關掉。已經收回成「名字要真的出現在<strong>叫它</strong>的位置」,五種情況全部答對。</span></li>有沒有「開始執行」那段 —— 那段只要被<strong>往內縮一格</strong>,整支程式就連看都不看直接放行,一支會印亂碼的程式就這樣無聲過關。已經修好:現在整支程式從頭翻到尾。這次<strong>沒有只驗撞到的那兩種寫法</strong> —— 把「往內縮一格」的所有可能寫法一次列成 <strong>22 種情況</strong>全跑過,全部抓得到;拿修之前那版跑同一批,有 <strong>10 種是無聲放行</strong>的,所以修掉的是一整族,不是單一一條。順手確認寫對的程式<strong>不會被誤判成錯的</strong>。</span></li>
       <li><span class="when">帶著走</span><span>同一道檢查,在找「開始執行」那段時<strong>只認一種寫法</strong> —— 同樣意思換個寫法(把左右對調、拆成兩行寫)它就找不到,一樣整支放行。這不是這次弄壞的,是從一開始就在的。<strong>已開單子</strong>,等你決定什麼時候修。</span></li>
       <li><span class="when">帶著走</span><span>同一道檢查有一條「跳過暫存資料夾」的規則,誤傷到一種<strong>常見的程式主檔名</strong>,那種檔案永遠不會被檢查到。目前專案裡沒有這種檔,所以現在沒有破口,是一個空著的盲點。<strong>已開單子</strong>。</span></li>
       <li><span class="when">帶著走</span><span>一支程式裡如果寫了<strong>兩段</strong>「開始執行」,這道檢查<strong>只看第一段</strong> —— 第一段寫對了,第二段寫錯也放行。同樣是老問題,這次還順手改善了其中一種情況。<strong>已開單子</strong>。</span></li>
@@ -118,6 +123,11 @@
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>最近幫你做的決定</h2>
     <ul class="list">
+      <li><span class="when">8/20</span><span>判斷「這段會不會跑到」時,<strong>寧可少放行、也不要多放行</strong> —— 這一輪放寬了四種寫法,同時特別去驗<strong>反方向</strong>:「換了名字但根本沒叫」的還是要被攔下來。理由是這道檢查一旦<strong>放太寬</strong>就等於不存在(該叫的時候不叫),而<strong>放太嚴</strong>只是吵一點(你看得到、也可以回報)。</span></li>
+      <li><span class="when">8/20</span><span>另外<strong>留了一個已知的鬆口</strong>:一個功能只要「交出」某個東西,不管交出來的東西後來有沒有被用,都算它有在跑。這是唯一往「放太寬」方向的取捨,<strong>事先講明並寫在程式旁邊</strong>,實測也確認就只有這一個。想收緊隨時可以,是幾行的事。</span></li>
+      <li><span class="when">8/20</span><span>四種寫法的認法<strong>收成同一個地方</strong>,不是各寫一段 —— 因為它們主張的是<strong>同一件事</strong>(「叫這個名字就等於叫另一個名字」),分開寫等於同一個規則有四份,下次改一份忘三份。你這邊看到的差別:以後再多認一種寫法,是加一行不是加一段。</span></li>
+      <li><span class="when">8/20</span><span>驗收<strong>兩個方向都要驗</strong>,不能只驗「該放行的有沒有放行」 —— 只驗會綠那半,等於只確認它不吵,沒確認它<strong>該叫的時候會叫</strong>,而後者才是這道檢查存在的理由。這一輪照這個做法,順手抓到兩族老毛病,都開了單子。</span></li>
+      <li><span class="when">8/19</span><span>上一輪把「會不會跑到」放寬成「名字有被提到就算」,這輪<strong>收回成「名字要出現在真的叫它的位置」</strong> —— 因為只要提到就算的話,程式裡任何一個<strong>剛好同名</strong>的東西都能讓整支放行,等於把守門關掉。代價是有些合法寫法會被誤攔,那是下面兩張單子在收的。</span></li>
       <li><span class="when">8/19</span><span>那道檢查改成<strong>整支程式從頭翻到尾</strong>找「開始執行」那段,不是只看最外層 —— 因為往內縮一格是<strong>正常人寫程式就會不小心踩到</strong>的形狀,不是刻意繞過。副作用是連「寫在函式裡、其實不會執行」的那種也會被算進去,理論上算誤判;<strong>決定不加例外</strong>,守門寧可偏嚴,而且整個專案實跑沒有任何一支被誤判成錯的。</span></li>
       <li><span class="when">8/19</span><span>驗收的方式不是「把撞到的那兩種寫法補上就好」,而是把<strong>同一個形狀的所有寫法一次列完</strong>(22 種)再一起跑 —— 因為修一條、下次換個人來看又抓到一條同形狀的,那是同一個問題被拆成好幾輪,不是好幾個問題。這一輪照這個做法,順手又挖出<strong>三條同一個根的老毛病</strong>,全部開了單子。</span></li>
       <li><span class="when">8/19</span><span>那兩道檢查改成看「<strong>整句主張還在不在</strong>」,不是看「某個關鍵字在不在」— 因為要繞過它從來不必刪字,把字留著、動作反過來寫就好。你這邊看到的差別:以後有人把說明書改成意思相反的版本,檢查會當場變紅,不會安靜放行。</span></li>
@@ -164,6 +174,7 @@
       <li><span class="when">已結案</span><span>最後一小塊「接進日常流程」 — 這塊沒有東西要演給你看(它是把既有功能接上日常流程的內部接線,對錯由電腦自動檢查把關),所以照約定不排驗收會,由之後的功能在用到它的時候順帶驗證。測試逐條全過,沒有必須先修的問題。</span></li>
       <li><span class="when">已結案</span><span>「守門的檢查繞得過」這張 — 這種問題是<strong>助理自己撿到的</strong>(不是你回報的),照約定<strong>不用排驗收會</strong>:測試全綠 + 一段白話回報就收掉。這次的白話回報就是上面品質那格那條。</span></li>
       <li><span class="when">已結案</span><span>「守門檢查有個側門」這張 —— 一樣是<strong>助理自己撿到的</strong>,照約定<strong>不用排驗收會</strong>:測試全綠 + 一段白話回報就收掉。白話回報就是上面品質那格那條。</span></li>
+      <li><span class="when">已結案</span><span>「守門檢查會誤會好程式」這張 —— 一樣是<strong>助理自己撿到的</strong>,照約定<strong>不用排驗收會</strong>:測試全綠 + 一段白話回報就收掉。白話回報就是上面品質那格那條。這一輪還特地<strong>找了一個沒看過前因後果的第三方</strong>,只拿驗收標準原句 + 測試紀錄去判 —— 它判過關,並指出兩族還沒收的老毛病,兩張單子都開了。</span></li>
       <li><span class="when">接下來</span><span>兩包功能到這裡都完整了、總單子也都結掉了,<strong>目前沒有排定的驗收會</strong>。下一個要驗收的東西,等你決定先推哪一張單子之後才會排。</span></li>
     </ul>
   </div>
