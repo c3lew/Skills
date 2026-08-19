@@ -1,6 +1,6 @@
 ---
 name: build-batch
-description: 一批彼此不卡的票一次跑完 — 算出「要開(最多 3 張)/ 排隊 / 還卡著」名單等 client 點頭,點頭後每張各自在獨立 git worktree 平行跑 build + QA,綠的依序合回主線、整批再驗一次,交棒 client-demo;有票沒過 QA 就好的先收、沒過那張留在自己工作區繼續修。當一份 spec 切完票、想一次推進多張彼此不卡的票時使用;只有一張能跑就指路單張 /build。
+description: 一批彼此不卡的票一次跑完 — 算出「要開(最多 3 張)/ 排隊 / 還卡著」名單等 client 點頭,點頭後每張各自在獨立 git worktree 平行跑 build + QA,做完一張從佇列補一張,中斷可續跑,綠的依序合回主線、整批再驗一次,交棒 client-demo;有票沒過 QA 就好的先收、沒過那張留在自己工作區繼續修,merge 撞車 agent 自己解。當一份 spec 切完票、想一次推進多張彼此不卡的票時使用;只有一張能跑就指路單張 /build。
 ---
 
 # build-batch
@@ -62,17 +62,45 @@ cap 寫死 3,不做設定。blocker 已關的票會被放行;blocker 還開著�
 - **說不** → 乾淨結束。什麼都沒開、什麼都沒改,不用回收。
 - **說好** → 往下走 §6。從這一刻起才會動到檔案。
 
-有 lane 沒過 QA 是接上的(§7.5:好的先收,壞的留在旁邊修),merge 撞車也接上了(§7a–§7c:解得掉 agent 自己解,解不掉停下整個合併階段講清楚哪兩張撞在哪個檔案)。**能開的超過 3 張要排隊** — 這件事還沒接上,遇到就停下來把現況講給 client 聽,不要自己發明處置。
+有 lane 沒過 QA 是接上的(§8.5:好的先收,壞的留在旁邊修),merge 撞車也接上了(§8a–§8c:解得掉 agent 自己解,解不掉停下整個合併階段講清楚哪兩張撞在哪個檔案),能開的超過 3 張也是 §6 的排隊補位,照跑。這三件事以外的意外,遇到就停下來把現況講給 client 聽,不要自己發明處置。
 
-## 6. 平行開工
+## 6. 平行開工 — 最多 3 條,做完一張補一張
 
-「要開」名單上每張票各自一個 git worktree — lane 之間是檔案系統層級隔離,不共用工作目錄,所以不可能互相把對方寫到一半的東西吃進去。branch 與工作區路徑由 [`batch.py`](batch.py) 算,不要自己拼:
+同時最多 3 條 lane(cap 同 §3),名單上其餘的票排隊。**排隊中的票在被開工前完全不動它** — 不開 worktree、不貼 comment、不改它一個字:它可能根本輪不到(client 中途喊停),而一張被貼過「開工」卻沒人在做的票,下一個看到的人只能靠猜。
+
+### 6.1 先接續上一次中斷的 lane
+
+`/build-batch` 重跑的時候,先問 git 有沒有既有的 lane — 有就是上一次中斷留下的(§7),接續它,**不重開**:
+
+```bash
+git worktree list --porcelain | grep -F /.git/batch-worktrees/
+```
+
+沒有輸出(`grep` 回 exit 1,正常)就是乾淨的一批,直接往 §6.2。有輸出就把那幾行**原封不動**貼進 `worktrees`,票號由 [`batch.py`](batch.py) 從路徑認 — 別自己讀,認錯一條就是等一下去 merge 一條根本不是這條線開的 branch:
 
 ```bash
 python <skill dir>/batch.py <<'JSON'
-{"mode": "start", "numbers": [47, 48], "titles": {"47": "...", "48": "..."}}
+{"mode": "resume", "worktrees": "worktree D:/repo/.git/batch-worktrees/47", "titles": {"47": "..."}}
 JSON
 ```
+
+```
+接續 #47 <title> — 既有工作區 .git/batch-worktrees/47(branch batch/47)還在,不重開
+```
+
+接續的 lane 就是「已經在跑」的 lane:它們佔掉的名額不能再開新的。接續了幾條就當成 §6.2 的 `running` 餵進去,別自己扣。
+
+### 6.2 開頭那幾條
+
+開工的每張票各自一個 git worktree — lane 之間是檔案系統層級隔離,不共用工作目錄,所以不可能互相把對方寫到一半的東西吃進去。開哪幾張、branch 與工作區路徑都由 [`batch.py`](batch.py) 算,不要自己拼也不要自己扣名額:`numbers` 餵「要開 → 排隊」整份名單,`running` 餵 §6.1 接續的那幾條(沒有就 `[]`):
+
+```bash
+python <skill dir>/batch.py <<'JSON'
+{"mode": "start", "numbers": [47, 48, 42, 50], "running": [], "titles": {"47": "...", "48": "..."}}
+JSON
+```
+
+**印幾行就開幾個 worktree,沒印到的就是還在佇列裡**,不要照名單全開 — 接續了 2 條、名單又滿 3 張的時候,自己扣名額的版本會開出 5 條同時在跑,而那個畫面跟正常的一模一樣。
 
 印出來的每一行就是 client 在終端機看到的「開工」,同一行也告訴你 branch 與路徑:
 
@@ -106,9 +134,51 @@ echo "$lane" | python <skill dir>/batch.py                                    # 
 echo "$lane" | python <skill dir>/batch.py | gh issue comment 47 --body-file -
 ```
 
-一條 lane 沒綠(`/build` 或 `/qa` 任一沒過)**不拖別條** — 記下它的票號,別的 lane 照跑到完。處置在 §7.5,現場什麼都不要收。
+### 6.3 做完一張補一張
 
-## 7. 依序合回主線
+一條 lane 結束就**立刻**從佇列補一張進來,不等其他 lane、也不管它是綠的還是紅的 — 紅的那條現場什麼都不要收(處置在 §8.5),但沒有理由讓佇列裡其他票陪它一起卡著。
+
+補誰不要自己算。把現場事實餵進去:`running` 是這一刻還在跑的 lane(不含剛收掉的那條),`queue` 是還沒開過的票,照「要開 → 排隊」的順序:
+
+```bash
+python <skill dir>/batch.py <<'JSON'
+{"mode": "refill", "running": [48, 42], "queue": [50, 51], "titles": {"50": "..."}}
+JSON
+```
+
+```
+補位 #50 <title> — 工作區 .git/batch-worktrees/50(branch batch/50);同時跑 3 條,佇列剩 1 張
+```
+
+印出來的每一行就是 client 在終端機看到的「補位」,同一行也告訴你 branch 與路徑 — 照 §6.2 一模一樣的三步開下去(`git worktree add` → `git push -u` → 把這一行貼回該張票),然後照 §6.2 起一個 subagent 跑 `/build` + `/qa`。
+
+行尾那兩個數字是補完之後的狀態:`同時跑 N 條` 就是 cap 這條不變量的當場證據,client 不用自己去數 worktree。沒名額或佇列空了會印「不補位 …」,那就是等剩下的 lane 收完,不要硬開。
+
+全部票都跑完(佇列空、沒有 lane 在跑)才往 §8。
+
+## 7. 中斷與續跑
+
+Ctrl-C、lane 死掉、client 喊停 — **中斷不等於全部重來**。已經 merge 的留在主線,未合併的 lane 留著 worktree 與 branch,什麼都不回收:回收掉的那幾條下次得從零跑一次,那是這條線最貴的東西。
+
+什麼時候寫這一段:**能寫的時候就寫**。Ctrl-C 直接把 agent 打死的話這一段根本輪不到跑 — 所以下一次重跑走到 §6.1、發現有既有 lane 但票上沒有中斷紀錄,就當場補上這一行再往下,不要當作沒發生過。
+
+每條沒合併的 lane 在自己票上留一行,client 之後翻票就知道它可以續:
+
+```bash
+lane='{"mode": "interrupted", "numbers": [47], "spec": 51, "titles": {"47": "..."}}'
+echo "$lane" | python <skill dir>/batch.py                                    # 印給 client
+echo "$lane" | python <skill dir>/batch.py | gh issue comment 47 --body-file -
+```
+
+```
+中斷,可續 #47 <title> — 未合併,工作區 .git/batch-worktrees/47 與 branch batch/47 都留著;重跑 `/build-batch #51`(Codex: `$build-batch #51`)會接續這條 lane
+```
+
+排隊中還沒開工的票不留任何紀錄 — 它們從頭到尾沒被碰過(§6),下次重跑就是一般的候選票。
+
+重跑就照 §6.1:偵測到既有的 `batch/*` worktree 就接續那幾條,不重開一份。
+
+## 8. 依序合回主線
 
 全部 lane 都跑完了才進這一段(綠的、沒綠的都跑完),而且**一張一張**合、不同時 — 同時 merge 撞在一起會留下一個沒人看得懂的中間狀態。
 
@@ -131,7 +201,7 @@ git worktree remove .git/batch-worktrees/47
 
 `git push` 要當場綠再合下一張。這條 lane 到這裡就結束了,工作區當場回收 — 三份完整 checkout 沒必要一路佔到整批跑完。**branch 留著**到票結案。
 
-### 7a. 撞車:先查出「跟誰撞」
+### 8a. 撞車:先查出「跟誰撞」
 
 `git merge` 紅了就是撞車。對面只可能是**這批裡、已經合進主線的那幾張**之一 — 還沒輪到的 lane 不在主線上,撞不到;上一批殘留沒合成的 branch 也不在主線上,同樣撞不到。這份名單 agent 手上本來就有(「要開」的順序 + 合到第幾張),不要去問 `git branch --list 'batch/*'`:那是「所有還活著的 branch」,會把還沒合的與上一批殘留的一起撈進來,然後把一張跟這次 merge 無關的票號印給 client。
 
@@ -144,7 +214,7 @@ git diff --name-only --diff-filter=U
 再問**已合的那幾張裡誰自己動過那個檔案**。這是撞法無關的問法:文字、圖檔、刪檔、改名都答得出來,因為它只問「哪條 lane 的工作碰過這個檔案」,不去讀內容:
 
 ```bash
-merged="47 42"          # 這批已經合進主線的,照 §7 的順序
+merged="47 42"          # 這批已經合進主線的,照 §8 的順序
 current=batch/48        # 正在合的那張
 file=<撞到的檔案>       # 一次只問一個檔案 — 撞到幾個就跑幾次,一個檔案一則紀錄
 
@@ -176,7 +246,7 @@ done
 
 **不要**用「最近一次動到這個檔案的 merge 是誰」或 `git log -S'<那段內容>'` 去認票:前者會回報中間那張乾淨的票;後者問的是「這個字串的出現次數在哪顆 commit 變了」,兩張票剛好各自加了同一句 boilerplate(`- [ ] 待補說明` 這種)就會回報錯的那張,而且錯得完全看不出來(QA 步驟 5 有並排實測)。上面那個迴圈問的是「已合的哪張碰過這個檔案」,不是內容鑑識,所以沒有這種失手。
 
-### 7b. 解得掉:自己解,不打擾 client
+### 8b. 解得掉:自己解,不打擾 client
 
 呼叫既有的 `/resolving-merge-conflicts` 原件解。它是唯一的解法來源 — 不自己 `-X ours` / `-X theirs` 挑一邊蓋過去,不強推,不砍 branch 重來。那三招都不是解衝突,是把其中一張票的工作丟掉,而且丟掉的當下沒有人看得見。
 
@@ -195,9 +265,9 @@ echo "$note" | gh issue comment 47 --body-file -
 
 `numbers` 第一個是正在合的那張,第二個是先合進去的那張;`how` 用 client 看得懂的話寫「兩邊各加了什麼、最後怎麼擺」,不要貼 diff。
 
-貼完就回 §7 繼續合下一張 — 撞車解掉不是需要 client 決定的事,不停、不問。
+貼完就回 §8 繼續合下一張 — 撞車解掉不是需要 client 決定的事,不停、不問。
 
-### 7c. 解不掉:停下整個合併階段
+### 8c. 解不掉:停下整個合併階段
 
 `/resolving-merge-conflicts` 也收不掉的時候(兩張票對同一段做了互斥的決定,誰對誰錯要 client 說了算),停下整個合併階段。停之前先把工作區弄乾淨 — 把這次沒合完的 merge 退掉,主線留在「上一張合完」的樣子,不要留一個帶衝突標記的 index 給 client:
 
@@ -221,13 +291,13 @@ echo "$note" | gh issue comment 48 --body-file -
 echo "$note" | gh issue comment 47 --body-file -
 ```
 
-`merged` 是已經合進主線的(照合的順序),`pending` 是還沒合的(含撞車失敗的那張)。印完就結束,§8 之後都不跑 — 這批沒有全部進主線,整批驗證與 demo 都還不成立。
+`merged` 是已經合進主線的(照合的順序),`pending` 是還沒合的(含撞車失敗的那張)。印完就結束,§9 之後都不跑 — 這批沒有全部進主線,整批驗證與 demo 都還不成立。
 
-## 7.5 沒過的那張留在旁邊修
+## 8.5 沒過的那張留在旁邊修
 
-「已收」那幾張照 §7 收完之後,對「還在修」那幾張做三件事 — 一件都不能省:
+「已收」那幾張照 §8 收完之後,對「還在修」那幾張做三件事 — 一件都不能省:
 
-1. **沒過 QA 那張的 worktree 與 branch 都留著,不 remove**。§7 那行 `git worktree remove` 只對已收的 lane 跑。client 回頭要接著修的就是那份 checkout,收掉他就得從頭再開一次。
+1. **沒過 QA 那張的 worktree 與 branch 都留著,不 remove**。§8 那行 `git worktree remove` 只對已收的 lane 跑。client 回頭要接著修的就是那份 checkout,收掉他就得從頭再開一次。
 2. **票上留一則 comment**,寫明它沒過、還在修、東西放在哪,結尾指路回 `/build`:
 
 ```bash
@@ -239,22 +309,22 @@ JSON
 
 3. **不要在這裡重跑 `/build` 或 `/qa`**。這條 lane 的下一棒是 client 自己決定什麼時候接,批次只負責把它安全地留在原地。
 
-留置不是終點,但接下去的那一棒不在這次執行裡:client 之後跑 `/build #48` → `/qa #48`,兩個都綠之後**不要直接跳 demo** — 先回到主 repo 照 §7 那三行(`git merge --no-ff batch/48` → `git push` → `git worktree remove`)把它收回來,再照 §8 用它自己的覆蓋驗收項驗一次。沒有這一段,batch/48 跟它的工作區就永遠掛在那裡沒人收。
+留置不是終點,但接下去的那一棒不在這次執行裡:client 之後跑 `/build #48` → `/qa #48`,兩個都綠之後**不要直接跳 demo** — 先回到主 repo 照 §8 那三行(`git merge --no-ff batch/48` → `git push` → `git worktree remove`)把它收回來,再照 §9 用它自己的覆蓋驗收項驗一次。沒有這一段,batch/48 跟它的工作區就永遠掛在那裡沒人收。
 
-**全部 lane 都沒過 → 一張都不合**:不 merge 任何東西、不 push、主線一個 commit 都不動,每張各自留 worktree + branch + 票上 comment,然後跳到 §9 印收尾那一行就結束 — 不跑 §8,也不指路 demo。留半套(合了一半、或收了工作區卻沒合)比什麼都不做更難救。
+**全部 lane 都沒過 → 一張都不合**:不 merge 任何東西、不 push、主線一個 commit 都不動,每張各自留 worktree + branch + 票上 comment,然後跳到 §10 印收尾那一行就結束 — 不跑 §9,也不指路 demo。留半套(合了一半、或收了工作區卻沒合)比什麼都不做更難救。
 
-## 8. 整批驗證
+## 9. 整批驗證
 
 三個 lane 各自綠不蘊含合起來綠(語意衝突、共用檔案的互相假設)。這是平行化唯一真正新增的風險,所以合完之後在主線上再跑一次:
 
 1. regression suite。
-2. 已合併那幾張的「覆蓋驗收項」聯集 — 每張票 body 的 `## 覆蓋驗收項` 段,去重後的清單。這份清單跟 §9 批次總結裡列的是同一份;兩邊對不起來就是有一條沒驗到。
+2. 已合併那幾張的「覆蓋驗收項」聯集 — 每張票 body 的 `## 覆蓋驗收項` 段,去重後的清單。這份清單跟 §10 批次總結裡列的是同一份;兩邊對不起來就是有一條沒驗到。
 
-**整批驗證只涵蓋已合併那幾張的覆蓋驗收項** — 還在修那張的不進來。它的東西根本沒上主線,把它的驗收項算進去必定紅,好的那幾張也就跟著收不進去。範圍縮這件事不用自己記:§9 那段 `"mode": "summary"` 吃的是整批 + `fixing`,聯集由 `batch.py` 自己挑,印出來的那份就是這一關要驗的那份。
+**整批驗證只涵蓋已合併那幾張的覆蓋驗收項** — 還在修那張的不進來。它的東西根本沒上主線,把它的驗收項算進去必定紅,好的那幾張也就跟著收不進去。範圍縮這件事不用自己記:§10 那段 `"mode": "summary"` 吃的是整批 + `fixing`,聯集由 `batch.py` 自己挑,印出來的那份就是這一關要驗的那份。
 
 綠了才往下。紅了停下來報給 client,不要往 demo 送。
 
-## 9. 收尾
+## 10. 收尾
 
 整批驗證綠 → 終端機印最後一行:
 
@@ -283,14 +353,14 @@ JSON
 
 `<<'JSON'` 寫在 `|` 之前,整段連結尾的 `JSON` 一起複製。
 
-已收那幾張的工作區在 §7 一張一張回收掉了,還在修那幾張照 §7.5 留著,這裡都不用再動。要確認收得對不對,母體只有 `.git/batch-worktrees/` 底下這幾個(路徑同 §7)— 只問這個母體,順便確認 branch 照 §7 留著:
+已收那幾張的工作區在 §8 一張一張回收掉了,還在修那幾張照 §8.5 留著,這裡都不用再動。要確認收得對不對,母體只有 `.git/batch-worktrees/` 底下這幾個(路徑同 §8)— 只問這個母體,順便確認 branch 照 §8 留著:
 
 ```bash
 git worktree list --porcelain | grep -F /.git/batch-worktrees/   # 只剩「還在修」那幾張
 git branch --list 'batch/*'                                      # 應該還列得出來
 ```
 
-第一行印出來的那幾列要**正好**是「還在修」那幾張(全綠時就是沒有輸出,`grep` 回 exit 1,正常):多出來的是沒走完 §7 的 lane,照 §7 的 `git worktree remove` 收掉再往下;少掉的更糟 — 那是把 client 要接著修的 checkout 收掉了,照 §6 的 `git worktree add` 重開一份。第二行反過來要**有**輸出 — `batch/*` 空掉表示有人連 branch 一起刪了,§7 明寫 branch 留著到票結案。兩行合起來才是「worktree 移除、branch 保留」這條驗收原句的判準,只跑第一行等於只驗了一半。
+第一行印出來的那幾列要**正好**是「還在修」那幾張(全綠時就是沒有輸出,`grep` 回 exit 1,正常):多出來的是沒走完 §8 的 lane,照 §8 的 `git worktree remove` 收掉再往下;少掉的更糟 — 那是把 client 要接著修的 checkout 收掉了,照 §6 的 `git worktree add` 重開一份。第二行反過來要**有**輸出 — `batch/*` 空掉表示有人連 branch 一起刪了,§8 明寫 branch 留著到票結案。兩行合起來才是「worktree 移除、branch 保留」這條驗收原句的判準,只跑第一行等於只驗了一半。
 
 判準只看 `.git/batch-worktrees/` 這個母體、不看 `git worktree list` 的列數,因為完整輸出是整個 repo 的所有 worktree,包含別人開的 — 例如 Claude Code 給 subagent 常駐的 `.claude/worktrees/agent-*`,跟 `/build-batch` 無關卻一直住在這裡。#53 的 QA 實錄(步驟 6):0 個 lane 殘留,`git worktree list` 還是印 4 列(1 列主 repo + 3 列 subagent worktree),拿「只剩主 repo」判就是紅的;反過來真的殘留 1 條時,那一列混在同樣的 4 列裡也認不出來(#61)。
 

@@ -42,6 +42,15 @@ CLIENT_LINES = (
      "SKILL.md §5: 名單印完問點頭的那句「這幾張要一起推嗎?」不見了"),
     (re.compile(re.escape("**說不** → 乾淨結束")),
      "SKILL.md §5: 說不之後乾淨結束、沒有殘留的承諾不見了"),
+    # #56:排隊的票在輪到之前是「完全沒被碰過」的狀態 — client 中途喊停時,
+    # 這句是他唯一的保證(被貼過「開工」卻沒人在做的票,下一個人只能靠猜)。
+    (re.compile(re.escape("排隊中的票在被開工前完全不動它")),
+     "SKILL.md §6: 排隊的票在開工前不碰的承諾不見了(#56 驗收項)"),
+    # #56:中斷之後 client 要知道自己手上剩什麼 — 哪些已經在主線、哪些還留著
+    # 可以續。這句沒了,中斷就變成「不知道要不要全部重來」。
+    (re.compile(re.escape("已經 merge 的留在主線,未合併的 lane 留著 worktree "
+                          "與 branch")),
+     "SKILL.md §7: 中斷之後留下什麼的承諾不見了(#56 驗收項)"),
 )
 
 # #54 固化:「一張沒過 QA,好的先收」這條 client 拍板的行為,有三句是散文才講得
@@ -135,8 +144,16 @@ def _titled(number, titles):
     return f"#{number} {titles.get(number, '')}".rstrip()
 
 
-def format_lane_start(numbers, titles):
-    """一張一行「開工」— client 從終端機看得到哪張在哪個工作區跑。"""
+def format_lane_start(numbers, titles, running=(), cap=CAP):
+    """一張一行「開工」— client 從終端機看得到哪張在哪個工作區跑。
+
+    開哪幾張走 `refill`,不是把 `numbers` 照單全開:`numbers` 是「要開 → 排隊」
+    整份名單,`running` 是 §6.1 接續下來、已經在跑的 lane。名額扣在這裡而不是
+    留給 agent 在文件上心算 —— 接續兩條、名單又是滿的 3 張時,心算的版本會開出
+    5 條同時在跑,而那個畫面跟正常的一模一樣。印幾行就開幾個 worktree。
+    """
+    numbers = refill(running, numbers, cap)[0]
+
     def line(n):
         lane = lane_of(n)
         return (f"開工 {_titled(n, titles)} — 工作區 {lane['worktree']}"
@@ -148,6 +165,94 @@ def format_lane_start(numbers, titles):
 def format_lane_done(numbers, titles):
     """一張一行「完成」— lane 內 build + QA 都綠才印。"""
     return "\n".join(f"完成 {_titled(n, titles)} — build + QA 綠" for n in numbers)
+
+
+def refill(running, queue, cap=CAP):
+    """佇列補位:哪幾張現在開得起來,開完誰在跑、誰還在排。
+
+    回傳 `(start_now, running_after, queue_after)`。這是這片唯一真正的邏輯,
+    而它守的不變量只有一條:**同時跑的 lane 數永遠 <= cap**。違反了畫面上看
+    起來跟正常沒兩樣(只是多一條 lane 在跑),沒有任何東西會當場紅 —— 所以它
+    是純函式,由 `self_check` 用整場模擬咬,不是留給 agent 每次現場心算。
+
+    已經在跑的票不會被再開一次:重跑 `/build-batch` 接續既有 worktree 走的就是
+    這條路(`running` 是既有 lane,`queue` 是整份名單),重複開一個 worktree 到
+    同一個路徑是 git 當場失敗,但更糟的是它可能開到一半的分支上。
+    """
+    running = list(running)
+    pending = [n for n in queue if n not in running]
+    slots = max(cap - len(running), 0)
+    start = pending[:slots]
+    return start, running + start, pending[slots:]
+
+
+def format_lane_refill(running, queue, titles, cap=CAP):
+    """補位一行 — 補了誰、現在同時跑幾條、佇列還剩幾張。
+
+    補誰是 `refill` 算的,不是呼叫端算好餵進來的:agent 手上有的是「誰還在跑、
+    誰還在排」這種現場事實,「還剩幾個名額」是它每補一次就要重算一次的算術,
+    算錯不會有人紅。所以這裡只收事實,名額自己算。
+
+    「同時跑 N 條」印在同一行,因為 cap 是這片唯一會被違反的不變量,而違反的
+    畫面跟正常長得一樣。印出來 client 一眼看得到 3,不用自己去數 worktree。
+    """
+    start, running_after, queue_after = refill(running, queue, cap)
+    tail = f";同時跑 {len(running_after)} 條,佇列剩 {len(queue_after)} 張"
+    if not start:
+        return "不補位 — 沒有名額或佇列已空" + tail
+
+    def line(n):
+        lane = lane_of(n)
+        return (f"補位 {_titled(n, titles)} — 工作區 {lane['worktree']}"
+                f"(branch {lane['branch']})" + tail)
+
+    return "\n".join(line(n) for n in start)
+
+
+def format_lane_resume(numbers, titles):
+    """重跑時接續既有 lane 的那幾行 — 不重開,不再 `git worktree add`。"""
+    if not numbers:
+        return "沒有既有 lane — 這是乾淨的一批,照 §6.2 開頭那幾條開下去"
+
+    def line(n):
+        lane = lane_of(n)
+        return (f"接續 {_titled(n, titles)} — 既有工作區 {lane['worktree']}"
+                f"(branch {lane['branch']})還在,不重開")
+
+    return "\n".join(line(n) for n in numbers)
+
+
+def format_lane_interrupted(numbers, titles, spec):
+    """中斷時每條未合併 lane 留在票上的那一行 — 「中斷,可續」的原句。"""
+    def line(n):
+        lane = lane_of(n)
+        return (f"中斷,可續 {_titled(n, titles)} — 未合併,工作區 "
+                f"{lane['worktree']} 與 branch {lane['branch']} 都留著;"
+                f"重跑 `/build-batch #{spec}`(Codex: `$build-batch #{spec}`)"
+                "會接續這條 lane")
+
+    return "\n".join(line(n) for n in numbers)
+
+
+LANE_PATH_RE = re.compile(re.escape(LANE_ROOT) + r"/(\d+)(?![\w.-])")
+
+
+def lane_numbers(worktrees):
+    """`git worktree list --porcelain` 的輸出 -> 還活著的 lane 票號。
+
+    解析放在這裡而不是留給 agent 讀路徑:認錯一條就是去 merge 一條根本不是
+    這條線開的 branch。母體同 §9 —— 只認 LANE_ROOT 底下的,因為完整輸出還有
+    主 repo 與別人開的 worktree(Claude Code 給 subagent 常駐的
+    `.claude/worktrees/agent-*`)。路徑分隔符先正規化成 `/` — Windows 上這條
+    輸出有時是反斜線版本的絕對路徑,不正規化就一條都認不出來,而「認不出來」
+    的畫面跟「真的沒有殘留」一模一樣。
+    """
+    seen = []
+    for m in LANE_PATH_RE.finditer(worktrees.replace("\\", "/")):
+        n = int(m.group(1))
+        if n not in seen:
+            seen.append(n)
+    return sorted(seen)
 
 
 def split_lanes(numbers, failed):
@@ -416,11 +521,19 @@ def main():
     if mode == "plan":
         print(format_plan(plan_batch(data["tickets"]), titles))
     elif mode == "start":
-        print(format_lane_start(numbers, titles))
+        print(format_lane_start(numbers, titles, data.get("running", [])))
     elif mode == "done":
         print(format_lane_done(numbers, titles))
     elif mode == "split":
         print(format_split(merged, fixing, titles))
+    elif mode == "refill":
+        print(format_lane_refill(data.get("running", []),
+                                 data.get("queue", []), titles))
+    elif mode == "resume":
+        print(format_lane_resume(lane_numbers(data.get("worktrees", "")),
+                                 titles))
+    elif mode == "interrupted":
+        print(format_lane_interrupted(numbers, titles, data["spec"]))
     elif mode == "merged":
         print(format_batch_done(merged, data["spec"], fixing, titles))
     elif mode == "fixing":
@@ -488,27 +601,27 @@ def fail_lane_issue(text):
 # 函式,改壞了 batch.py 一條 assert 都不會紅。所以逐句咬。
 CONFLICT_LINES = (
     (re.compile(re.escape("`/resolving-merge-conflicts`")),
-     "SKILL.md 7b: 撞車要呼叫既有的 /resolving-merge-conflicts 解 — 這句不見了,"
+     "SKILL.md 8b: 撞車要呼叫既有的 /resolving-merge-conflicts 解 — 這句不見了,"
      "下一個 agent 會自己發明解法"),
     (re.compile(re.escape("git merge-base")),
-     "SKILL.md 7a: 認票要問「已合的那幾張裡誰自己動過這個檔案」(merge-base + "
+     "SKILL.md 8a: 認票要問「已合的那幾張裡誰自己動過這個檔案」(merge-base + "
      "git diff --name-only)— 改回讀內容認票,圖檔沒有內容可讀、第三張乾淨改過"
      "同一個檔案時還會靜靜報出錯的票號給 client(QA 第 3、4 輪各實測到一次)"),
     (re.compile(re.escape('merged="')),
-     "SKILL.md 7a: 候選母體要是「這批已經合進主線的那幾張」(agent 手上的名單),"
+     "SKILL.md 8a: 候選母體要是「這批已經合進主線的那幾張」(agent 手上的名單),"
      "不是 git branch --list 'batch/*' — 那會把還沒輪到的 lane 與上一批殘留的 branch "
      "一起撈進來,印一張跟這次 merge 無關的票號給 client(QA 第 5 輪實測)"),
     (re.compile(re.escape("--name-status -M")),
-     "SKILL.md 7a: 正在合的那張把檔案改名時,對面動的是舊名字 — 少了這行 rename "
+     "SKILL.md 8a: 正在合的那張把檔案改名時,對面動的是舊名字 — 少了這行 rename "
      "pre-image 的查法,候選會是空的,然後對 client 講一句假的「跟主線上既有的內容撞」"
      "(QA 第 5 輪實測)"),
     (re.compile(re.escape("git branch --list 'batch/*' --contains")),
-     "SKILL.md 7a: 候選多於一條時要用 git blame 那一行 + --contains 換算成 lane"),
+     "SKILL.md 8a: 候選多於一條時要用 git blame 那一行 + --contains 換算成 lane"),
     (re.compile(re.escape("worktree 與 branch 都留著")),
-     "SKILL.md 7c: 停下時未合的 lane 要保留 worktree 與 branch — 這句不見了,"
+     "SKILL.md 8c: 停下時未合的 lane 要保留 worktree 與 branch — 這句不見了,"
      "client 決定之後那些 lane 就接不回去了"),
     (re.compile(re.escape("git merge --abort")),
-     "SKILL.md 7c: 停下之前要把沒合完的 merge 退掉 — 少了它,client 接手的是一個"
+     "SKILL.md 8c: 停下之前要把沒合完的 merge 退掉 — 少了它,client 接手的是一個"
      "帶衝突標記的 index"),
 )
 # 「不強推」不能只靠散文承諾:文件裡真的貼出一行 `-X ours`,agent 照著跑就把一張票
@@ -535,8 +648,8 @@ def conflict_lines_issue(text):
     return None
 
 
-MODES = ("start", "done", "split", "merged", "fixing", "summary",
-         "conflict-resolved", "conflict-stopped")
+MODES = ("start", "done", "split", "refill", "resume", "interrupted",
+         "merged", "fixing", "summary", "conflict-resolved", "conflict-stopped")
 
 
 def skill_mode_issue(text):
@@ -710,6 +823,9 @@ JSON''')
         ("沒必要開批次,用 `/build #47`(Codex: `$build #47`)就好", "§4 指路單張"),
         ("這幾張要一起推嗎?", "§5 問點頭"),
         ("**說不** → 乾淨結束", "§5 說不"),
+        ("排隊中的票在被開工前完全不動它", "§6 排隊不碰"),
+        ("已經 merge 的留在主線,未合併的 lane 留著 worktree 與 branch",
+         "§7 中斷留下什麼"),
     ):
         assert original in text, label
         assert client_lines_issue(text.replace(original, "", 1)), label
@@ -877,6 +993,16 @@ JSON''')
          format_lane_start([47], {47: "登入頁 → 🔑"})),
         ({"mode": "done", "numbers": [47], "titles": {"47": "登入頁 → 🔑"}},
          format_lane_done([47], {47: "登入頁 → 🔑"})),
+        ({"mode": "refill", "running": [48], "queue": [47],
+          "titles": {"47": "登入頁 → 🔑"}},
+         format_lane_refill([48], [47], {47: "登入頁 → 🔑"})),
+        ({"mode": "resume",
+          "worktrees": "worktree D:/repo/.git/batch-worktrees/47",
+          "titles": {"47": "登入頁 → 🔑"}},
+         format_lane_resume([47], {47: "登入頁 → 🔑"})),
+        ({"mode": "interrupted", "numbers": [47], "spec": 51,
+          "titles": {"47": "登入頁 → 🔑"}},
+         format_lane_interrupted([47], {47: "登入頁 → 🔑"}, 51)),
         ({"mode": "merged", "numbers": [47, 48], "spec": 51},
          format_batch_done([47, 48], 51)),
         ({"mode": "summary", "numbers": [47], "spec": 51,
@@ -947,6 +1073,102 @@ JSON''')
         assert want in err, (payload, err)
         # 沒釘 stderr 的話中文會變成 cp950 的問號串 / 壞碼,decode 得出來也不是原句
         assert "?" not in err, (payload, err)
+
+    # ---- #56 排隊補位 / 中斷續跑 --------------------------------------------
+    # 整場模擬:5 張能跑、一次收掉一條 lane。要同時成立三件事 —— 開頭只開 3 條、
+    # 全程同時跑的數不超過 cap、每張最後都輪到。這是 refill 存在的理由,而它壞掉
+    # 的畫面(多一條 lane 在跑)跟正常長得一模一樣,沒有東西會當場紅。
+    start, running, queue = refill([], [1, 2, 3, 4, 5])
+    assert (start, running, queue) == ([1, 2, 3], [1, 2, 3], [4, 5])
+    opened = list(start)
+    while running:
+        running = running[1:]  # 收掉一條(綠或紅都一樣要讓出名額)
+        start, running, queue = refill(running, queue)
+        assert len(running) <= CAP, running
+        opened += start
+    assert opened == [1, 2, 3, 4, 5], opened
+    assert queue == []
+
+    # 名額滿了不補、佇列空了不補
+    assert refill([1, 2, 3], [4]) == ([], [1, 2, 3], [4])
+    assert refill([1], []) == ([], [1], [])
+    # 已經在跑的票不會被再開一次 — 重跑接續既有 lane 走的就是這條
+    assert refill([47], [47, 48]) == ([48], [47, 48], [])
+    # cap 是參數,不是硬編在函式體裡
+    assert refill([], [1, 2], cap=1) == ([1], [1], [2])
+    # 純函式:不改到餵進來的 list
+    running_in, queue_in = [1], [2, 3]
+    refill(running_in, queue_in)
+    assert running_in == [1] and queue_in == [2, 3]
+
+    # 補位一行:補了誰、在哪個工作區、同時跑幾條、佇列剩幾張
+    got = format_lane_refill([48, 42], [50, 51], {50: "補位"})
+    assert got == ("補位 #50 補位 — 工作區 .git/batch-worktrees/50"
+                   "(branch batch/50);同時跑 3 條,佇列剩 1 張"), got
+    # 一次讓出兩個名額就補兩張,兩行的數字都是補完之後的狀態
+    got = format_lane_refill([48], [50, 51, 52], {}).splitlines()
+    assert len(got) == 2 and all("同時跑 3 條,佇列剩 1 張" in l for l in got), got
+    # 沒名額 / 沒票可補時不是靜靜印一片空白給 client
+    assert format_lane_refill([1, 2, 3], [4], {}).startswith("不補位"), "沒名額"
+    assert format_lane_refill([], [], {}).startswith("不補位"), "佇列空"
+
+    # 既有 lane 的票號由路徑認,不由 agent 讀 —— 認錯一條就是去 merge 一條
+    # 根本不是這條線開的 branch
+    porcelain = "\n".join([
+        "worktree D:/repo", "HEAD abc", "branch refs/heads/main", "",
+        "worktree D:/repo/.git/batch-worktrees/48", "branch refs/heads/batch/48",
+        "", "worktree D:/repo/.git/batch-worktrees/47",
+        "branch refs/heads/batch/47", "",
+        "worktree D:/repo/.claude/worktrees/agent-9", "",
+    ])
+    assert lane_numbers(porcelain) == [47, 48], lane_numbers(porcelain)
+    # 主 repo 與別人開的 worktree 都不是 lane(§9 同一個母體)
+    assert lane_numbers("worktree D:/repo\nworktree D:/repo/.claude/"
+                        "worktrees/agent-9") == []
+    # Windows 的反斜線版本一樣要認得,而且同一條只算一次
+    assert lane_numbers("worktree D:\\repo\\.git\\batch-worktrees\\47\n"
+                        "worktree D:/repo/.git/batch-worktrees/47") == [47]
+    assert lane_numbers("") == []
+    # 票號要整段對齊 — `47-old`、`47.bak` 這種殘骸不是 lane 47
+    assert lane_numbers("worktree D:/repo/.git/batch-worktrees/47-old") == []
+    assert lane_numbers("worktree D:/repo/.git/batch-worktrees/47/sub") == [47]
+
+    # 接續一行:既有工作區與 branch 都指得出來,而且明說不重開
+    assert format_lane_resume([47], {47: "名單"}) == (
+        "接續 #47 名單 — 既有工作區 .git/batch-worktrees/47"
+        "(branch batch/47)還在,不重開")
+    # 沒有既有 lane 時不是印一行空白給 client
+    assert format_lane_resume([], {}).startswith("沒有既有 lane")
+    # 中斷一行:「中斷,可續」的原句 + 留下什麼 + 怎麼續(兩端指令都在)
+    stopped = format_lane_interrupted([47], {47: "名單"}, 51)
+    assert stopped.startswith("中斷,可續 #47 名單 — 未合併,"), stopped
+    assert ".git/batch-worktrees/47" in stopped and "batch/47" in stopped, stopped
+    assert ("`/build-batch #51`" in stopped
+            and "`$build-batch #51`" in stopped), stopped
+
+    # 開頭那幾條也扣名額:接續 2 條 + 名單 3 張,只准再開 1 張。這條是 code
+    # review 抓到的洞 —— 原本 §6.2 叫 agent「自己扣掉接續的那幾條」,而算錯開出
+    # 5 條同時在跑的畫面跟正常的一模一樣。
+    opening = format_lane_start([47, 48, 42], {}, running=[61, 62]).splitlines()
+    assert len(opening) == 1 and opening[0].startswith("開工 #47"), opening
+    # 名單比 cap 長 -> 只開前 cap 張,其餘留在佇列(沒印到就是沒開)
+    assert len(format_lane_start([1, 2, 3, 4, 5], {}).splitlines()) == CAP
+    # 名額已經滿 -> 一行都不印,agent 就一個 worktree 都不會開
+    assert format_lane_start([47], {}, running=[61, 62, 63]) == ""
+    # #52/#53 的既有用法不變:沒接續、名單沒超過 cap,就是照單開
+    assert format_lane_start([47, 48], {47: "名單", 48: "點頭"}).splitlines() == [
+        "開工 #47 名單 — 工作區 .git/batch-worktrees/47(branch batch/47)",
+        "開工 #48 點頭 — 工作區 .git/batch-worktrees/48(branch batch/48)",
+    ]
+
+    # SKILL.md §6.1:接續偵測問的母體跟 §10 清場判準是同一個(打錯就是撈不到
+    # 任何既有 lane,一路綠著把同一張票重開一次)。母體字串要出現兩次 —— §6.1
+    # 一次、§10 一次;只錨「有沒有這串」的話,§6.1 整段砍掉照樣綠。
+    assert text.count(f"grep -F /{LANE_ROOT}/") >= 2, text.count(
+        f"grep -F /{LANE_ROOT}/")
+    assert "### 6.1 先接續上一次中斷的 lane" in text
+    # 開工那段要收 running(接續的 lane),不然名額扣不到
+    assert '"mode": "start", "numbers": [47, 48, 42, 50], "running": []' in text
 
     # #53 固化:新加的每一段一樣要把資料餵進這支檔。哪天有人把「開工」改成
     # 在 SKILL.md 裡 echo 一行中文,那就是 #58 原封不動再來一次。
