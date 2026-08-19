@@ -16,6 +16,7 @@ docstring、字串常數、f-string、變數名)都是同一形狀。這支把�
     python scripts/qa/60-mention-sweep.py <repo> --live-overapprox  # 可達性 over-approximate 的代價
     ... --old                                                 # 對照組:#60 修之前那版(d3cc9ed^)
     ... --prev                                                # 對照組:上一輪 QA 的 HEAD(188c7d8)
+    ... --prev73                                              # 對照組:#73 修之前(e56789c)
 """
 import subprocess
 import sys
@@ -167,7 +168,7 @@ LIVE_OVERAPPROX = [
 
 
 # 對照組能指的兩個歷史點:#60 動手前(--old),與上一輪 QA 的 HEAD(--prev,#71 修之前)。
-BASELINES = {"--old": "d3cc9ed^", "--prev": "188c7d8"}
+BASELINES = {"--old": "d3cc9ed^", "--prev": "188c7d8", "--prev73": "e56789c"}
 
 
 def guard_module(repo, old):
