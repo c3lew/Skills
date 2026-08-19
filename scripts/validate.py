@@ -26,6 +26,7 @@ Usage:
 import ast
 import re
 import sys
+from textwrap import indent
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -254,7 +255,9 @@ def stream_encoding_issues(repo):
             tree = ast.parse(py.read_text(encoding="utf-8"))
         except SyntaxError:
             continue  # nothing runs it either — not this guard's failure
-        main = next((n for n in tree.body if isinstance(n, ast.If)
+        # walk, not tree.body: a `__main__` block nested one level under a
+        # try or an `if` is still what runs the script (#65)
+        main = next((n for n in ast.walk(tree) if isinstance(n, ast.If)
                      and ast.unparse(n.test) == MAIN_TEST), None)
         if main is None:
             continue
@@ -815,6 +818,19 @@ def self_check():
         ):
             bad.write_text(mention, encoding="utf-8")
             assert len(stream_encoding_issues(repo)) == 1, mention
+
+        # #65: the `__main__` block does not have to be top-level. Indent it
+        # one level under a try or an `if True` and a `tree.body`-only scan
+        # stops finding it — the file is skipped and a naked print sails past.
+        for wrapper in ("try:\n{body}except Exception:\n    pass\n",
+                        "if True:\n{body}"):
+            nested = wrapper.format(body=indent(naked, "    "))
+            bad.write_text(nested, encoding="utf-8")
+            assert len(stream_encoding_issues(repo)) == 1, nested
+            pinned = wrapper.format(
+                body=indent(runnable + out_pin + "\n", "    "))
+            bad.write_text(pinned, encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], pinned
 
     # and the live repo is clean — every script that can be run pins its streams
     assert stream_encoding_issues(REPO) == [], stream_encoding_issues(REPO)
