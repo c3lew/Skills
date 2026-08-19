@@ -14,7 +14,9 @@ Handoff lines (「下一步:`/x #N`」) must dual-write the Codex form on the sa
 line (`$x #N`) — Codex calls skills with `$name`, so a slash-only handoff is a
 comment the client cannot paste there. Repo-wide (main() only, not validate()):
 every baton must name a skill that exists under skills/, because that pasted
-command has to resolve to an installed skill dir on the other agent.
+command has to resolve to an installed skill dir on the other agent; and every
+runnable `*.py` must pin stdout (and stdin, if it reads it) to UTF-8, because a
+Windows console is cp950 and everything this line prints is 中文 (#58).
 Does NOT validate prose content.
 
 Usage:
@@ -140,6 +142,62 @@ def handoff_target_issues(skills_dir):
     return errors
 
 
+MAIN_BLOCK = 'if __name__ == "__main__"'
+# (stream, pin, bypass, symptom). Two ways to survive a cp950 console: pin the
+# stream's encoding, or go around the text layer entirely via .buffer. Only the
+# pin is positional (see the docstring) — .buffer carries no encoding at all,
+# so wherever it sits it is already safe.
+STREAM_PINS = (
+    ("stdout", 'sys.stdout.reconfigure(encoding="utf-8")', "sys.stdout.buffer",
+     "its 中文 output is mojibake"),
+    ("stdin", 'sys.stdin.reconfigure(encoding="utf-8")', "sys.stdin.buffer",
+     "中文 input is mojibake or UnicodeDecodeError"),
+)
+
+
+def stream_encoding_issues(repo):
+    """Every runnable script must pin its streams to UTF-8 (#58).
+
+    A Windows console is cp950 by default, and everything this line carries is
+    中文: an unpinned stdout prints the名單 as mojibake, and an unpinned stdin
+    cannot even read a heredoc of ticket titles. Worse than mojibake, any
+    character Big5 lacks (an emoji, a kana in a title) raises
+    UnicodeEncode/DecodeError and kills the command outright.
+
+    Both symptoms are invisible to an in-process assert — there the streams are
+    a pipe or a StringIO, never the console — so the guard is structural: a
+    file with a `__main__` block pins stdout, and pins stdin too if it reads
+    it. No case-by-case judgement about whether *this* script's text happens to
+    be ASCII today.
+
+    The pin must sit *inside* the `__main__` block, so the check is positional
+    like `unpushed_commit_link_issue`. A pin in `main()` is the shape that
+    breaks: self_check calls `main()` with stdout captured into a StringIO,
+    which has no `reconfigure` — a substring-anywhere check would call that
+    green, which is exactly how this guard first shipped.
+    """
+    errors = []
+    for py in sorted(repo.rglob("*.py")):
+        if any(part.startswith((".", "__")) for part in py.parts):
+            continue  # __pycache__, .venv — not source anyone runs
+        text = py.read_text(encoding="utf-8")
+        if MAIN_BLOCK not in text:
+            continue
+        entry = text.index(MAIN_BLOCK)
+        label = py.relative_to(repo).as_posix()
+        for stream, pin, bypass, symptom in STREAM_PINS:
+            if stream == "stdin" and "sys.stdin" not in text:
+                continue  # a script that never reads stdin has nothing to pin
+            if bypass in text or text.rfind(pin) > entry:
+                continue
+            errors.append(
+                f"{label}: runnable script does not pin {stream} to UTF-8 "
+                f"inside its `{MAIN_BLOCK}` block — {symptom} on a cp950 "
+                f"console (#58)"
+            )
+    return errors
+
+
 def resolves_in(skill_dir, ref):
     """True if ref points at something that exists *within* skill_dir."""
     target = (skill_dir / ref).resolve()
@@ -212,7 +270,9 @@ def validate(skills_dir, repo):
 
 
 def main():
-    errors = validate(REPO / "skills", REPO) + handoff_target_issues(REPO / "skills")
+    errors = (validate(REPO / "skills", REPO)
+              + handoff_target_issues(REPO / "skills")
+              + stream_encoding_issues(REPO))
     for e in errors:
         print(f"FAIL {e}")
     if errors:
@@ -540,10 +600,56 @@ def self_check():
             "docs/disciplines/disc.md (docs is source of truth)"
         ], errs
 
+    # #58 guard
+    (out_stream, out_pin, out_bypass, _), (_, in_pin, in_bypass, _) = STREAM_PINS
+    assert out_stream == "stdout"
+    with tempfile.TemporaryDirectory() as td:
+        repo = Path(td)
+        (repo / "scripts").mkdir()
+        # a module nobody runs has no console to lose
+        lib = repo / "scripts" / "lib.py"
+        lib.write_text("print('no main block, not runnable')", encoding="utf-8")
+        assert stream_encoding_issues(repo) == []
+        (repo / "__pycache__").mkdir()
+        (repo / "__pycache__" / "x.py").write_text(MAIN_BLOCK + ":\n    pass\n",
+                                                   encoding="utf-8")
+        assert stream_encoding_issues(repo) == []
+
+        bad = repo / "scripts" / "run.py"
+        runnable = MAIN_BLOCK + ":\n    "
+        bad.write_text(runnable + 'print("要開")\n', encoding="utf-8")
+        assert [e.split(":")[0] for e in stream_encoding_issues(repo)] == ["scripts/run.py"]
+        for pin in (out_pin, out_bypass):
+            bad.write_text(runnable + pin + "\n", encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], pin
+        # the pin has to be *in* the __main__ block. A reconfigure sitting in
+        # main() is the shape AGENTS.md warns about — self_check calls main()
+        # with a StringIO, which has no reconfigure — so it must still be red.
+        bad.write_text(f"def main():\n    {out_pin}\n\n\n{runnable}main()\n",
+                       encoding="utf-8")
+        assert len(stream_encoding_issues(repo)) == 1, stream_encoding_issues(repo)
+        # ...while .buffer in main() is fine: it carries no encoding to get wrong
+        bad.write_text(f"def main():\n    {out_bypass}.write(b'x')\n\n\n"
+                       f"{runnable}main()\n", encoding="utf-8")
+        assert stream_encoding_issues(repo) == []
+
+        # reading stdin is its own half of #58 — a pinned stdout is not enough
+        reader = runnable + out_pin + "\n    json.load(sys.stdin)\n"
+        bad.write_text(reader, encoding="utf-8")
+        assert len(stream_encoding_issues(repo)) == 1, stream_encoding_issues(repo)
+        assert "stdin" in stream_encoding_issues(repo)[0]
+        for pin in (in_pin, in_bypass):
+            bad.write_text(reader + "    " + pin + "\n", encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], pin
+
+    # and the live repo is clean — every script that can be run pins its streams
+    assert stream_encoding_issues(REPO) == [], stream_encoding_issues(REPO)
+
     print("OK validate self-check green")
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")  # #58, AGENTS.md
     if "--self-check" in sys.argv:
         self_check()
         sys.exit(0)

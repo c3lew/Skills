@@ -247,6 +247,7 @@ def self_check():
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")  # #58, AGENTS.md
     if "--self-check" in sys.argv:
         self_check()
         sys.exit(0)

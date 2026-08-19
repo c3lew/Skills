@@ -28,12 +28,7 @@ closed 的票不進候選,但要留在餵進去的資料裡 — 它們是判斷�
 把純資料餵進 [`batch.py`](batch.py),名單的算與印都在裡面,不要自己心算或自己排版:
 
 ```bash
-python -c "
-import json,sys; sys.path.insert(0,'<skill dir>')
-from batch import plan_batch, format_plan
-data=json.load(sys.stdin)
-print(format_plan(plan_batch(data['tickets']), {int(k):v for k,v in data['titles'].items()}))
-" <<'JSON'
+python <skill dir>/batch.py <<'JSON'
 {"tickets": [{"number": 47, "state": "open", "blocked_by": []},
              {"number": 48, "state": "open", "blocked_by": [47]}],
  "titles": {"47": "...", "48": "..."}}

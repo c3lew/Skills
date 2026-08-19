@@ -12,8 +12,12 @@ so it is not left as prose the agent improvises.
 Ships inside the skill dir because install copies only that dir.
 
 Usage:
-    python batch.py --self-check   # run built-in assertions
+    python batch.py < plan.json     # print the list the client reads
+    python batch.py --self-check    # run built-in assertions
 """
+import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -69,6 +73,19 @@ def format_plan(plan, titles):
                 row += " — 卡在 " + "、".join(f"#{b}" for b in blockers)
             lines.append(row)
     return "\n".join(lines)
+
+
+def main():
+    """stdin JSON -> the three sections the client reads.
+
+    The printing lives here rather than in SKILL.md's command line because
+    that is the only place a test can reach it — #58 was a print no test could
+    see. The UTF-8 pins that fix it sit in the `__main__` block below, per
+    AGENTS.md 「會被跑到的 python 檔要釘 UTF-8」.
+    """
+    data = json.load(sys.stdin)
+    titles = {int(k): v for k, v in data.get("titles", {}).items()}
+    print(format_plan(plan_batch(data["tickets"]), titles))
 
 
 def _ticket(number, blocked_by=(), state="open"):
@@ -150,11 +167,38 @@ def self_check():
     for section in ("要開", "排隊", "還卡著"):
         assert section in text, section
 
+    # #58: whether the名單 survives the client's console is invisible to an
+    # in-process assert — there stdout is a pipe or a StringIO, never cp950.
+    # So shell out with both streams forced to cp950 and compare raw bytes.
+    # `ensure_ascii=False` matters: escaped-to-ASCII JSON would sail through
+    # an unpinned stdin and hide half the bug. The expected text comes from
+    # format_plan, not a literal — this asserts on encoding, and the layout is
+    # already pinned by the assertions above.
+    tickets = [t(10), t(13, [10])]
+    titles = {10: "登入頁 → 🔑", 13: "導向"}
+    payload = json.dumps({"tickets": tickets,
+                          "titles": {str(k): v for k, v in titles.items()}},
+                         ensure_ascii=False)
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=payload.encode("utf-8"), capture_output=True,
+        env=dict(os.environ, PYTHONIOENCODING="cp950"),
+    )
+    assert child.returncode == 0, child.stderr.decode("utf-8", "replace")
+    got = child.stdout.decode("utf-8").splitlines()
+    assert got == format_plan(plan_batch(tickets), titles).splitlines(), got
+
     print("OK batch self-check green")
 
 
 if __name__ == "__main__":
+    # #58 — both ends of the pipe are 中文 and a Windows console is cp950 on
+    # both. See AGENTS.md 「會被跑到的 python 檔要釘 UTF-8」.
+    sys.stdout.reconfigure(encoding="utf-8")
     if "--self-check" in sys.argv:
         self_check()
         sys.exit(0)
-    print(__doc__)
+    # after the self-check exit: with stdin closed `sys.stdin` is None, and the
+    # checks must still run in a harness that hands us no stdin at all
+    sys.stdin.reconfigure(encoding="utf-8")
+    main()
