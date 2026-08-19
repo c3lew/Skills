@@ -59,11 +59,11 @@
 <div class="sub">專案儀表板 · 更新於 8/19 · 資料來自工作紀錄 · 目前用的版本:6 個功能全部上線,加「同時開好幾張單子」的第一塊,都已換裝你的電腦</div>
 
 <div class="hero">
-  <div class="where">現在在哪:六個大功能全部驗收完畢,新的一包功能「<strong>一次同時開好幾張單子</strong>」開工中。第一小塊(算出現在哪幾張可以同時開、列出名單等你點頭)<strong>你已經驗收點頭、過關了</strong> — 新版也裝到你電腦上了。接下來把這張單子關掉,再開下一小塊(點頭之後真的分頭開工)。</div>
+  <div class="where">現在在哪:六個大功能全部驗收完畢。新的一包功能「<strong>一次同時開好幾張單子</strong>」的第一小塊(算出哪幾張可以同時開、列名單等你點頭)<strong>你已驗收、結案、換裝完成</strong>。接下來是第二小塊:點頭之後真的分頭同時開工、全部通過再依序收回主線。</div>
   <div class="release"><strong>這次換裝了什麼:</strong>「一次同時開好幾張單子」的第一塊正式上線 — 打一個指令,助理會先算一遍哪幾張現在真的能同時動、哪幾張還在等別人做完,印一份「要開 / 排隊 / 還卡著」的名單給你看,然後停下來等你說要不要推;你說不就乾淨收工,什麼都不會被動到。只有一張能動時它會直接叫你走單張,不浪費你時間開批次。這次還把它對你講的那兩句話(「用單張指令就好」「這幾張要一起推嗎?」)交給自動檢查守著,以後誰改壞了檢查當場變紅。<span class="rb">反悔的話</span>:裝回上一版就好,舊版還留著,一個指令的事。</div>
   <div class="next">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <div><strong>下一步:</strong>打<code>/close #52</code>(另一種助理:<code>$close #52</code>)— 這一小塊你已經點頭過關,把單子關掉<br>不確定的話問一句<code>/next</code>(<code>$next</code>)就會告訴你該開哪一棒。另外六張小單子都是你判「之後再修」的,沒有急件。</div>
+    <div><strong>下一步:</strong>打<code>/build-batch #51</code>(另一種助理:<code>$build-batch #51</code>)— 剛上線的新功能,先讓它列一份「現在哪幾張能同時開」給你看,你點頭再往下<br>不確定的話問一句<code>/next</code>(<code>$next</code>)就會告訴你該開哪一棒。另外六張小單子都是你判「之後再修」的,沒有急件。</div>
   </div>
 </div>
 
@@ -76,7 +76,7 @@
     <div class="slice-row"><span class="slice-name">公開前先掃一遍不該外流的內容</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">在乾淨的電腦上一行指令裝好</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">在另一種助理上完整跑通一次</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
-    <div class="slice-row"><span class="slice-name">算出哪幾張單子可以同時開,列名單等你點頭</span><span class="badge b-warn">測試中</span><span class="bar"><i style="width:70%"></i></span></div>
+    <div class="slice-row"><span class="slice-name">算出哪幾張單子可以同時開,列名單等你點頭</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">同時開工、全部通過後依序收回主線</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
     <div class="slice-row"><span class="slice-name">有一張沒過:好的先收,壞的留在旁邊修</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
     <div class="slice-row"><span class="slice-name">兩張改到同一處:助理自己解,解不掉就停下來講</span><span class="badge b-fog">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
@@ -89,7 +89,7 @@
     <div class="qa-tiles">
       <div class="tile"><div class="num" style="color:var(--ok)">0</div><div class="lbl">必須先修</div></div>
       <div class="tile"><div class="num" style="color:var(--warn)">6</div><div class="lbl">小毛病(帶著走)</div></div>
-      <div class="tile"><div class="num" style="color:var(--ok)">7</div><div class="lbl">既有功能全數正常</div></div>
+      <div class="tile"><div class="num" style="color:var(--ok)">8</div><div class="lbl">既有功能全數正常</div></div>
     </div>
     <ul class="list" style="margin-top:14px">
       <li><span class="when">已結案</span><span>助理列「現在可以同時開哪幾張單子」那份名單,在你的黑底終端機上三段標題(要開 / 排隊 / 還卡著)是一堆亂碼,讀不出來哪張屬於哪段;單子標題裡只要有 emoji 或箭頭,指令還會當場中斷。已經修好、演給你看、你點頭收掉,新版已換裝,而且自動檢查會守住:以後誰把「印名單」搬回說明書裡的臨時指令、或漏了設定文字編碼,檢查當場變紅。</span></li>
@@ -109,6 +109,9 @@
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>最近幫你做的決定</h2>
     <ul class="list">
+      <li><span class="when">8/19</span><span>那份名單裡「還卡著」那一段,不只寫哪張卡著,還一併寫出「卡在誰後面」 — 因為那正是你要判斷的資訊,讓助理自己心算等於把一半判斷搬到沒人檢查得到的地方。你這邊看到的差別:名單直接讀得出來誰在等誰。</span></li>
+      <li><span class="when">8/19</span><span>看不到狀態的那種卡關對象,一律當成「還卡著」,不猜「應該做完了」 — 猜錯的後果正好是這個功能要防的事(兩張會互相打架的單子被同時開)。代價是偶爾會保守地多留一張在等待區,你當場說一聲就能推翻。</span></li>
+      <li><span class="when">8/19</span><span>那些對你講的話(「只有一張就用單張指令就好」「這幾張要一起推嗎?」)也交給自動檢查守著,不只守程式算得對不對 — 你是照著那兩句話點頭的,改壞了會無聲無息地漂掉,下一次你看到的就不是你驗過的東西。</span></li>
       <li><span class="when">8/19</span><span>亂碼的修法不是在說明書那行指令前面加設定,而是把「印名單」這件事搬進程式裡、在程式裡把文字編碼釘死 — 因為留在說明書裡的指令是測不到的地方,測不到就會再壞一次。你這邊看到的差別:貼的指令變短了,而且不用先調任何設定。</span></li>
       <li><span class="when">8/19</span><span>順手把整個專案裡所有「會自己印東西給你看」的程式都一起釘死編碼,並立成規矩交給自動檢查守著 — 雖然只有一支是你真的踩到的。好處是下一支忘了釘的程式當場變紅;代價是這次多動了三個檔案各一行。</span></li>
       <li><span class="when">8/19</span><span>新增一道檢查,守的是「說明書叫你貼的那行指令,有沒有還走進程式裡」— 因為這個亂碼從頭到尾都不是程式算錯,而是說明書叫你貼的那行繞過了程式。只認「有沒有繞過」,不比對整段文字長相,所以你改排版、換句話說都不會誤報。</span></li>
@@ -138,7 +141,8 @@
       <li><span class="when">已結案</span><span>「在另一種助理上完整跑通一次」 — 紀錄逐段放給你看,你點頭過關,新版已換裝。這是這包工作的最後一個功能。</span></li>
       <li><span class="when">已結案</span><span>「交接連結點下去是壞的」 — 修好後演給你看,你三條都點頭,新版已換裝,規矩也交給電腦守了。</span></li>
       <li><span class="when">已結案</span><span>「名單在終端機上是亂碼」 — 修好後四種情況逐條演給你看,你全部點頭,新版已換裝,規矩也交給電腦守了。</span></li>
-      <li><span class="when">接下來</span><span>「算出哪幾張單子可以同時開,列名單等你點頭」 — 亂碼修掉了,這一小塊要重驗一次;通過後就會跑給你看。</span></li>
+      <li><span class="when">已結案</span><span>「算出哪幾張單子可以同時開,列名單等你點頭」 — 三種情況逐條演給你看,你全部點頭,新版已換裝,你講過的那兩句話也交給電腦守了。</span></li>
+      <li><span class="when">接下來</span><span>「點頭之後真的分頭同時開工,全部通過再依序收回主線」 — 下一小塊,做完會跑給你看。</span></li>
     </ul>
   </div>
 </div>
