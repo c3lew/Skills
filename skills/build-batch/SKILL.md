@@ -1,6 +1,6 @@
 ---
 name: build-batch
-description: 算出「現在誰能同時開」的名單 — 讀票上已宣告的卡關關係,印出「要開(最多 3 張)/ 排隊 / 還卡著」三段,停下來等 client 點頭。當一份 spec 切完票、想一次推進多張彼此不卡的票時使用;只有一張能跑就指路單張 /build。
+description: 一批彼此不卡的票一次跑完 — 算出「要開(最多 3 張)/ 排隊 / 還卡著」名單等 client 點頭,點頭後每張各自在獨立 git worktree 平行跑 build + QA,全綠依序合回主線、整批再驗一次,交棒 client-demo。當一份 spec 切完票、想一次推進多張彼此不卡的票時使用;只有一張能跑就指路單張 /build。
 ---
 
 # build-batch
@@ -60,7 +60,98 @@ cap 寫死 3,不做設定。blocker 已關的票會被放行;blocker 還開著�
 名單印完停下來,明確問 client:「這幾張要一起推嗎?」
 
 - **說不** → 乾淨結束。什麼都沒開、什麼都沒改,不用回收。
-- **說好** → 本版到此為止:獨立工作區的平行開工還沒接上,照「要開」的順序一行一張印「下一步:`/build #47`(Codex: `$build #47`)」讓 client 自己推。
+- **說好** → 往下走 §6。從這一刻起才會動到檔案。
+
+本版只走全綠路徑。**有票 QA 沒過、merge 撞車、能開的超過 3 張要排隊** — 這三件事都還沒接上,遇到就停下來把現況講給 client 聽,不要自己發明處置。
+
+## 6. 平行開工
+
+「要開」名單上每張票各自一個 git worktree — lane 之間是檔案系統層級隔離,不共用工作目錄,所以不可能互相把對方寫到一半的東西吃進去。branch 與工作區路徑由 [`batch.py`](batch.py) 算,不要自己拼:
+
+```bash
+python <skill dir>/batch.py <<'JSON'
+{"mode": "start", "numbers": [47, 48], "titles": {"47": "...", "48": "..."}}
+JSON
+```
+
+印出來的每一行就是 client 在終端機看到的「開工」,同一行也告訴你 branch 與路徑:
+
+```
+開工 #47 名單 — 工作區 .git/batch-worktrees/47(branch batch/47)
+```
+
+照那兩個值開 worktree,一張一次,開完立刻把 branch 推上去:
+
+```bash
+git worktree add .git/batch-worktrees/47 -b batch/47
+git push -u origin batch/47
+```
+
+`-u` 是必要的,不是順手:lane 內的 `/build` 會 `git push`,branch 沒有 upstream 它當場失敗 — 而它貼在票上的 commit link 指的就是那些還沒推上去的 sha,在 GitHub 上是 404。
+
+同一行也貼回該張票 — client 離開電腦回來翻票就知道它什麼時候開的:
+
+```bash
+lane='{"mode": "start", "numbers": [47], "titles": {"47": "..."}}'
+echo "$lane" | python <skill dir>/batch.py | gh issue comment 47 --body-file -
+```
+
+然後每張 lane **平行**跑 — 一個 lane 一個 subagent,工作目錄就是它自己的 worktree,在裡面依序跑 `/build #47` 與 `/qa #47`,兩個都綠這條 lane 才算綠。lane 之間不互等。
+
+一條 lane 綠了就立刻報一行,不要等整批 — 印給 client、也貼回票上:
+
+```bash
+lane='{"mode": "done", "numbers": [47], "titles": {"47": "..."}}'
+echo "$lane" | python <skill dir>/batch.py                                    # 印給 client
+echo "$lane" | python <skill dir>/batch.py | gh issue comment 47 --body-file -
+```
+
+## 7. 依序合回主線
+
+全部 lane 綠了才進這一段,而且**一張一張**合、不同時 — 同時 merge 撞在一起會留下一個沒人看得懂的中間狀態。回到主 repo,照「要開」的順序,每張:
+
+```bash
+git merge --no-ff batch/47
+git push
+git worktree remove .git/batch-worktrees/47
+```
+
+`git push` 要當場綠再合下一張。這條 lane 到這裡就結束了,工作區當場回收 — 三份完整 checkout 沒必要一路佔到整批跑完。**branch 留著**到票結案。
+
+撞車不在本版範圍 — 停下來把哪兩張撞在哪個檔案講給 client 聽,不要硬推。
+
+## 8. 整批驗證
+
+三個 lane 各自綠不蘊含合起來綠(語意衝突、共用檔案的互相假設)。這是平行化唯一真正新增的風險,所以合完之後在主線上再跑一次:
+
+1. regression suite。
+2. 這批**所有票**的「覆蓋驗收項」聯集 — 每張票 body 的 `## 覆蓋驗收項` 段,去重後的清單。這份清單跟 §9 批次總結裡列的是同一份;兩邊對不起來就是有一條沒驗到。
+
+綠了才往下。紅了停下來報給 client,不要往 demo 送。
+
+## 9. 收尾
+
+整批驗證綠 → 終端機印最後一行:
+
+```bash
+python <skill dir>/batch.py <<'JSON'
+{"mode": "merged", "numbers": [47, 48, 42], "spec": 51}
+JSON
+```
+
+每張票上的產出紀錄由 lane 內的 `/build` 自己寫完了(它本來就會 push 完再貼 commit link),這裡不重複寫。spec 票上再留一則批次總結:
+
+```bash
+python <skill dir>/batch.py <<'JSON'
+{"mode": "summary", "numbers": [47, 48], "spec": 51,
+ "titles": {"47": "...", "48": "..."},
+ "coverage": [["#47 覆蓋的驗收項原句"], ["#48 覆蓋的驗收項原句"]]}
+JSON
+```
+
+印出來的整段當 comment body 貼上去(`gh issue comment 51 --body-file -`)。
+
+工作區已經在 §7 一張一張回收掉了,這裡不用再收。`git worktree list` 應該只剩主 repo — 沒剩乾淨就是有 lane 沒走完 §7,回頭查。
 
 ## Codex 端
 

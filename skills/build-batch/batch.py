@@ -96,6 +96,76 @@ def format_plan(plan, titles):
     return "\n".join(lines)
 
 
+LANE_ROOT = ".git/batch-worktrees"  # 藏在 .git 底下 -> 不進 git status,不用 gitignore
+
+
+def lane_of(number):
+    """One ticket's isolated lane: which branch, which working copy.
+
+    Derived, never improvised. Two lanes landing on the same directory is the
+    one failure this whole command exists to prevent, and a mistyped path in a
+    shell line fails silently — it just makes a second checkout of the wrong
+    thing. So the mapping lives here, and the shell lines SKILL.md hands the
+    agent are asserted against it in `self_check` — change LANE_ROOT and the
+    doc goes red instead of quietly disagreeing.
+    """
+    return {"number": number,
+            "branch": f"batch/{number}",
+            "worktree": f"{LANE_ROOT}/{number}"}
+
+
+def _titled(number, titles):
+    return f"#{number} {titles.get(number, '')}".rstrip()
+
+
+def format_lane_start(numbers, titles):
+    """一張一行「開工」— client 從終端機看得到哪張在哪個工作區跑。"""
+    def line(n):
+        lane = lane_of(n)
+        return (f"開工 {_titled(n, titles)} — 工作區 {lane['worktree']}"
+                f"(branch {lane['branch']})")
+
+    return "\n".join(line(n) for n in numbers)
+
+
+def format_lane_done(numbers, titles):
+    """一張一行「完成」— lane 內 build + QA 都綠才印。"""
+    return "\n".join(f"完成 {_titled(n, titles)} — build + QA 綠" for n in numbers)
+
+
+def format_batch_done(numbers, spec):
+    """整批驗證綠之後終端機的最後一行:合了幾張 + 下一棒。"""
+    return (f"{len(numbers)} 張已合併,"
+            f"下一步:`/client-demo #{spec}`(Codex: `$client-demo #{spec}`)"
+            " — 一次 demo 這批")
+
+
+def coverage_union(sections):
+    """這批所有票的「覆蓋驗收項」聯集,保序去重。
+
+    整批驗證要跑的就是這份聯集(spec 決策 ③)。去重是因為兩張票常覆蓋同一條
+    驗收項 — 重複的那條會讓整批驗證與後面的 demo 各演兩次同一件事。
+    """
+    seen, out = set(), []
+    for items in sections:
+        for item in items:
+            if item not in seen:
+                seen.add(item)
+                out.append(item)
+    return out
+
+
+def format_batch_summary(spec, numbers, titles, sections):
+    """spec 票上那則批次總結 comment(整批唯一一個看得完全批的地方)。"""
+    lines = [f"## 批次總結({len(numbers)} 張)", ""]
+    lines += [f"- {_titled(n, titles)} — 已合併({lane_of(n)['branch']})"
+              for n in numbers]
+    lines += ["", "整批驗證:regression + 下列覆蓋驗收項聯集,全綠。", ""]
+    lines += [f"- {item}" for item in coverage_union(sections)]
+    lines += ["", f"下一步:`/client-demo #{spec}`(Codex: `$client-demo #{spec}`)"]
+    return "\n".join(lines)
+
+
 def main():
     """stdin JSON -> the three sections the client reads.
 
@@ -106,7 +176,22 @@ def main():
     """
     data = json.load(sys.stdin)
     titles = {int(k): v for k, v in data.get("titles", {}).items()}
-    print(format_plan(plan_batch(data["tickets"]), titles))
+    mode = data.get("mode", "plan")
+    numbers = data.get("numbers", [])
+    if mode == "plan":
+        print(format_plan(plan_batch(data["tickets"]), titles))
+    elif mode == "start":
+        print(format_lane_start(numbers, titles))
+    elif mode == "done":
+        print(format_lane_done(numbers, titles))
+    elif mode == "merged":
+        print(format_batch_done(numbers, data["spec"]))
+    elif mode == "summary":
+        print(format_batch_summary(data["spec"], numbers, titles,
+                                   data.get("coverage", [])))
+    else:
+        raise SystemExit(f"unknown mode: {mode!r} (want one of plan, "
+                         + ", ".join(MODES) + ")")
 
 
 def skill_command_issue(text):
@@ -134,6 +219,26 @@ def client_lines_issue(text):
     for pattern, message in CLIENT_LINES:
         if not pattern.search(text):
             return message
+    return None
+
+
+MODES = ("start", "done", "merged", "summary")
+
+
+def skill_mode_issue(text):
+    """#53 的每一段一樣要把資料餵進這支檔,不是在文件裡 echo 一行中文。
+
+    `skill_command_issue` 守的是「名單」那一段;平行開工之後 client 螢幕上又多了
+    開工 / 完成 / 已合併 / 批次總結四種中文輸出,每一種都走同一條 cp950 的路。
+    有人把其中一段改回 shell 裡直接印,#58 就原封不動再來一次 — 而且 batch.py
+    照樣全綠。所以逐個 mode 咬住。
+    """
+    blocks = "\n".join(b for b in BASH_BLOCK_RE.findall(text) if "batch.py" in b)
+    missing = [m for m in MODES if f'"mode": "{m}"' not in blocks]
+    if missing:
+        return ("SKILL.md: these batch.py modes are never invoked from a bash "
+                "block — that output is printed somewhere no test and no UTF-8 "
+                f"pin can reach (#58): {', '.join(missing)}")
     return None
 
 
@@ -257,14 +362,27 @@ JSON''')
 
     assert skill_command_issue(text) is None, skill_command_issue(text)
     # 改壞:§3 不再把 JSON 餵進來
+    # 每一段都要換掉 — 只改第一段的話別段還餵得進來,咬到的會是另一條規則
     mutated = text.replace("python <skill dir>/batch.py <<'JSON'",
-                           "python -c print", 1)
+                           "python <skill dir>/nope.py <<'JSON'")
     assert mutated != text
     got = skill_command_issue(mutated)
     assert got and "batch.py" in got, got
     # 繞過:§3 留著,另外多一段自己印的指令
     got = skill_command_issue(text + fence("python3 -c 'print(1)'"))
     assert got and "python -c" in got, got
+
+    # #53:SKILL.md 裡那幾行 git 指令是 client 端唯一真的會動到檔案系統的東西,
+    # 而路徑打錯在 shell 裡是無聲的(它只是多 checkout 一份到錯的地方)。所以每一行
+    # 都對著 lane_of 咬 — 改了 LANE_ROOT 沒改文件,這裡就紅。
+    lane47 = lane_of(47)
+    for command in (
+        f"git worktree add {lane47['worktree']} -b {lane47['branch']}",
+        f"git worktree remove {lane47['worktree']}",
+        f"git merge --no-ff {lane47['branch']}",
+    ):
+        assert command in text, command
+    assert LANE_ROOT.startswith(".git/"), LANE_ROOT  # 不進 git status,不用 gitignore
 
     # #52 過關固化:§4/§5 對 client 講的兩句。真的 SKILL.md 要過,拿掉任何一句要咬。
     assert client_lines_issue(text) is None, client_lines_issue(text)
@@ -278,6 +396,100 @@ JSON''')
     # 指路那句要帶兩端的指令,只留 Claude 端不算
     assert client_lines_issue(
         text.replace("(Codex: `$build #47`)", "", 1)), "§4 Codex 端"
+
+    # ---- #53 平行開工 → 依序合併 → 整批驗證 ----------------------------------
+    # lane 的 branch 與工作區由這裡算,不由 agent 現編:兩個 lane 拿到同一個路徑
+    # 就是這片要防的事(檔案系統層級隔離),而路徑打錯在 shell 裡是無聲的。
+    assert lane_of(47) == {"number": 47, "branch": "batch/47",
+                           "worktree": ".git/batch-worktrees/47"}
+    paths = {lane_of(n)["worktree"] for n in (47, 48, 42)}
+    assert len(paths) == 3, paths
+    # 工作區藏在 .git 底下 -> 不進 git status,也不用 gitignore
+    assert lane_of(47)["worktree"].startswith(".git/")
+
+    # 開工/完成:一張一行,#N 與 title 都在,而且帶得出它在哪個工作區
+    start = format_lane_start([47, 48], {47: "名單", 48: "點頭"})
+    assert start.splitlines() == [
+        "開工 #47 名單 — 工作區 .git/batch-worktrees/47(branch batch/47)",
+        "開工 #48 點頭 — 工作區 .git/batch-worktrees/48(branch batch/48)",
+    ], start
+    assert format_lane_done([47], {47: "名單"}) == "完成 #47 名單 — build + QA 綠"
+    # 沒有 title 也要印得出來(title 抓不到不擋開工)
+    assert format_lane_start([47], {}) == (
+        "開工 #47 — 工作區 .git/batch-worktrees/47(branch batch/47)")
+
+    # 整批合併完的那一行:張數 + 交棒指令兩端都在
+    done = format_batch_done([47, 48, 42], 51)
+    assert done.startswith("3 張已合併,"), done
+    assert "`/client-demo #51`" in done and "`$client-demo #51`" in done, done
+    # 「下一步:」開頭 -> validate.py 的 baton 雙寫 guard 掃得到這個形狀
+    assert "下一步:`/client-demo #51`" in done, done
+    assert format_batch_done([47], 51).startswith("1 張已合併,")
+
+    # 覆蓋驗收項聯集:保序、去重(兩張票覆蓋同一條驗收項時 demo 不該演兩次)
+    assert coverage_union([["a", "b"], ["b", "c"], []]) == ["a", "b", "c"]
+    assert coverage_union([]) == []
+
+    # spec 票的批次總結:每張都列到、聯集列到、結尾是交棒行
+    summary = format_batch_summary(
+        51, [47, 48], {47: "名單", 48: "點頭"}, [["a"], ["a", "b"]])
+    assert "#47 名單 — 已合併(batch/47)" in summary, summary
+    assert "#48 點頭 — 已合併(batch/48)" in summary, summary
+    assert "- a" in summary and "- b" in summary, summary
+    assert summary.count("- a") == 1, summary
+    assert summary.rstrip().endswith(
+        "下一步:`/client-demo #51`(Codex: `$client-demo #51`)"), summary
+
+    # #53 的四種輸出同樣全是中文,同樣印在 cp950 的主控台上 — 名單走過一次的
+    # 那條路,它們每一條都要自己再走一次(mode 是新的,__main__ 的 pin 不會自動
+    # 蓋到沒被跑過的分支)。emoji 留著:Big5 沒有它,沒 pin 就當場炸。
+    for payload, want in (
+        ({"mode": "start", "numbers": [47], "titles": {"47": "登入頁 → 🔑"}},
+         format_lane_start([47], {47: "登入頁 → 🔑"})),
+        ({"mode": "done", "numbers": [47], "titles": {"47": "登入頁 → 🔑"}},
+         format_lane_done([47], {47: "登入頁 → 🔑"})),
+        ({"mode": "merged", "numbers": [47, 48], "spec": 51},
+         format_batch_done([47, 48], 51)),
+        ({"mode": "summary", "numbers": [47], "spec": 51,
+          "titles": {"47": "登入頁 → 🔑"}, "coverage": [["導向 → 🏠"]]},
+         format_batch_summary(51, [47], {47: "登入頁 → 🔑"}, [["導向 → 🏠"]])),
+    ):
+        child = subprocess.run(
+            [sys.executable, __file__],
+            input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            capture_output=True,
+            env=dict(os.environ, PYTHONIOENCODING="cp950"),
+        )
+        assert child.returncode == 0, (payload["mode"],
+                                       child.stderr.decode("utf-8", "replace"))
+        # splitlines():子行程在 Windows 上吐 CRLF,這裡驗的是編碼不是行尾
+        assert (child.stdout.decode("utf-8").splitlines()
+                == want.splitlines()), payload["mode"]
+
+    # 沒給 mode 還是走名單 — #52 的用法整片不能被這片改掉
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=json.dumps({"tickets": [_ticket(1), _ticket(2, [1])]}).encode(),
+        capture_output=True)
+    assert child.returncode == 0, child.stderr.decode("utf-8", "replace")
+    assert (child.stdout.decode("utf-8").splitlines()
+            == format_plan(plan_batch([_ticket(1), _ticket(2, [1])]), {}
+                           ).splitlines()), child.stdout
+
+    # 打錯 mode 要當場停,不要靜靜印出空的一片給 client
+    child = subprocess.run([sys.executable, __file__], input=b'{"mode": "nope"}',
+                           capture_output=True)
+    assert child.returncode != 0 and not child.stdout.strip(), child.stdout
+
+    # #53 固化:新加的每一段一樣要把資料餵進這支檔。哪天有人把「開工」改成
+    # 在 SKILL.md 裡 echo 一行中文,那就是 #58 原封不動再來一次。
+    assert skill_mode_issue(text) is None, skill_mode_issue(text)
+    for mode in MODES:
+        # 全部換掉 — 同一個 mode 在 SKILL.md 可能被呼叫不只一次
+        mutated = text.replace(f'"mode": "{mode}"', '"mode": "nope"')
+        assert mutated != text, mode
+        got = skill_mode_issue(mutated)
+        assert got and mode in got, (mode, got)
 
     print("OK batch self-check green")
 
