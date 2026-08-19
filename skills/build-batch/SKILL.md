@@ -151,15 +151,18 @@ JSON
 
 印出來的整段當 comment body 貼上去(`gh issue comment 51 --body-file -`)。
 
-工作區已經在 §7 一張一張回收掉了,這裡不用再收。要確認有沒有漏收,母體只有 `.git/batch-worktrees/` 底下這幾個(路徑同 §7)— 只問這個母體:
+工作區已經在 §7 一張一張回收掉了,這裡不用再收。要確認有沒有漏收,母體只有 `.git/batch-worktrees/` 底下這幾個(路徑同 §7)— 只問這個母體,順便確認 branch 照 §7 留著:
 
 ```bash
-git worktree list --porcelain | grep -F /batch-worktrees/
+git worktree list --porcelain | grep -F /.git/batch-worktrees/   # 應該沒有輸出
+git branch --list 'batch/*'                                      # 應該還列得出來
 ```
 
-沒有輸出(`grep` 回 exit 1,正常)就是收乾淨了。印出來的每一列就是一條沒走完 §7 的 lane,照 §7 的 `git worktree remove` 收掉再往下。
+第一行沒有輸出(`grep` 回 exit 1,正常)就是工作區收乾淨了;印出來的每一列就是一條沒走完 §7 的 lane,照 §7 的 `git worktree remove` 收掉再往下。第二行反過來要**有**輸出 — `batch/*` 空掉表示有人連 branch 一起刪了,§7 明寫 branch 留著到票結案。兩行合起來才是「worktree 移除、branch 保留」這條驗收原句的判準,只跑第一行等於只驗了一半。
 
-判準用 `--porcelain` 過濾、不看列數,有兩個理由。一是**母體要有界**:`git worktree list` 的完整輸出是整個 repo 的所有 worktree,包含別人開的 — 例如 Claude Code 給 subagent 常駐的 `.claude/worktrees/agent-*`,跟 `/build-batch` 無關卻一直住在這裡。#61 開票那台機器實測:0 個 lane 殘留,`git worktree list` 還是印 4 列 — 1 列主 repo + 3 列 subagent worktree,拿「只剩主 repo」判就是紅的;反過來真的殘留 1 條時,那一列混在同樣的 4 列裡也認不出來(#61)。二是**問 git 而不是問檔案系統**:`ls .git/batch-worktrees` 在 linked worktree 底下會踩到 `.git` 是檔案不是目錄,錯誤被吃掉就變成假綠,而且註冊還在、目錄先沒了的 lane 它也看不到。
+判準只看 `.git/batch-worktrees/` 這個母體、不看 `git worktree list` 的列數,因為完整輸出是整個 repo 的所有 worktree,包含別人開的 — 例如 Claude Code 給 subagent 常駐的 `.claude/worktrees/agent-*`,跟 `/build-batch` 無關卻一直住在這裡。#53 的 QA 實錄(步驟 6):0 個 lane 殘留,`git worktree list` 還是印 4 列(1 列主 repo + 3 列 subagent worktree),拿「只剩主 repo」判就是紅的;反過來真的殘留 1 條時,那一列混在同樣的 4 列裡也認不出來(#61)。
+
+也不要退回 `ls .git/batch-worktrees`:在 linked worktree 底下 `.git` 是檔案不是目錄,`ls` 直接報錯(被 `2>/dev/null` 一吃就是假綠),而「註冊還在、目錄先沒了」的 lane 它根本看不到。問 git 的版本這兩種都答得對,而且 git 自己失敗(cwd 不在 repo 裡)會把 `fatal:` 印在 stderr 上,看得見 — 不像被重導掉的 `ls`。
 
 ## Codex 端
 
