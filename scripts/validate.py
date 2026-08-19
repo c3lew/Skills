@@ -199,9 +199,9 @@ def handoff_target_issues(skills_dir):
 MAIN_BLOCK = 'if __name__ == "__main__"'
 MAIN_TEST = ast.unparse(ast.parse(MAIN_BLOCK + ":\n    pass").body[0].test)
 # (stream, pin, bypass, symptom). Two ways to survive a cp950 console: pin the
-# stream's encoding, or go around the text layer entirely via .buffer. Only the
-# pin is positional (see the docstring) — .buffer carries no encoding at all,
-# so wherever it sits it is already safe.
+# stream's encoding, or go around the text layer entirely via .buffer. Both
+# halves are positional (see the docstring): the pin must sit in the `__main__`
+# block, the bypass must sit somewhere the module actually reaches (#70).
 STREAM_PINS = (
     ("stdout", 'sys.stdout.reconfigure(encoding="utf-8")', "sys.stdout.buffer",
      "its 中文 output is mojibake"),
@@ -226,6 +226,74 @@ def norm(expr):
     return ast.unparse(ast.parse(expr, mode="eval").body)
 
 
+DEAD_END = (ast.Raise, ast.Return, ast.Break, ast.Continue)
+
+
+def runs(body):
+    """The statements in `body` that actually execute, dead code cut out.
+
+    Cut: a branch whose test is a constant the other way (`if False:`),
+    everything after a `raise`/`return`, and the body of a def — a def only
+    runs when something calls it, which `live_exprs` resolves separately.
+    An `except` handler counts as dead too: it is the error path, not the
+    path a script prints its output on.
+    """
+    out = []
+    for stmt in body:
+        if isinstance(stmt, ast.If):
+            try:
+                branch = bool(ast.literal_eval(stmt.test))
+            except Exception:
+                branch = None  # not decidable — both halves may run
+            if branch is not False:
+                out += runs(stmt.body)
+            if branch is not True:
+                out += runs(stmt.orelse)
+        elif isinstance(stmt, ast.Try):
+            out += runs(stmt.body) + runs(stmt.orelse) + runs(stmt.finalbody)
+        elif isinstance(stmt, (ast.For, ast.AsyncFor, ast.While, ast.With,
+                               ast.AsyncWith)):
+            out += runs(stmt.body) + runs(getattr(stmt, "orelse", []))
+        elif isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef,
+                               ast.ClassDef)):
+            continue
+        else:
+            out.append(stmt)
+        if isinstance(stmt, DEAD_END):
+            break
+    return out
+
+
+def live_exprs(tree):
+    """`code_exprs` restricted to code the module actually reaches (#70).
+
+    The bypass half of the guard has to be positional like the pin half: a
+    `sys.stdout.buffer` sitting in a never-called function or behind
+    `if False:` is not "the script writes bytes", it is a switch anyone can
+    flip to silence the guard — the same failure shape #60 closed for prose.
+
+    Reachability is a name-only call graph from the module's top level:
+    a call by bare name (or `.attr`) pulls that def's body in, transitively.
+    ponytail: a bypass reached only through an alias, a dict of handlers or a
+    callback still counts as live, and two defs sharing a name are one node.
+    Upgrade to real resolution if that ever shows up — the cheap version
+    already kills every dead-code case in #70.
+    """
+    defs = {n.name: n for n in ast.walk(tree)
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    exprs, called, todo = set(), set(), runs(tree.body)
+    while todo:
+        for node in ast.walk(todo.pop()):
+            if isinstance(node, (ast.Attribute, ast.Call)):
+                exprs.add(ast.unparse(node))
+            if isinstance(node, ast.Call):
+                name = getattr(node.func, "id", getattr(node.func, "attr", None))
+                if name in defs and name not in called:
+                    called.add(name)
+                    todo += runs(defs[name].body)
+    return exprs
+
+
 def stream_encoding_issues(repo):
     """Every runnable script must pin its streams to UTF-8 (#58).
 
@@ -246,6 +314,11 @@ def stream_encoding_issues(repo):
     breaks: self_check calls `main()` with stdout captured into a StringIO,
     which has no `reconfigure` — a substring-anywhere check would call that
     green, which is exactly how this guard first shipped.
+
+    The `.buffer` bypass is positional too, but by reachability rather than by
+    block: `main()` legitimately writes bytes and `__main__` calls it, while a
+    `.buffer` line in dead code or in a function nobody calls is a switch that
+    silences the guard without printing a single byte (#70).
     """
     errors = []
     for py in sorted(repo.rglob("*.py")):
@@ -262,11 +335,12 @@ def stream_encoding_issues(repo):
         if main is None:
             continue
         whole, inside = code_exprs(tree), code_exprs(main)
+        live = live_exprs(tree)
         label = py.relative_to(repo).as_posix()
         for stream, pin, bypass, symptom in STREAM_PINS:
             if stream == "stdin" and f"sys.{stream}" not in whole:
                 continue  # a script that never reads stdin has nothing to pin
-            if norm(bypass) in whole or norm(pin) in inside:
+            if norm(bypass) in live or norm(pin) in inside:
                 continue
             errors.append(
                 f"{label}: runnable script does not pin {stream} to UTF-8 "
@@ -818,6 +892,26 @@ def self_check():
         ):
             bad.write_text(mention, encoding="utf-8")
             assert len(stream_encoding_issues(repo)) == 1, mention
+
+        # #70: the bypass only counts where the module actually reaches it.
+        # Every one of these writes bytes *somewhere* in the AST — and every
+        # one of them still prints naked 中文 when you run it.
+        for dead in (
+            f"def dump():\n    {out_bypass}.write(b'x')\n" + naked,
+            f"if False:\n    {out_bypass}.write(b'x')\n" + naked,
+            f"try:\n    pass\nexcept Exception:\n"
+            f"    {out_bypass}.write(b'x')\n" + naked,
+            naked + f"    raise SystemExit\n    {out_bypass}.write(b'x')\n",
+        ):
+            bad.write_text(dead, encoding="utf-8")
+            assert len(stream_encoding_issues(repo)) == 1, dead
+        # ...and the two shapes that do reach it stay green
+        for alive in (
+            runnable + f"{out_bypass}.write('要開'.encode())\n",
+            f"def main():\n    {out_bypass}.write(b'x')\n" + runnable + "main()\n",
+        ):
+            bad.write_text(alive, encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], alive
 
         # #65: the `__main__` block does not have to be top-level. Indent it
         # one level under a try or an `if True` and a `tree.body`-only scan
