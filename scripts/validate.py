@@ -23,6 +23,7 @@ Usage:
     python scripts/validate.py               # lint the repo, exit 1 on errors
     python scripts/validate.py --self-check  # run built-in assertions
 """
+import ast
 import re
 import sys
 from pathlib import Path
@@ -195,6 +196,7 @@ def handoff_target_issues(skills_dir):
 
 
 MAIN_BLOCK = 'if __name__ == "__main__"'
+MAIN_TEST = ast.unparse(ast.parse(MAIN_BLOCK + ":\n    pass").body[0].test)
 # (stream, pin, bypass, symptom). Two ways to survive a cp950 console: pin the
 # stream's encoding, or go around the text layer entirely via .buffer. Only the
 # pin is positional (see the docstring) — .buffer carries no encoding at all,
@@ -205,6 +207,22 @@ STREAM_PINS = (
     ("stdin", 'sys.stdin.reconfigure(encoding="utf-8")', "sys.stdin.buffer",
      "中文 input is mojibake or UnicodeDecodeError"),
 )
+
+
+def code_exprs(node):
+    """Every attribute access and call under `node`, as normalised source.
+
+    Reading the AST instead of the file text is the whole point: comments are
+    gone before parsing and a docstring is a str constant, never an Attribute,
+    so prose *about* `sys.stdout.buffer` cannot pass for a use of it (#60).
+    """
+    return {ast.unparse(n) for n in ast.walk(node)
+            if isinstance(n, (ast.Attribute, ast.Call))}
+
+
+def norm(expr):
+    """`expr` written the way ast.unparse would write it — quotes and all."""
+    return ast.unparse(ast.parse(expr, mode="eval").body)
 
 
 def stream_encoding_issues(repo):
@@ -232,15 +250,20 @@ def stream_encoding_issues(repo):
     for py in sorted(repo.rglob("*.py")):
         if any(part.startswith((".", "__")) for part in py.parts):
             continue  # __pycache__, .venv — not source anyone runs
-        text = py.read_text(encoding="utf-8")
-        if MAIN_BLOCK not in text:
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue  # nothing runs it either — not this guard's failure
+        main = next((n for n in tree.body if isinstance(n, ast.If)
+                     and ast.unparse(n.test) == MAIN_TEST), None)
+        if main is None:
             continue
-        entry = text.index(MAIN_BLOCK)
+        whole, inside = code_exprs(tree), code_exprs(main)
         label = py.relative_to(repo).as_posix()
         for stream, pin, bypass, symptom in STREAM_PINS:
-            if stream == "stdin" and "sys.stdin" not in text:
+            if stream == "stdin" and f"sys.{stream}" not in whole:
                 continue  # a script that never reads stdin has nothing to pin
-            if bypass in text or text.rfind(pin) > entry:
+            if norm(bypass) in whole or norm(pin) in inside:
                 continue
             errors.append(
                 f"{label}: runnable script does not pin {stream} to UTF-8 "
@@ -779,6 +802,19 @@ def self_check():
         for pin in (in_pin, in_bypass):
             bad.write_text(reader + "    " + pin + "\n", encoding="utf-8")
             assert stream_encoding_issues(repo) == [], pin
+
+        # #60: prose is not code. A comment or docstring that *mentions*
+        # the bypass (or the pin) used to satisfy a substring scan, so one
+        # line of 「這裡沒走 sys.stdout.buffer」 switched the guard off.
+        naked = runnable + 'print("要開")\n'
+        for mention in (
+            naked + "    # 這裡沒走 " + out_bypass + "\n",
+            '"""' + out_bypass + ' 的說明,不是呼叫"""\n' + naked,
+            naked + "    # 記得補 " + out_pin + "\n",
+            'x = "' + out_bypass + '"\n' + naked,
+        ):
+            bad.write_text(mention, encoding="utf-8")
+            assert len(stream_encoding_issues(repo)) == 1, mention
 
     # and the live repo is clean — every script that can be run pins its streams
     assert stream_encoding_issues(REPO) == [], stream_encoding_issues(REPO)
