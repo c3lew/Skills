@@ -247,6 +247,84 @@ def format_fixing_comment(number, merged, titles=None):
     ])
 
 
+def _files(files):
+    if not files:
+        raise SystemExit("conflict modes want at least one file — 「撞在哪個檔案」"
+                         "是 client 唯一看得懂的定位")
+    return "、".join(files)
+
+
+def _how(how):
+    """`how` 是 agent 現寫的自由文字,而它會被貼上票 — 擋掉貼 diff 這種寫法。
+
+    紀錄是寫給非技術 client 讀的一句話。貼進衝突標記或整段 diff,那一行就從
+    「白話紀錄」變成「請你自己看 git」,而這正是這片要消掉的東西。
+    """
+    if not how or "\n" in how or "<<<<<<<" in how or ">>>>>>>" in how:
+        raise SystemExit("`how` 要是一句白話、單行、不含衝突標記 — 它會原封不動"
+                         f"貼上票給 client 讀,got {how!r}")
+    return how
+
+
+def _who(numbers, titles, files):
+    """「誰跟誰撞在哪個檔案」那半句。`numbers[0]` 是正在合的那張,其餘是對面。
+
+    對面有幾張是查出來的結果,不是我們挑的(§7a):這批裡自己動過那個檔案的
+    lane 就是候選。三種都要講得出來,因為三種都真的會發生 —
+
+    - 一張:常態,講「都改到 X」。
+    - 零張:那個檔案這批沒人動過(主線自己的 commit 改的)。猜一個票號貼上票
+      比不講更糟,所以照實說跟主線既有的內容撞。
+    - 多張:內容層級認不出唯一那張的時候(§7a 最後一步)。列出候選是誠實的,
+      隨便挑一張講死才是 client 會被指去看錯票的那條路 —— 前四輪 QA 有三輪
+      卡在這件事上。
+    """
+    if not numbers:
+        raise SystemExit("conflict modes want at least the ticket being merged, "
+                         "got []")
+    here = _titled(numbers[0], titles)
+    others = numbers[1:]
+    if not others:
+        return f"{here} 跟主線上既有的內容撞在 {_files(files)}"
+    if len(others) == 1:
+        return f"{here} 跟 {_titled(others[0], titles)} 都改到 {_files(files)}"
+    listed = "、".join(_titled(n, titles) for n in others)
+    return (f"{here} 跟這批裡同樣改過 {_files(files)} 的 {listed} 撞在一起"
+            f"(是哪一張要打開那個檔案才分得出來)")
+
+
+def format_conflict_resolved(numbers, titles, files, how):
+    """撞車解掉之後,相關的票上各留的那一行白話紀錄。
+
+    每張票貼的是同一句 — client 從哪一張票翻起來,看到的都是完整的「哪幾張撞、
+    撞在哪個檔案、怎麼解的」,不用再去對面那張湊。句子由這裡組,不由 agent 現編:
+    它是 client 之後回頭對帳的唯一紀錄,措辭漂掉就對不起來。
+    """
+    return f"撞車已解:{_who(numbers, titles, files)} — {_how(how)}。合併照常繼續,不用你處理。"
+
+
+def format_conflict_stopped(numbers, titles, files, merged, pending):
+    """解不掉的時候,終端機與相關的票上的同一份白話說明。
+
+    停下來的重點不是「有 conflict」,是 client 要能不看 git 就知道現在的狀態:
+    誰跟誰撞在哪個檔案、什麼已經進主線了、什麼還原地等著。所以已合/未合兩份清單
+    跟撞車那句一起印 — 少了它們,client 得自己去問 git 才敢決定。
+    """
+    lines = [
+        f"撞車停下:{_who(numbers, titles, files)},自己解不掉 — 這批合併停在這裡,等你決定。",
+        "",
+        f"已經合進主線的({len(merged)} 張):",
+    ]
+    lines += [f"  {_titled(n, titles)}" for n in merged] or ["  (無)"]
+    lines += ["", f"還沒合的({len(pending)} 張),工作區與 branch 都留著:"]
+    lines += [f"  {_titled(n, titles)} — {lane_of(n)['worktree']}"
+              f"(branch {lane_of(n)['branch']})" for n in pending] or ["  (無)"]
+    lines += ["", "沒有猜、沒有強推,也沒有把任何一邊蓋掉。"]
+    return "\n".join(lines)
+
+
+
+
 def coverage_union(sections):
     """這批所有票的「覆蓋驗收項」聯集,保序去重。
 
@@ -354,6 +432,13 @@ def main():
     elif mode == "summary":
         print(format_batch_summary(data["spec"], merged, titles,
                                    data.get("coverage", {}), fixing))
+    elif mode == "conflict-resolved":
+        print(format_conflict_resolved(numbers, titles, data.get("files", []),
+                                       data["how"]))
+    elif mode == "conflict-stopped":
+        print(format_conflict_stopped(numbers, titles, data.get("files", []),
+                                      data.get("merged", []),
+                                      data.get("pending", [])))
     else:
         raise SystemExit(f"unknown mode: {mode!r} (want one of plan, "
                          + ", ".join(MODES) + ")")
@@ -399,7 +484,59 @@ def fail_lane_issue(text):
     return None
 
 
-MODES = ("start", "done", "split", "merged", "fixing", "summary")
+# #55:撞車處置的判準全在散文裡 — 「呼叫哪個原件解」「停下時什麼留著」都不是
+# 函式,改壞了 batch.py 一條 assert 都不會紅。所以逐句咬。
+CONFLICT_LINES = (
+    (re.compile(re.escape("`/resolving-merge-conflicts`")),
+     "SKILL.md 7b: 撞車要呼叫既有的 /resolving-merge-conflicts 解 — 這句不見了,"
+     "下一個 agent 會自己發明解法"),
+    (re.compile(re.escape("git merge-base")),
+     "SKILL.md 7a: 認票要問「已合的那幾張裡誰自己動過這個檔案」(merge-base + "
+     "git diff --name-only)— 改回讀內容認票,圖檔沒有內容可讀、第三張乾淨改過"
+     "同一個檔案時還會靜靜報出錯的票號給 client(QA 第 3、4 輪各實測到一次)"),
+    (re.compile(re.escape('merged="')),
+     "SKILL.md 7a: 候選母體要是「這批已經合進主線的那幾張」(agent 手上的名單),"
+     "不是 git branch --list 'batch/*' — 那會把還沒輪到的 lane 與上一批殘留的 branch "
+     "一起撈進來,印一張跟這次 merge 無關的票號給 client(QA 第 5 輪實測)"),
+    (re.compile(re.escape("--name-status -M")),
+     "SKILL.md 7a: 正在合的那張把檔案改名時,對面動的是舊名字 — 少了這行 rename "
+     "pre-image 的查法,候選會是空的,然後對 client 講一句假的「跟主線上既有的內容撞」"
+     "(QA 第 5 輪實測)"),
+    (re.compile(re.escape("git branch --list 'batch/*' --contains")),
+     "SKILL.md 7a: 候選多於一條時要用 git blame 那一行 + --contains 換算成 lane"),
+    (re.compile(re.escape("worktree 與 branch 都留著")),
+     "SKILL.md 7c: 停下時未合的 lane 要保留 worktree 與 branch — 這句不見了,"
+     "client 決定之後那些 lane 就接不回去了"),
+    (re.compile(re.escape("git merge --abort")),
+     "SKILL.md 7c: 停下之前要把沒合完的 merge 退掉 — 少了它,client 接手的是一個"
+     "帶衝突標記的 index"),
+)
+# 「不強推」不能只靠散文承諾:文件裡真的貼出一行 `-X ours`,agent 照著跑就把一張票
+# 的工作蓋掉了,而且蓋掉的當下沒有人看得見。所以直接禁止這些指令出現在可執行的
+# bash block 裡(散文裡點名它們是「不要做」,不受影響)。
+FORCE_RE = re.compile(r"--force|-X +(?:ours|theirs)|push +-f\b|reset +--hard")
+
+
+def forced_merge_issue(text):
+    """bash block 裡有沒有把一邊蓋過去的指令(#55)。"""
+    for block in BASH_BLOCK_RE.findall(text):
+        hit = FORCE_RE.search(block)
+        if hit:
+            return (f"SKILL.md: a bash block runs `{hit.group(0)}` — 撞車的處置只有"
+                    "「解掉」與「停下」兩條,蓋過去會無聲丟掉一張票的工作(#55)")
+    return None
+
+
+def conflict_lines_issue(text):
+    """撞車處置的那幾句還在不在(#55)。"""
+    for pattern, message in CONFLICT_LINES:
+        if not pattern.search(text):
+            return message
+    return None
+
+
+MODES = ("start", "done", "split", "merged", "fixing", "summary",
+         "conflict-resolved", "conflict-stopped")
 
 
 def skill_mode_issue(text):
@@ -828,6 +965,146 @@ JSON''')
         m = pattern.search(text)
         assert m, pattern.pattern
         assert fail_lane_issue(text.replace(m.group(0), "", 1)), m.group(0)
+
+    # ---- #55 撞車:解得掉自己解、解不掉停下來 --------------------------------
+    # 相關的票貼的是同一句,而且那一句要自己講完「誰跟誰、哪個檔案、怎麼解的」—
+    # client 不需要知道什麼是 merge conflict,只需要讀得懂這一行。
+    resolved = format_conflict_resolved(
+        [48, 47], {48: "點頭", 47: "名單"}, ["skills/build-batch/SKILL.md"],
+        "兩邊都在 §7 加段落,依序保留")
+    assert resolved == (
+        "撞車已解:#48 點頭 跟 #47 名單 都改到 skills/build-batch/SKILL.md — "
+        "兩邊都在 §7 加段落,依序保留。合併照常繼續,不用你處理。"), resolved
+    assert "conflict" not in resolved and "merge" not in resolved, resolved
+    # 撞在多個檔案 -> 全部列出來,不只報第一個
+    assert "a.py、b.py" in format_conflict_resolved(
+        [1, 2], {}, ["a.py", "b.py"], "x"), "multi-file"
+
+    # §7a 的三種認票結果都要講得出來(對面幾張是查出來的,不是我們挑的)
+    #   0 張:那個檔案這批沒人動過 -> 照實講跟主線既有的內容撞,不猜票號
+    solo = _who([48], {48: "點頭"}, ["a.py"])
+    assert solo == "#48 點頭 跟主線上既有的內容撞在 a.py", solo
+    #   多張:內容層級分不出唯一那張 -> 列出候選,不挑一張講死
+    many = _who([48, 47, 42], {48: "點頭", 47: "名單", 42: "算票"}, ["a.py"])
+    assert many == ("#48 點頭 跟這批裡同樣改過 a.py 的 #47 名單、#42 算票 撞在一起"
+                    "(是哪一張要打開那個檔案才分得出來)"), many
+    #   連正在合的那張都沒給 -> 當場停,不要印半殘的紀錄貼上票
+    for bad in ([], ()):
+        try:
+            format_conflict_resolved(bad, {}, ["a.py"], "x")
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError(f"expected SystemExit for numbers={bad}")
+    try:
+        format_conflict_resolved([48, 47], {}, [], "x")
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("expected SystemExit for empty files")
+
+    # `how` 是 agent 現寫的自由文字,會原封不動貼上票 — 貼 diff / 衝突標記要當場停
+    for bad_how in ("", "第一行\n第二行", "<<<<<<< HEAD", "a\n>>>>>>> batch/48"):
+        try:
+            format_conflict_resolved([48, 47], {}, ["a.py"], bad_how)
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError(f"expected SystemExit for how={bad_how!r}")
+
+    # 解不掉:誰跟誰撞在哪個檔案 + 已合的留主線 + 未合的 lane 原地留著
+    stopped = format_conflict_stopped(
+        [48, 47], {48: "點頭", 47: "名單", 42: "算票", 49: "收尾"},
+        ["skills/build-batch/SKILL.md"], [42, 47], [48, 49])
+    assert stopped.splitlines() == [
+        "撞車停下:#48 點頭 跟 #47 名單 都改到 skills/build-batch/SKILL.md,"
+        "自己解不掉 — 這批合併停在這裡,等你決定。",
+        "",
+        "已經合進主線的(2 張):",
+        "  #42 算票",
+        "  #47 名單",
+        "",
+        "還沒合的(2 張),工作區與 branch 都留著:",
+        "  #48 點頭 — .git/batch-worktrees/48(branch batch/48)",
+        "  #49 收尾 — .git/batch-worktrees/49(branch batch/49)",
+        "",
+        "沒有猜、沒有強推,也沒有把任何一邊蓋掉。",
+    ], stopped
+    # 停下那句一樣是給非技術 client 讀的 — 第一行不准漏術語出來。後面幾行留著
+    # branch 名與 lane 路徑是刻意的:那是 client(或他找來的人)要回到那個工作區
+    # 唯一能貼進終端機的東西,不是術語裝飾。
+    headline = stopped.splitlines()[0]
+    for jargon in ("conflict", "merge", "index", "rebase", "abort"):
+        assert jargon not in headline.lower(), (jargon, headline)
+
+    # 未合 lane 的路徑同樣由 lane_of 算 — client 照著它就能回到那個工作區
+    for n in (48, 49):
+        assert lane_of(n)["worktree"] in stopped and lane_of(n)["branch"] in stopped
+    # 第一張就撞:已合的是空的,照樣要印出來讓 client 知道主線沒被動過
+    first = format_conflict_stopped([48, 47], {}, ["a.py"], [], [48])
+    assert "已經合進主線的(0 張):\n  (無)" in first, first
+    # §7a 查不出另一張(0 候選)-> 停下那句照實講,不猜票號
+    nobody = format_conflict_stopped([48], {48: "點頭"}, ["a.py"], [47], [48])
+    assert nobody.splitlines()[0] == (
+        "撞車停下:#48 點頭 跟主線上既有的內容撞在 a.py,自己解不掉 — "
+        "這批合併停在這裡,等你決定。"), nobody
+    assert "#47" not in nobody.splitlines()[0], nobody
+
+    assert conflict_lines_issue(text) is None, conflict_lines_issue(text)
+    for original, label in (
+        ("`/resolving-merge-conflicts`", "§7b 呼叫原件解"),
+        ("worktree 與 branch 都留著", "§7c 未合的 lane 留著"),
+        ("git merge-base", "§7a 認票問的是「誰動過這個檔案」"),
+        ('merged="', "§7a 候選母體是已合名單,不是所有 batch/* branch"),
+        ("--name-status -M", "§7a rename 的 pre-image 也要查"),
+        ("git branch --list 'batch/*' --contains", "§7a 多候選時的 blame 換算"),
+        ("git merge --abort", "§7c 退掉沒合完的 merge"),
+    ):
+        assert original in text, label
+        # 全部換掉 — 同一句在 SKILL.md 可能出現不只一次,只拿掉第一個等於沒 mutate
+        assert conflict_lines_issue(text.replace(original, "")), label
+
+    # 「不強推」要咬在可執行的那一面:文件裡真的貼出這些指令就是紅的
+    assert forced_merge_issue(text) is None, forced_merge_issue(text)
+    for command in ("git push --force", "git merge -X ours batch/47",
+                    "git merge -X theirs batch/47", "git reset --hard origin/main",
+                    "git push -f"):
+        got = forced_merge_issue(text + fence(command))
+        assert got and "#55" in got, (command, got)
+    # 散文裡點名「不要做」不算 — 那正是文件該講的話
+    assert forced_merge_issue("不要用 --force,也不要 -X ours") is None
+
+    # 兩種撞車輸出同樣印在 cp950 的主控台上,而且會被 gh 貼回票 — 自己走一次
+    for payload, want in (
+        ({"mode": "conflict-resolved", "numbers": [48, 47],
+          "titles": {"48": "登入頁 → 🔑", "47": "導向"},
+          "files": ["登入.py"], "how": "兩邊的段落都留著 → 依序擺"},
+         format_conflict_resolved([48, 47], {48: "登入頁 → 🔑", 47: "導向"},
+                                  ["登入.py"], "兩邊的段落都留著 → 依序擺")),
+        ({"mode": "conflict-stopped", "numbers": [48, 47],
+          "titles": {"48": "登入頁 → 🔑", "47": "導向"},
+          "files": ["登入.py"], "merged": [47], "pending": [48]},
+         format_conflict_stopped([48, 47], {48: "登入頁 → 🔑", 47: "導向"},
+                                 ["登入.py"], [47], [48])),
+    ):
+        child = subprocess.run(
+            [sys.executable, __file__],
+            input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            capture_output=True,
+            env=dict(os.environ, PYTHONIOENCODING="cp950"),
+        )
+        assert child.returncode == 0, (payload["mode"],
+                                       child.stderr.decode("utf-8", "replace"))
+        assert (child.stdout.decode("utf-8").splitlines()
+                == want.splitlines()), payload["mode"]
+
+    # 連正在合的那張都沒給 -> 子行程也要當場停,不要靜靜貼一句半殘的紀錄上票
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=json.dumps({"mode": "conflict-resolved", "numbers": [],
+                          "files": ["a.py"], "how": "x"}).encode(),
+        capture_output=True)
+    assert child.returncode != 0 and not child.stdout.strip(), child.stdout
 
     print("OK batch self-check green")
 
