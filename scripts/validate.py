@@ -281,8 +281,63 @@ def runs(body):
 
 
 def names_in(expr):
-    """Every identifier `expr` reads — `Name.id` and `Attribute.attr` alike."""
-    return {getattr(n, "id", getattr(n, "attr", None)) for n in ast.walk(expr)}
+    """Every identifier `expr` reads — `Name.id` and `Attribute.attr` alike.
+
+    A `Lambda` is not descended into. Its body is deferred code: it runs when
+    something *calls* the lambda, not where the literal sits — the same reason
+    `runs` cuts a def's body and `own_scope` stops at one. Walking in from here
+    read the lambda's own parameter as if it were the module's dead `dump`, and
+    read a lambda that merely *hands `dump` on* as if calling it ran `dump` —
+    either way `return lambda: dump` came back as "what `get()` gives you", and
+    `get()()` exempted a file where not one line of `dump` runs (#83). What a
+    lambda reaches once it really is called is `free_in`.
+    """
+    out, stack = set(), [expr]
+    while stack:
+        n = stack.pop()
+        if isinstance(n, ast.Lambda):
+            continue
+        out.add(getattr(n, "id", getattr(n, "attr", None)))
+        stack += list(ast.iter_child_nodes(n))
+    return out
+
+
+def free_in(lam):
+    """What a `Lambda` reaches once something calls it — its args shadowed out.
+
+    The other half of `names_in` stopping at a lambda. `own_scope` already
+    refuses to walk into one, so a lambda's args never reach the `local` set a
+    def's `return` is filtered against, while `names_in` used to walk in and
+    read them anyway; that asymmetry is the one #83 was opened on, and putting
+    both halves on the same boundary is what closes its nine cases.
+
+    A parameter's *default* is not shadowed away with the parameter: it is
+    evaluated out here, in the enclosing scope, and reaching the parameter
+    inside the body is reaching whatever the default named — `lambda x=dump:
+    x()` really does run `dump`. Only the defaults of parameters the body
+    actually reads carry, because widening past that is the direction that
+    makes this guard go quiet.
+
+    Recursion falls out of `names_in`: a lambda nested in the body is left
+    alone, because calling the outer one only *builds* the inner one.
+
+    ponytail: this flattens "the body reads it" into "calling the lambda runs
+    it", the same over-approximation `bindings_in` makes for `f = dump; f()`,
+    and it is applied only where something really does call the lambda — a
+    lambda a def merely *hands back* is not walked at all, because #83's own
+    cases require `def get(): return lambda: dump` to stay dead under
+    `get()()`. Two false reds fall out of that, both the noisy direction: one
+    call level further (`get()()()`), and a returned lambda that does call
+    what it was handed (`return lambda x=dump: x()`).
+    """
+    a = lam.args
+    slots = [p.arg for p in a.posonlyargs + a.args]
+    pairs = list(zip(slots[len(slots) - len(a.defaults):], a.defaults))
+    pairs += [(p.arg, d) for p, d in zip(a.kwonlyargs, a.kw_defaults) if d]
+    reads = names_in(lam.body)
+    bound = {p.arg for p in ast.walk(a) if isinstance(p, ast.arg)}
+    return (reads - bound).union(*[names_in(d) for n, d in pairs if n in reads]
+                                 or [set()])
 
 
 def own_scope(node):
@@ -317,15 +372,23 @@ def binds(node):
     `bindings_in` for the same reason: patched shape by shape, the shapes not
     yet named stay open. A `with ... as` target, a comprehension target and a
     walrus need no branch of their own — each is already a `Name` in a
-    `Store` context; a `Lambda`'s args are unreachable because `own_scope`
-    stops at one.
+    `Store` context. A `Lambda`'s args get no branch either, and the reason
+    once given for that — `own_scope` stops at a lambda, so they are
+    unreachable — described only half the reachability: `own_scope` stopped,
+    `names_in` did not, so the body's names came through while the args that
+    shadow them did not. That is the asymmetry #83 was opened on. Both halves
+    stop at a lambda now, and what a *called* lambda reaches, args shadowed
+    out, is `free_in`.
 
     Evidence: `self_check` pins six of the eight — the nested `def` and
     `class` share one branch and only `class` is pinned, because a nested def
     of the same name is *also* held down by the collapsed `defs` dict (#80),
     so a pin there would pass whether this branch collects it or not. It is
     covered by `79-return-sweep.py --own-names` instead, and turns into real
-    evidence once #80 stops shadowing it.
+    evidence once #80 stops shadowing it. Lambda args are outside that count
+    of eight: they are shadowed by `free_in`, whose evidence is the eight dead
+    shapes and three ceilings `self_check` pins under #83, plus
+    `81-lambda-sweep.py --lambda-scope`.
 
     ponytail: a `global`/`nonlocal` name is *not* collected — it declares the
     binding to be someone else's, so it is not a local shadow. That costs a
@@ -399,6 +462,8 @@ def bindings_in(node):
     for target, value in pairs:
         for name, src in bound_pairs(target, value):
             out[name] |= names_in(src)
+            if isinstance(src, ast.Lambda):  # calling the name runs the body
+                out[name] |= free_in(src)
             if isinstance(src, ast.Call):
                 out[name] |= {RET + f for f in names_in(src.func) if f}
     return out
@@ -466,6 +531,8 @@ def live_nodes(tree):
             for n in ast.walk(stmt):
                 if isinstance(n, ast.Call):
                     invoked |= names_in(n.func)
+                    if isinstance(n.func, ast.Lambda):  # `(lambda: x)()` — #83
+                        invoked |= free_in(n.func)
                     if isinstance(n.func, ast.Call):  # `get()()` — #79
                         invoked |= {RET + f for f in names_in(n.func.func) if f}
                     for arg in list(n.args) + [k.value for k in n.keywords]:
@@ -1218,10 +1285,46 @@ def self_check():
                        "        case {**dump}:\n            pass\n"),
                       ("type parameter", "def get[dump]():", ""),
                   )],
+                # #83: `own_scope` stops at a `Lambda`, so the names a lambda
+                # binds never reach `local` — while the other half of the same
+                # line walked straight *into* the lambda body. Either way the
+                # module's `dump` came out as what `get()` hands back, and not
+                # one of these runs a line of it.
+                *[(f"lambda scope: {shape.splitlines()[-1].strip()}",
+                   f"def get():\n    {shape}\n\n\n"
+                   + runnable + f"{call}\n    print('要開')\n")
+                  for shape, call in (
+                      ("return (lambda dump: dump)(1)", "get()()"),
+                      ("f = lambda dump: dump\n    return f(1)", "get()()"),
+                      ("return lambda dump: dump", "get()(1)"),
+                      ("return lambda: dump", "get()()"),
+                      ("return lambda x=dump: x", "get()()"),
+                      # the default is evaluated, but naming `dump` is not
+                      # calling it — and nothing here calls `x` either
+                      ("f = lambda x=dump: 1\n    return f()", "get()"),
+                      ("return (lambda: dump,)[0]", "get()()"),
+                      ("return (lambda: (lambda: dump))()", "get()()"),
+                  )],
         ):
             still_dead = f"def dump():\n    {out_bypass}.write(b'x')\n\n\n" + tail
             bad.write_text(still_dead, encoding="utf-8")
             assert len(stream_encoding_issues(repo)) == 1, label
+
+        # #83 ceiling: the lambda *is* called, what it hands back really is the
+        # dead def, and the result of that is called too — every line of `dump`
+        # runs, so stopping at a `Lambda` must not redden this one.
+        # A parameter default is the same story from the other side: it is
+        # evaluated out here, so reaching the parameter reaches what it named.
+        for body, call in (
+                ("f = lambda: dump\n    return f()", "get()()"),   # bound, called
+                ("return (lambda: dump)()", "get()()"),        # called on the spot
+                ("f = lambda x=dump: x()\n    return f()", "get()"),   # default run
+        ):
+            alive = (f"def dump():\n    {out_bypass}.write(b'x')\n\n\n"
+                     f"def get():\n    {body}\n\n\n"
+                     + runnable + f"{call}\n    print('要開')\n")
+            bad.write_text(alive, encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], alive
 
         # #73: and a bare *mention* stays dead. Widen the rule back to "the
         # name appears live" and one colliding local — or an unrelated
