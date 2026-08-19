@@ -264,6 +264,11 @@ def runs(body):
     return out
 
 
+def names_in(expr):
+    """Every identifier `expr` reads — `Name.id` and `Attribute.attr` alike."""
+    return {getattr(n, "id", getattr(n, "attr", None)) for n in ast.walk(expr)}
+
+
 def live_nodes(tree):
     """Every AST node the module actually reaches (#70).
 
@@ -271,28 +276,55 @@ def live_nodes(tree):
     `sys.stdout.buffer` sitting in a never-called function or behind
     `if False:` is not "the script writes bytes", it is a switch anyone can
     flip to silence the guard — the same failure shape #60 closed for prose.
-    Reachability is a name-only call graph from the module's top level, and a
-    *mention* of a def's name pulls its body in — not just a call by that
-    name. An alias (`f = dump`), a handler dict (`{"a": dump}`) and a callback
-    argument (`run(dump)`) all reach the body, and none of them is a `Call`
-    whose func is `dump` (#71).
-    ponytail: deliberately over-approximates — a local variable that happens
-    to shadow a def's name pulls that def in, and two defs sharing a name are
-    one node. Both err toward calling code live, which is the safe direction
-    for a guard whose bad outcome is stopping a legitimate script; dead code
-    is still cut by `runs`.
+
+    Reachability is a name-only call graph from the module's top level, and
+    what pulls a def's body in is its name in a *call* position: the `func` of
+    a `Call` (`dump()`, `W().go()`), or an argument handed to something that
+    calls it (`run(dump)`). A name bound to another name carries the same
+    reach once that binding is itself called, which is how an alias
+    (`f = dump; f()`) and a handler dict (`H = {"a": dump}; H["a"]()`) reach
+    the body without ever naming `dump` at a call (#71).
+
+    A bare mention does not count and must not: `x = [dump]`, a local
+    `dump = 1` that happens to shadow the def, an unrelated `c.dump` — none of
+    them runs a line of `dump`, and counting them would hand back the switch
+    #70 took away, since one colliding name anywhere live would exempt the
+    whole file (#73).
+
+    ponytail: two approximations remain — two defs sharing a name are one
+    node, and a name handed to a call is assumed called by it. Both widen the
+    live set, which is the direction that makes this guard go *silent* on a
+    script printing unpinned 中文, so they are kept to the two shapes above
+    where a call is the ordinary reading of the code; the four dead-`dump`
+    shapes `self_check` pins under #73 stay dead. Dead code is cut by `runs`.
     """
     defs = {n.name: n for n in ast.walk(tree)
             if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
-    seen, called, todo = [], set(), runs(tree.body)
-    while todo:
-        for node in ast.walk(todo.pop()):
-            seen.append(node)
-            name = getattr(node, "id", getattr(node, "attr", None))
-            if name in defs and name not in called:
-                called.add(name)
-                todo += runs(defs[name].body)
-    return seen
+    live, body = set(), runs(tree.body)
+    while True:
+        invoked, bound = set(), {}
+        for stmt in body:
+            for n in ast.walk(stmt):
+                if isinstance(n, ast.Call):
+                    invoked |= names_in(n.func)
+                    for arg in list(n.args) + [k.value for k in n.keywords]:
+                        invoked |= names_in(arg)
+                elif isinstance(n, ast.Assign):
+                    for target in n.targets:
+                        if isinstance(target, ast.Name):
+                            bound.setdefault(target.id, set())
+                            bound[target.id] |= names_in(n.value)
+        todo = list(invoked)
+        while todo:  # an invoked binding invokes whatever it was bound to
+            for name in bound.get(todo.pop(), ()):
+                if name not in invoked:
+                    invoked.add(name)
+                    todo.append(name)
+        fresh = (invoked & set(defs)) - live
+        if not fresh:
+            return [n for stmt in body for n in ast.walk(stmt)]
+        live |= fresh
+        body = runs(tree.body) + [s for name in live for s in runs(defs[name].body)]
 
 
 def stream_encoding_issues(repo):
@@ -944,9 +976,9 @@ def self_check():
             bad.write_text(pinned, encoding="utf-8")
             assert stream_encoding_issues(repo) == [], pinned
 
-        # #71(a): the call graph counts a *mention* of a def, not only a call
-        # by that name. Alias, handler dict and callback all reach the body —
-        # and every one of these really does write its bytes when you run it.
+        # #71(a): the call graph counts a name in a *call* position, which an
+        # alias, a handler dict and a callback all reach without ever naming
+        # `dump` at a call — and every one really does write its bytes.
         for reach in ("f = dump\n    f()",
                       "H = {'a': dump}\n    H['a']()",
                       "run(dump)"):
@@ -955,11 +987,14 @@ def self_check():
                         + runnable + reach + "\n    print('要開')\n")
             bad.write_text(indirect, encoding="utf-8")
             assert stream_encoding_issues(repo) == [], indirect
-        # the dead-code cases above must not come back green through the new
-        # mention rule: nothing names `dump`, so nothing pulls it in.
-        never = f"def dump():\n    {out_bypass}.write(b'x')\n" + naked
-        bad.write_text(never, encoding="utf-8")
-        assert len(stream_encoding_issues(repo)) == 1, never
+        # #73: and a bare *mention* stays dead. Widen the rule back to "the
+        # name appears live" and one colliding local — or an unrelated
+        # attribute — exempts the whole file, which is #70's switch again.
+        for mention in ("", "x = [dump]\n    ", "dump = 1\n    ", "c.dump\n    "):
+            never = (f"def dump():\n    {out_bypass}.write(b'x')\n"
+                     + runnable + mention + "print('要開')\n")
+            bad.write_text(never, encoding="utf-8")
+            assert len(stream_encoding_issues(repo)) == 1, never
 
         # #71(b): #60 AC1's second branch — a script with no live `print(` has
         # nothing on its way to the console, so it owes no pin.
