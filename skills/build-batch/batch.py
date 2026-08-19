@@ -312,9 +312,17 @@ CONFLICT_LINES = (
      "SKILL.md 7b: 撞車要呼叫既有的 /resolving-merge-conflicts 解 — 這句不見了,"
      "下一個 agent 會自己發明解法"),
     (re.compile(re.escape("git merge-base")),
-     "SKILL.md 7a: 認票要問「這批裡誰自己動過這個檔案」(merge-base + "
+     "SKILL.md 7a: 認票要問「已合的那幾張裡誰自己動過這個檔案」(merge-base + "
      "git diff --name-only)— 改回讀內容認票,圖檔沒有內容可讀、第三張乾淨改過"
      "同一個檔案時還會靜靜報出錯的票號給 client(QA 第 3、4 輪各實測到一次)"),
+    (re.compile(re.escape('merged="')),
+     "SKILL.md 7a: 候選母體要是「這批已經合進主線的那幾張」(agent 手上的名單),"
+     "不是 git branch --list 'batch/*' — 那會把還沒輪到的 lane 與上一批殘留的 branch "
+     "一起撈進來,印一張跟這次 merge 無關的票號給 client(QA 第 5 輪實測)"),
+    (re.compile(re.escape("--name-status -M")),
+     "SKILL.md 7a: 正在合的那張把檔案改名時,對面動的是舊名字 — 少了這行 rename "
+     "pre-image 的查法,候選會是空的,然後對 client 講一句假的「跟主線上既有的內容撞」"
+     "(QA 第 5 輪實測)"),
     (re.compile(re.escape("git branch --list 'batch/*' --contains")),
      "SKILL.md 7a: 候選多於一條時要用 git blame 那一行 + --contains 換算成 lane"),
     (re.compile(re.escape("worktree 與 branch 都留著")),
@@ -713,6 +721,8 @@ JSON''')
         ("`/resolving-merge-conflicts`", "§7b 呼叫原件解"),
         ("worktree 與 branch 都留著", "§7c 未合的 lane 留著"),
         ("git merge-base", "§7a 認票問的是「誰動過這個檔案」"),
+        ('merged="', "§7a 候選母體是已合名單,不是所有 batch/* branch"),
+        ("--name-status -M", "§7a rename 的 pre-image 也要查"),
         ("git branch --list 'batch/*' --contains", "§7a 多候選時的 blame 換算"),
         ("git merge --abort", "§7c 退掉沒合完的 merge"),
     ):
