@@ -127,7 +127,9 @@ git diff --name-only --diff-filter=U                 # 撞在哪些檔案
 git log --merges --full-history --format=%s -1 -- <撞到的檔案>   # Merge branch 'batch/<另一張>'
 ```
 
-第二行問的是「主線上最近一次動到這個檔案的 merge 是哪條 lane」,那條 lane 的票號就是另一張。`--full-history` 不能省:少了它,git 的 history simplification 會把「跟其中一個 parent 同樹」的 merge commit 整個省略掉 — 而合 lane 的 merge 剛好每個都是這種形狀,指令會安靜地回空的,agent 就以為「查不出來」而多停一次(QA 第 1 輪實測)。查不出來(例如那個檔案是主線本來就有、不是這批動的)就不要猜票號,直接走 §7c 停下來,終端機照實講「跟主線既有內容撞」。
+第二行問的是「主線上最近一次動到這個檔案的 merge 是哪條 lane」,那條 lane 的票號就是另一張。`--full-history` 不能省:少了它,git 的 history simplification 會把「跟其中一個 parent 同樹」的 merge commit 整個省略掉 — 而合 lane 的 merge 剛好每個都是這種形狀,指令會安靜地回空的,agent 就以為「查不出來」而多停一次(QA 第 1 輪實測)。
+
+真的查不出來(例如那個檔案是主線本來就有、不是這批動的)就不要猜票號,直接走 §7c 停下來,終端機照實講「跟主線既有內容撞」。
 
 ### 7b. 解得掉:自己解,不打擾 client
 
