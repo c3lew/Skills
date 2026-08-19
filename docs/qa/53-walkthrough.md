@@ -19,7 +19,9 @@
 
 **實錄的呈現規則**:步驟 3a 是一支 script 一次跑完的輸出,**指令那幾行是 bash 自己的
 xtrace 印的**(`PS4='+ '`,`set -x`),不是我事後照著寫的 — 所以引號、glob 展開、`cd`、
-`printf` 全部照實出現,順序就是真的執行順序(stdout 與 stderr 合流)。整段原封不動貼上,
+`printf` 的參數全部照實出現,順序就是真的執行順序(stdout 與 stderr 合流)。**一個已知限制:
+xtrace 不印重導向**,所以 `printf … >> docs/qa/lane-47.md` 的 `>>` 那半看不到,寫進哪個檔要
+靠下一行的 `git add docs/qa/lane-47.md` 與 commit 的 `create mode 100644` 反推。整段原封不動貼上,
 沒有摺疊、沒有省略號、沒有補寫的摘要行。唯一的改動是把 scratchpad 的長路徑統一縮寫成
 `…/scratchpad`(整份檔一致)。其他步驟是逐段手跑,指令與輸出成對貼出。
 
@@ -33,8 +35,8 @@ xtrace 印的**(`PS4='+ '`,`set -x`),不是我事後照著寫的 — 所以引�
 
 ```bash
 cd "D:/Self Project/Skills"
-python scripts/validate.py
 python scripts/validate.py --self-check
+python scripts/validate.py
 python scripts/batch.py --self-check
 python skills/build-batch/batch.py --self-check
 python scripts/install.py --self-check
@@ -59,7 +61,10 @@ $ python scripts/hooks/triage-to-maintain.py --self-check
 OK triage-to-maintain self-check green
 ```
 
-全綠。兩個都印 `OK batch self-check green` 的是**不同的兩支檔**,不是同一個跑兩次充數:
+全綠。兩個都印 `OK batch self-check green` 的是不同的兩支檔,**但跑的是同一組斷言** —
+`scripts/batch.py` 是 repo 層的入口,把 `skills/build-batch` 加進 `sys.path` 之後
+`from batch import self_check` 再叫它。所以這兩行是同一套 self-check 用兩種路徑跑,
+不是兩組獨立的測試:
 
 ```text
 $ md5sum scripts/batch.py skills/build-batch/batch.py
@@ -68,14 +73,30 @@ $ md5sum scripts/batch.py skills/build-batch/batch.py
 $ wc -c scripts/batch.py skills/build-batch/batch.py
   737 scripts/batch.py
 23557 skills/build-batch/batch.py
+$ grep -n "import\|self_check" scripts/batch.py
+9:import sys
+10:from pathlib import Path
+12:sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "build-batch"))
+13:from batch import self_check  # noqa: E402
+17:    if "--self-check" in sys.argv:
+18:        self_check()
 ```
 
 (`[fixture] FAIL` 是 install self-check 自己的負向 fixture,預期輸出。)
 
 ## 步驟 2 — 驗收項 1:終端機每張各報一行「開工」(本 repo)
 
-照 SKILL.md §6 逐字跑。`PYTHONIOENCODING=cp950` 是刻意的 — 證明連把環境釘成 cp950 都蓋不掉
-`__main__` 的 UTF-8 pin(#58 的形狀)。title 裡留 emoji,Big5 沒有它。
+跑的是 SKILL.md §6 的這段(原文照抄,`skills/build-batch/SKILL.md` 第 71-75 行):
+
+> ```bash
+> python <skill dir>/batch.py <<'JSON'
+> {"mode": "start", "numbers": [47, 48], "titles": {"47": "...", "48": "..."}}
+> JSON
+> ```
+
+`<skill dir>` 代入 `skills/build-batch`,票號換成三張。`PYTHONIOENCODING=cp950` 是我另外加的
+— 用來證明連把環境釘成 cp950 都蓋不掉 `__main__` 的 UTF-8 pin(#58 的形狀)。title 裡留
+emoji,Big5 沒有它。
 
 ```text
 $ cd skills/build-batch
@@ -100,9 +121,14 @@ $ echo '{"mode": "start", "numbers": [47], "titles": {"47": "登入頁 → 🔑"
 
 `351 226 213` = `開` 的 UTF-8。
 
+**這一條驗到的範圍**:程式寫進 pipe 的 bytes 是 UTF-8,而且 `PYTHONIOENCODING=cp950` 蓋不掉
+它。真的主控台(`sys.stdout` 直接接 console handle)是另一條路徑 — 那條在 #58 修完之後由
+`__main__` 的同一行 `reconfigure` 管,本輪沒有再拿實體 console 重驗一次。
+
 這條指令只是**印**,不會動檔案系統 — 前後各夾一次 `test -d`:
 
 ```text
+$ cd "D:/Self Project/Skills"        # 先回 repo root,下面三行的相對路徑都以它為準
 $ test -d .git/batch-worktrees && echo EXISTS || echo 不存在
 不存在
 $ echo '{"mode":"start","numbers":[47,48,42],"titles":{}}' | PYTHONIOENCODING=cp950 python skills/build-batch/batch.py
@@ -148,11 +174,15 @@ JSON
 3 張已合併,下一步:`/client-demo #51`(Codex: `$client-demo #51`) — 一次 demo 這批
 ```
 
+**「3 張」同樣是把輸入 `numbers` 的長度回吐,不查證任何 merge 真的發生過** — 跟上面的
+「完成」行同一個性質。真的有沒有合進去看步驟 3a 的 sha 鏈。
+
 ## 步驟 3a — 工作區、upstream、依序合併、整批驗證(scratchpad clone,xtrace)
 
-下面整段是一支 script 一次跑完的原始輸出:開三個工作區 → 每條 lane 在自己的工作區裡改真的
-tracked 檔 + commit + 跑 self-check + push → 反例(沒 `push -u` 會怎樣)→ 依序 merge、
-每張合完當場收自己的工作區 → 合完的主線上跑整批驗證。
+下面整段是一支 script 一次跑完的原始輸出:開三個工作區 → 每條 lane 在自己的工作區裡
+`printf` 新增一個 `docs/qa/lane-<N>.md`(**是新增檔,不是改既有的 tracked 檔** — 實錄裡是
+`create mode 100644`)+ commit + 跑 self-check + push → 反例(沒 `push -u` 會怎樣)→
+依序 merge、每張合完當場收自己的工作區 → 合完的主線上跑整批驗證。
 
 `+ ` 開頭的行是 bash xtrace 印的指令,其餘是該指令的輸出。**注意 `git branch` 的輸出裡也有
 `+`**:那是 git 自己的標記,表示該 branch 正 checkout 在某個 linked worktree 裡 — 三條 lane
@@ -358,9 +388,11 @@ e58c19a lane 47 work
   隔離的證據是 xtrace 裡的 **glob 展開**:script 寫的是 `ls docs/qa/lane-*.md`,bash 展開後
   印出來的是 `+ ls docs/qa/lane-47.md` — 也就是在 lane 47 的工作區裡,`lane-*.md` 只 match
   到一個檔,48 與 42 的檔在那個工作區裡根本不存在(不是我只 ls 了一個已知路徑,是 shell
-  自己掃出來只有一個)。三條 lane 都是同樣的形狀。主 repo 的 `git status --short` 沒有輸出
-  — 工作區藏在 `.git/` 底下,不進 status、不用 `.gitignore`(`batch.py` 的 `LANE_ROOT`
-  註解宣稱的那件事)。
+  自己掃出來只有一個)。三條 lane 都是同樣的形狀。
+- **工作區不進 `git status`**:三個 worktree 都開好之後那次 `git status --short` 沒有輸出。
+  這條旁證很弱 — 當下 lane 檔都還沒建,本來就沒東西可報;而且 `.git/` 底下不進 status 是
+  git 的定義,不是這次量出來的。真正被證到的只有「`worktree add` 到 `.git/` 底下不會讓主
+  repo 的 status 髒掉」,`LANE_ROOT` 註解宣稱的就是這件事。
 - **`push -u` 的必要性**:三條 lane 開完就 `push -u`,後面 lane 內第一次 `git push`
   (完全不帶參數)都成功推上去(`67619b5..e58c19a` 等)。反例那條 lane 沒跑 `push -u`,
   同樣一句 `git push` 當場 `fatal: … has no upstream branch`、`exit=128`。`/build` 的完工
@@ -426,11 +458,30 @@ https://github.com/c3lew/Skills/issues/53#issuecomment-5338114051
 
 (那份 JSON 與步驟 4 的逐字元相同 — 兩處都貼全,可以自己對。)
 
-從 GitHub 撈回來。上面那個 `printf` 產出 6 行(標題、空行、說明、空行、`---`、空行),
-所以 body 從第 7 行起才是 `batch.py` 的輸出:
+從 GitHub 撈回來、裁掉標頭、逐字元比對 — 這一段同樣由 bash xtrace 印指令
+(`+ ` 開頭的是指令,其餘是輸出;cwd 是 `D:/Self Project/Skills/skills/build-batch`):
 
 ```text
-$ gh api repos/c3lew/Skills/issues/comments/5338114051 -q .body
++ PYTHONIOENCODING=cp950
++ python batch.py                      # heredoc 與上面那份逐字元相同,輸出導進 local.txt
++ wc -l …/scratchpad/local.txt
+13 …/scratchpad/local.txt
++ gh api repos/c3lew/Skills/issues/comments/5338114051 -q .body
++ wc -l …/scratchpad/readback-full.txt
+20 …/scratchpad/readback-full.txt
++ head -8 …/scratchpad/readback-full.txt
+### QA 證據(#53 walkthrough 步驟 5)— 這不是真的批次總結
+
+下面整段是 `skills/build-batch/batch.py` `mode=summary` 的 stdout,直接 pipe 進 `gh issue comment 53 --body-file -`,用來驗「終端機字串 → 票上」這條路真的走得通(含中文與 emoji)。票號、標題、覆蓋驗收項都是 QA 造的樣本。
+
+---
+
+## 批次總結(3 張)
+
++ tail -n +7 …/scratchpad/readback-full.txt
++ wc -l …/scratchpad/readback-body.txt
+14 …/scratchpad/readback-body.txt
++ cat …/scratchpad/readback-body.txt
 ## 批次總結(3 張)
 
 - #47 登入頁 → 🔑 — 已合併(batch/47)
@@ -444,27 +495,41 @@ $ gh api repos/c3lew/Skills/issues/comments/5338114051 -q .body
 - 三張都綠 → 合回主線。
 
 下一步:`/client-demo #51`(Codex: `$client-demo #51`)
+
++ set +x
 ```
 
-逐字元比對。`local.txt` 是本機 stdout,`readback-body.txt` 是上面撈回來的 body 去掉標頭
-6 行;比對前只正規化 CRLF 與結尾空行:
+行數對得起來:GitHub 存的整則 body 是 20 行 = QA 的標頭 6 行(標題、空行、說明、空行、
+`---`、空行,`head -8` 看得到前 8 行)+ `batch.py` 的 13 行 + 結尾空行。`tail -n +7` 裁掉
+標頭之後是 14 行(13 行內容 + 結尾空行)。
+
+最後逐字元比對這兩個檔:
 
 ```text
-$ PYTHONIOENCODING=utf-8 python - <<'PY'
+++ PYTHONIOENCODING=utf-8
+++ python -
+本機 stdout 行數: 13
+GitHub 撈回行數 : 13
+逐字元相同      : True
+emoji 那一行    : - #47 登入頁 → 🔑 — 已合併(batch/47)
+```
+
+跑的是這支(`strip("
+")` 吃掉結尾空行的差、`replace` 吃掉 CRLF 的差):
+
+```python
 import pathlib
-norm = lambda f: pathlib.Path(f).read_text(encoding="utf-8").replace("\r\n", "\n").strip("\n")
+norm = lambda f: pathlib.Path(f).read_text(encoding="utf-8").replace("
+", "
+").strip("
+")
 local, back = norm("local.txt"), norm("readback-body.txt")
 print("本機 stdout 行數:", len(local.splitlines()))
 print("GitHub 撈回行數 :", len(back.splitlines()))
 print("逐字元相同      :", local == back)
 for line in back.splitlines():
-    if "\U0001f511" in line:
+    if "🔑" in line:
         print("emoji 那一行    :", line)
-PY
-本機 stdout 行數: 13
-GitHub 撈回行數 : 13
-逐字元相同      : True
-emoji 那一行    : - #47 登入頁 → 🔑 — 已合併(batch/47)
 ```
 
 `--body-file -` 這條路真的走得通,中文與 emoji 存回 GitHub 一字不差。
@@ -528,11 +593,13 @@ Claude Code 自己的 subagent worktree(`.claude/worktrees/agent-*`)常駐在同
    差」,但貼的是 QA 造的樣本、貼在 #53 而不是 spec 票 #51。
 5. **`gh issue comment` 貼「開工 / 完成」兩行到真的票上** — 會在真票留下假資料,沒做;用的
    是同一條 pipe 加同一個旗標(步驟 5 已驗)。
-6. **「CLI 印出的那個路徑」與「真的被開出來的工作區」沒有在同一次執行裡連起來** —
-   `batch.py` 只印字串(步驟 2 尾巴的 `test -d` 前後夾證),worktree 是
-   步驟 3a 在 scratchpad clone 裡照那個字串手打 git 開的。兩邊的字面值相同
+6. **CLI 的字串與 git 的動作沒有在同一次執行裡連起來(兩側都是)** —
+   *開工側*:`batch.py` 只印字串(步驟 2 尾巴的 `test -d` 前後夾證),worktree 是步驟 3a
+   在 scratchpad clone 裡照那個字串手打 git 開的;兩邊字面值相同
    (`.git/batch-worktrees/47` / `batch/47`),但「跑這個 skill 就會得到那個工作區」這條因果
-   要等 §5 點頭之後的真跑才連得上,和第 1 條同一個缺口。
+   沒被驗到。*合併側*:merge 發生在 scratchpad clone,「3 張已合併」印在本 repo,而那個
+   數字是回吐輸入的長度、不查證 merge — 同型斷點。兩側都要等 §5 點頭之後的真跑才連得上,
+   和第 1 條同一個缺口。
 7. **fail / 撞車 / 超過 3 張排隊三條路徑** — SKILL.md §5、§7 明寫不在本版範圍,遇到停下來
    交給 client,是後面各自獨立的票。
 
