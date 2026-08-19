@@ -151,7 +151,15 @@ JSON
 
 印出來的整段當 comment body 貼上去(`gh issue comment 51 --body-file -`)。
 
-工作區已經在 §7 一張一張回收掉了,這裡不用再收。`git worktree list` 應該只剩主 repo — 沒剩乾淨就是有 lane 沒走完 §7,回頭查。
+工作區已經在 §7 一張一張回收掉了,這裡不用再收。要確認有沒有漏收,母體只有 `.git/batch-worktrees/` 底下這幾個(路徑同 §7)— 只問這個母體:
+
+```bash
+git worktree list --porcelain | grep -F /batch-worktrees/
+```
+
+沒有輸出(`grep` 回 exit 1,正常)就是收乾淨了。印出來的每一列就是一條沒走完 §7 的 lane,照 §7 的 `git worktree remove` 收掉再往下。
+
+判準用 `--porcelain` 過濾、不看列數,有兩個理由。一是**母體要有界**:`git worktree list` 的完整輸出是整個 repo 的所有 worktree,包含別人開的 — 例如 Claude Code 給 subagent 常駐的 `.claude/worktrees/agent-*`,跟 `/build-batch` 無關卻一直住在這裡。#61 開票那台機器實測:0 個 lane 殘留,`git worktree list` 還是印 4 列 — 1 列主 repo + 3 列 subagent worktree,拿「只剩主 repo」判就是紅的;反過來真的殘留 1 條時,那一列混在同樣的 4 列裡也認不出來(#61)。二是**問 git 而不是問檔案系統**:`ls .git/batch-worktrees` 在 linked worktree 底下會踩到 `.git` 是檔案不是目錄,錯誤被吃掉就變成假綠,而且註冊還在、目錄先沒了的 lane 它也看不到。
 
 ## Codex 端
 
