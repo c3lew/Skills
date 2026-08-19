@@ -58,6 +58,32 @@ PLACEHOLDER_SKILLS = {"skill"}
 # matching it would keep the guard green after the actual step is deleted.
 COMMIT_LINK_RE = re.compile(r"commit link", re.I)
 PUSH_RE = re.compile(r"git push", re.I)
+# #64 固化:這一類 guard 證明的是「某句指示存在於散文中」,而繞過它的方式從來不是刪掉
+# 關鍵詞,是把關鍵詞留著、動作反過來寫 —「**不要** git push」「**不用**問 client」。
+# 所以「這句指示在」只認**沒被否定**的那次出現:動作詞前面貼著否定詞的不算數。
+# 清單只收**兩字以上**的否定詞:單字的 `別`/`免` 是別的詞的零件 —「個別問 client」
+# 「為避免 git push 失敗」會被誤判成否定,那是把講對話的散文判紅。
+NEGATORS = ("不要", "不用", "不需", "不必", "不得", "不可",
+            "無需", "無須", "毋須", "切勿", "禁止")
+# 否定詞和動作詞中間塞得下引號、強調記號和一兩個副詞(「不用 `git push`」「不要先
+# git push」),塞不下子句邊界 — 跨過標點就是另一句話,前一句的否定管不到它。
+# ponytail: 這是有界的啟發式,不是語意分析。它咬的是「關鍵詞留著、當場反過來寫」
+# 這一種繞過(#64 的母體);離否定詞四個字以外的改寫(「…時直接發佈,收工後再回報
+# client」)還是綠的 — 那條靠 review 擋,再往下追是無底的詞表軍備賽。
+NEGATOR_RE = re.compile(
+    "(?:%s)[^,。;、!?\n]{0,4}$" % "|".join(NEGATORS)
+)
+# 往回看多遠由清單自己決定:最長的否定詞 + 中間容得下的字數。
+NEGATOR_WINDOW = max(len(n) for n in NEGATORS) + 4
+
+
+def unnegated(pattern, text):
+    """Yield matches of `pattern` in `text` that no adjacent negator cancels."""
+    for m in pattern.finditer(text):
+        if not NEGATOR_RE.search(text[max(0, m.start() - NEGATOR_WINDOW):m.start()]):
+            yield m
+
+
 # Only file refs are links an agent can follow. Bare directory refs
 # (`docs/disciplines/`, `.out-of-scope/`) are prose about paths a skill
 # operates on in the *target* repo — not links, so not checked. Same for
@@ -111,8 +137,7 @@ def unpushed_commit_link_issue(text):
     link = COMMIT_LINK_RE.search(text)
     if not link:
         return False
-    push = PUSH_RE.search(text)
-    return push is None or push.start() > link.start()
+    return not any(m.start() < link.start() for m in unnegated(PUSH_RE, text))
 
 
 # #57 固化:批次判斷(`/build-batch` 的 plan_batch)整個吃切票那關宣告的 blocking
@@ -125,13 +150,21 @@ def unpushed_commit_link_issue(text):
 # 一張票都沒發佈,要它帶這句話是假陽性。
 TO_TICKETS_CALL_RE = re.compile(r"呼叫 `/to-tickets")
 ZERO_EDGE_AUDIT_RE = re.compile("一張 blocking 邊都沒宣告")
+# 判準是「條件詞 + 動作詞出現在同一個 span 裡」,不是「條件詞在不在」— 對照組
+# find_slash_only_handoffs 就是這個形狀。span 斷在句號/換行:條件在這句、動作在下
+# 一句,是兩句各自成立,不是那句指示存在(#64)。
+ZERO_EDGE_SPAN_RE = re.compile(r"[^。\n]*%s[^。\n]*" % ZERO_EDGE_AUDIT_RE.pattern)
+ASK_CLIENT_RE = re.compile(r"(?:回報|問|請示) client", re.I)
 
 
 def missing_blocking_audit_issue(text):
     """True if a ticket-publishing skill never reports a zero-edge batch."""
     if not TO_TICKETS_CALL_RE.search(text):
         return False
-    return ZERO_EDGE_AUDIT_RE.search(text) is None
+    return not any(
+        any(unnegated(ASK_CLIENT_RE, span))
+        for span in ZERO_EDGE_SPAN_RE.findall(text)
+    )
 
 
 def handoff_target_issues(skills_dir):
@@ -382,6 +415,19 @@ def self_check():
     assert unpushed_commit_link_issue("貼 commit links,之後 `git push`") is True
     # prose "push" is not the step — only the runnable command counts
     assert unpushed_commit_link_issue("push 後貼 commit links") is True
+    # 繞過方向:關鍵詞留著、意思反過來。一句「不要 git push」照樣含 `git push`,
+    # 位置也在前面 — 只看關鍵詞在不在的 guard 會放行它。
+    assert unpushed_commit_link_issue("不要 git push,直接在票上附 commit link") is True
+    assert unpushed_commit_link_issue("不用 `git push`,先貼 commit links") is True
+    # 換個否定詞、或中間塞個副詞,都還是同一句反過來的話
+    assert unpushed_commit_link_issue("不可 git push,直接貼 commit link") is True
+    assert unpushed_commit_link_issue("切勿 git push,直接貼 commit link") is True
+    assert unpushed_commit_link_issue("不要先 git push,直接貼 commit link") is True
+    assert unpushed_commit_link_issue("不用「**`git push`**」,先貼 commit links") is True
+    # 反過來的假陽性:`免`/`別` 是別的詞的零件,不是這句話在否定 push
+    assert not unpushed_commit_link_issue("為避免 git push 失敗,先跑 lint。之後貼 commit link")
+    # 否定跨過標點就管不到下一句了 —「不要慌」不是「不要 push」
+    assert not unpushed_commit_link_issue("不要慌,先 git push,再貼 commit link")
 
     # the real-skill layer: every SKILL.md that pastes commit links must carry the
     # push step *before* it, and deleting that step from the real file must redden.
@@ -408,6 +454,9 @@ def self_check():
             # drop the push command -> the guard must bite
             copy.write_text(PUSH_RE.sub("commit", text), encoding="utf-8")
             assert expected in validate(skills.parent, Path(tmp)), label
+            # 繞過方向(#64):指令一個字都沒少,只是每一次都被反過來寫
+            copy.write_text(PUSH_RE.sub("不要 git push", text), encoding="utf-8")
+            assert expected in validate(skills.parent, Path(tmp)), label
 
     # #57 固化:zero-blocking-edge audit. Hand-written cases first — only a skill
     # that publishes tickets is on the hook, and carrying the line is the fix.
@@ -417,6 +466,26 @@ def self_check():
     assert not missing_blocking_audit_issue("沒有 spec 就指回 `/to-tickets`")
     assert not missing_blocking_audit_issue(
         "呼叫 `/to-tickets`;一張 blocking 邊都沒宣告時回報 client")
+    # 繞過方向:條件詞原封不動留著,動作反過來寫 — 守的是那句主張,不是那個關鍵詞
+    assert missing_blocking_audit_issue(
+        "呼叫 `/to-tickets` 切票。一張 blocking 邊都沒宣告的時候,直接發佈,不用問 client。"
+    ) is True
+    # 條件詞在某一句、動作詞在另一句:兩句各自成立不代表那句指示存在
+    assert missing_blocking_audit_issue(
+        "呼叫 `/to-tickets` 切票。一張 blocking 邊都沒宣告的時候,直接發佈。"
+        "有疑問回報 client。"
+    ) is True
+    assert missing_blocking_audit_issue(
+        "呼叫 `/to-tickets` 切票。一張 blocking 邊都沒宣告時,不用再問 client,直接發佈。"
+    ) is True
+    assert missing_blocking_audit_issue(
+        "呼叫 `/to-tickets` 切票。一張 blocking 邊都沒宣告時,無須問 client,直接發佈。"
+    ) is True
+    # 假陽性:`別` 出現在「分別/個別」裡,那句話沒有在否定任何東西
+    assert not missing_blocking_audit_issue(
+        "呼叫 `/to-tickets` 切票。一張 blocking 邊都沒宣告時,分別回報 client 每一張票。")
+    assert not missing_blocking_audit_issue(
+        "呼叫 `/to-tickets` 切票。一張 blocking 邊都沒宣告時,個別問 client 要不要併批。")
 
     # the real-skill layer: the cases above are hand-written strings, so they stay
     # green even if no shipped skill ever asked the question. Take the actual
@@ -442,6 +511,13 @@ def self_check():
             assert got == [], (label, got)
             # drop the audit line -> the guard must bite, naming this file
             copy.write_text(text.replace(m.group(0), "", 1), encoding="utf-8")
+            got = [e for e in validate(skills.parent, Path(tmp)) if "blocking" in e]
+            assert got and all(e.startswith(label) for e in got), (label, got)
+            # 繞過方向(#64):條件詞原封不動,只把動作反過來 —「回報 client」變
+            # 「不用問 client」。守關鍵詞的 guard 這裡會放行,守主張的不會。
+            flipped = ASK_CLIENT_RE.sub("不用問 client", text)
+            assert flipped != text, label
+            copy.write_text(flipped, encoding="utf-8")
             got = [e for e in validate(skills.parent, Path(tmp)) if "blocking" in e]
             assert got and all(e.startswith(label) for e in got), (label, got)
 
