@@ -257,6 +257,16 @@ if __name__ == "__main__":
     get()()
     print("要開的票")
 """, "GREEN"),
+    ("對照:回傳值存進變數後才呼叫 `f = get(); f()`(#79 的天花板,不得誤紅)", """import sys
+def dump():
+    sys.stdout.buffer.write(b"x")
+def get():
+    return dump
+if __name__ == "__main__":
+    f = get()
+    f()
+    print("要開的票")
+""", "GREEN"),
     ("對照:`get` 自己也沒被呼叫(死碼,必須維持 RED)", """import sys
 def dump():
     sys.stdout.buffer.write(b"x")

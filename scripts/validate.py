@@ -229,6 +229,10 @@ def norm(expr):
 
 DEAD_END = (ast.Raise, ast.Return, ast.Break, ast.Continue)
 
+# The key for "whatever calling this name hands back". Not an identifier, so
+# it cannot collide with the real names it shares a dict with (#79).
+RET = "()"
+
 
 def runs(body):
     """The statements in `body` that actually execute, dead code cut out.
@@ -326,6 +330,10 @@ def bindings_in(node):
     `Assign` target, as #73 shipped, left the rest writing the same thing and
     getting shouted at for it.
 
+    A call on the right-hand side binds the *result*, not the callee:
+    `f = get()` makes calling `f` call whatever `get` returns, which is the
+    `RET` key, not `get` itself (#79).
+
     ponytail: a `with ... as f` is the same claim again and is *not*
     collected. Leaving it out costs a false red — a legitimate script told to
     pin a stream it already writes — which is the direction that makes noise,
@@ -344,6 +352,8 @@ def bindings_in(node):
     for target, value in pairs:
         for name, src in bound_pairs(target, value):
             out[name] |= names_in(src)
+            if isinstance(src, ast.Call):
+                out[name] |= {RET + f for f in names_in(src.func) if f}
     return out
 
 
@@ -363,9 +373,17 @@ def live_nodes(tree):
     written — `=`, an annotated `=`, a tuple unpack, a `for` target or a
     class attribute, all collected by `bindings_in` — which is how an alias
     (`f = dump; f()`) and a handler dict (`H = {"a": dump}; H["a"]()`) reach
-    the body without ever naming `dump` at a call (#71, #75). A def that
-    returns a name carries it the same way, so a factory
-    (`def get(): return dump` + `get()()`) reaches it too.
+    the body without ever naming `dump` at a call (#71, #75).
+
+    A def that returns a name carries it the same way, but the binding it
+    makes is on the *result* of calling it, under the `RET` key: a factory
+    reaches `dump` when the thing it hands back is itself called
+    (`get()()`, `f = get(); f()`), and not when the result is dropped
+    (`get()`) or parked in a name nobody calls (`x = get()`) — there not one
+    line of `dump` runs, so exempting the file would be the switch again
+    (#79). A name the def assigns itself is not what it hands back either:
+    `def get(): dump = 1; return dump` returns its local, which merely
+    collides with the def's name.
 
     A bare mention does not count and must not: `x = [dump]`, a local
     `dump = 1` that happens to shadow the def, an unrelated `c.dump` — none of
@@ -373,21 +391,26 @@ def live_nodes(tree):
     #70 took away, since one colliding name anywhere live would exempt the
     whole file (#73).
 
-    ponytail: three approximations remain — two defs sharing a name are one
-    node, a name handed to a call is assumed called by it, and a live def's
-    return value is carried whether or not the result is itself called. All
-    three widen the live set, which is the direction that makes this guard go
-    *silent* on a script printing unpinned 中文, so each is kept to a shape
-    where a call is the ordinary reading of the code; the four dead-`dump`
-    shapes `self_check` pins under #73 stay dead. Dead code is cut by `runs`.
+    ponytail: two approximations remain — two defs sharing a name are one
+    node, and a name handed to a call is assumed called by it. Both widen the
+    live set, which is the direction that makes this guard go *silent* on a
+    script printing unpinned 中文, so each is kept to a shape where a call is
+    the ordinary reading of the code; the four dead-`dump` shapes `self_check`
+    pins under #73 stay dead. A call result handed straight to another call
+    (`run(get())`) is *not* carried — that costs a false red, the noisy
+    direction. Dead code is cut by `runs`.
     """
     defs = {n.name: n for n in ast.walk(tree)
             if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
-    returned = defaultdict(set)  # what a def hands back to its callers
+    returned = defaultdict(set)  # what calling a def hands back, by RET key
     for name, node in defs.items():
-        for n in own_scope(node):
+        own = list(own_scope(node))
+        local = {n.id for n in own if isinstance(n, ast.Name)
+                 and isinstance(n.ctx, ast.Store)}
+        local |= {n.arg for n in own if isinstance(n, ast.arg)}
+        for n in own:
             if isinstance(n, ast.Return) and n.value is not None:
-                returned[name] |= names_in(n.value)
+                returned[RET + name] |= names_in(n.value) - local
     live, body = set(), runs(tree.body)
     while True:
         invoked = set()
@@ -396,6 +419,8 @@ def live_nodes(tree):
             for n in ast.walk(stmt):
                 if isinstance(n, ast.Call):
                     invoked |= names_in(n.func)
+                    if isinstance(n.func, ast.Call):  # `get()()` — #79
+                        invoked |= {RET + f for f in names_in(n.func.func) if f}
                     for arg in list(n.args) + [k.value for k in n.keywords]:
                         invoked |= names_in(arg)
                 else:
@@ -1081,11 +1106,13 @@ def self_check():
         # assignment and the `for` target (narrow it back to a bare `Assign`
         # and those three turn red); `runs` no longer cutting a class body is
         # what makes `class W: run = dump` an `Assign` anyone can collect;
-        # and the `returned` seed in `live_nodes` is what carries `get()()`.
+        # and the `RET` binding in `live_nodes` is what carries the factory,
+        # whether the result is called on the spot or through a name (#79).
         for reach in ("a, b = dump, dump\n    a()",
                       "f: object = dump\n    f()",
                       "for f in [dump]:\n        f()",
                       "get()()",
+                      "f = get()\n    f()",
                       "W.run()"):
             shape = (f"def dump():\n    {out_bypass}.write(b'x')\n\n\n"
                      f"def get():\n    return dump\n\n\n"
@@ -1107,6 +1134,18 @@ def self_check():
                 ("a *nested* def returns it, only the outer one runs",
                  "def outer():\n    def inner():\n        return dump\n"
                  "    return 1\n\n\n" + runnable + "outer()\n    print('要開')\n"),
+                # #79: the factory runs, but what it hands back never does.
+                # Carry a return unconditionally and one `get()` exempts the
+                # file without running a line of `dump` — the switch again.
+                ("factory called, result dropped",
+                 "def get():\n    return dump\n\n\n"
+                 + runnable + "get()\n    print('要開')\n"),
+                ("factory called, result parked in a name nobody calls",
+                 "def get():\n    return dump\n\n\n"
+                 + runnable + "x = get()\n    print('要開')\n"),
+                ("what it returns is its own local, colliding by name",
+                 "def get():\n    dump = 1\n    return dump\n\n\n"
+                 + runnable + "get()()\n    print('要開')\n"),
         ):
             still_dead = f"def dump():\n    {out_bypass}.write(b'x')\n\n\n" + tail
             bad.write_text(still_dead, encoding="utf-8")
