@@ -142,14 +142,14 @@ JSON
 每張票上的產出紀錄由 lane 內的 `/build` 自己寫完了(它本來就會 push 完再貼 commit link),這裡不重複寫。spec 票上再留一則批次總結:
 
 ```bash
-python <skill dir>/batch.py <<'JSON'
+python <skill dir>/batch.py <<'JSON' | gh issue comment 51 --body-file -
 {"mode": "summary", "numbers": [47, 48], "spec": 51,
  "titles": {"47": "...", "48": "..."},
  "coverage": [["#47 覆蓋的驗收項原句"], ["#48 覆蓋的驗收項原句"]]}
 JSON
 ```
 
-印出來的整段當 comment body 貼上去(`gh issue comment 51 --body-file -`)。
+`<<'JSON'` 寫在 `|` 之前,整段連結尾的 `JSON` 一起複製。
 
 工作區已經在 §7 一張一張回收掉了,這裡不用再收。`git worktree list` 應該只剩主 repo — 沒剩乾淨就是有 lane 沒走完 §7,回頭查。
 
