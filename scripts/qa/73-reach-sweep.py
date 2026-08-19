@@ -14,6 +14,7 @@
     python scripts/qa/73-reach-sweep.py <repo> --binding    # 綁定形狀(誤紅那邊)
     python scripts/qa/73-reach-sweep.py <repo> --arg-widen  # 引數即呼叫(誤放那邊)
     ... --prev                                              # 對照組:#73 修之前(e56789c)
+    ... --prev75                                            # 對照組:#75 修之前(39003a3)
 """
 import importlib.util
 import sys
@@ -68,7 +69,7 @@ ARG_WIDEN = [
      DUMP + 'if __name__ == "__main__":\n    x = isinstance(dump, object)\n' + TAIL, "RED"),
 ]
 
-BASELINES = {"--prev": "e56789c"}
+BASELINES = {"--prev": "e56789c", "--prev75": "39003a3"}
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
