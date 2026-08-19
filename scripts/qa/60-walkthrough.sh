@@ -68,14 +68,48 @@ PY
 echo "==== STEP 6  #58 的原病沒退步:pin 放在 main() 而不是 __main__ block -> 仍判紅 ===="
 python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --positional
 
-echo "==== STEP 6b  本輪抓到的:守門靜默跳過的兩條路(期望紅、實際綠)===="
+echo "==== STEP 6b  上一輪的 blocking(#65)已修:靜默跳過三條路只剩 SyntaxError(#66,known issue)===="
 set +e
 python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --skips
-echo "exit $?  <- 非 0 是預期的,這三條是本輪 QA 的 finding,不是 AC"
+echo "exit $?  <- 非 0 是預期的:剩下那條是 #66,已開票排期"
 set -e
 
-echo "==== STEP 6c  對照組:同樣兩個 case 在改之前(d3cc9ed^)是判紅的 ===="
+echo "==== STEP 6c  對照組:同樣三個 case 在改之前(d3cc9ed^)是判紅的 ===="
 python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --skips --old
+
+echo "==== STEP 6d  本輪同型全掃:豁免的位置判準(AC1 原句的「會執行的位置」)===="
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --bypass-position
+echo "exit $?  <- 非 0 是本輪 finding"
+set -e
+
+echo "==== STEP 6e  對照組:同一組 case 在改之前也全綠 -> 是天花板沒抬,不是 regression ===="
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --bypass-position --old
+echo "exit $?"
+set -e
+
+echo "==== STEP 6f  AC1 括號裡的第二支路(「或檔案裡沒有裸 print(」)有沒有實作 — 純證據,不是 finding ===="
+# AC1 是「或」:兩支實作路擇一即可。這一步證明守門走的是第一支(bypass 語意判準),
+# 第二支完全沒實作 — 沒有裸 print( 的檔案照樣要求 pin。所以 AC1 只能拿第一支來判。
+python - "$ROOT" <<'PY'
+import sys, tempfile, pathlib
+sys.path.insert(0, sys.argv[1] + "/scripts")
+sys.stdout.reconfigure(encoding="utf-8")
+import validate as V
+
+CASES = {
+    "整檔沒有裸 print(,也沒 pin/bypass": 'import sys\nif __name__ == "__main__":\n    x = 1\n',
+    "print 只出現在 comment 裡,不是真的呼叫": 'import sys\nif __name__ == "__main__":\n    # 這裡不用 print(\n    x = 1\n',
+    "只寫檔案、完全不印到 console": 'import sys\nimport pathlib\nif __name__ == "__main__":\n    pathlib.Path("o.txt").write_text("要開的票", encoding="utf-8")\n',
+}
+tmp = pathlib.Path(tempfile.mkdtemp())
+for name, src in CASES.items():
+    (tmp / "probe.py").write_text(src, encoding="utf-8")
+    got = "RED" if V.stream_encoding_issues(tmp) else "GREEN"
+    print(f"{name.ljust(34)}  第二支路會判 GREEN  實際 {got}")
+print("\n三條都 RED -> 第二支路沒實作(守門不看 print,只看 pin/bypass)")
+PY
 
 echo "==== STEP 7  repo 本體沒被動過 ===="
 python "$ROOT/scripts/validate.py"

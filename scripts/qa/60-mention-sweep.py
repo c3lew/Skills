@@ -9,6 +9,7 @@ docstring、字串常數、f-string、變數名)都是同一形狀。這支把�
     python scripts/qa/60-mention-sweep.py <repo>              # 提到 vs 用到 全表
     python scripts/qa/60-mention-sweep.py <repo> --positional # 位置判準(#58 原病)
     python scripts/qa/60-mention-sweep.py <repo> --skips      # 守門靜默跳過的路
+    python scripts/qa/60-mention-sweep.py <repo> --bypass-position  # 豁免的位置判準
     ... --old                                                 # 對照組:#60 修之前那版守門
 """
 import subprocess
@@ -63,6 +64,27 @@ SKIPS = [
 ]
 
 
+# 第四型(#65 修完重跑這輪抓到):豁免現在**認得出散文**了,但仍然是「檔案裡任何地方
+# 出現一次真的 attribute access,整支檔案就豁免」。AC1 原句要的是「真的在**會執行的
+# 位置**用 sys.stdout.buffer.write」— 死碼、沒人呼叫的 function 都不是會執行的位置。
+# 這是 #60 那條病的下一層(判準從「文字任何地方」變成「AST 任何地方」),不是 regression:
+# 改之前的 substring 版同樣全綠。
+BYPASS_POSITION = [
+    ("bypass 在從未被呼叫的 function 內",
+     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    print("要開的票")\n', "RED"),
+    ("bypass 在 `if False:` 死碼裡",
+     'import sys\nif False:\n    sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    print("要開的票")\n', "RED"),
+    ("bypass 只出現在跑不到的 except 分支",
+     'import sys\ntry:\n    pass\nexcept Exception:\n    sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    print("要開的票")\n', "RED"),
+    ("bypass 在 `raise SystemExit` 之後的死碼",
+     'import sys\nif __name__ == "__main__":\n    print("要開的票")\n    raise SystemExit\n    sys.stdout.buffer.write(b"x")\n', "RED"),
+    ("bypass 真的在 __main__ 裡用(不得誤紅)",
+     'import sys\nif __name__ == "__main__":\n    sys.stdout.buffer.write("要開的票".encode())\n', "GREEN"),
+    ("bypass 在 main(),__main__ 呼叫它(triage-to-maintain 的形狀,不得誤紅)",
+     'import sys\ndef main():\n    sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    main()\n', "GREEN"),
+]
+
+
 def guard_module(repo, old):
     """`stream_encoding_issues` 的來源:現況,或 #60 修之前那版(對照組)。"""
     if not old:
@@ -106,4 +128,6 @@ if __name__ == "__main__":
         cases = POSITIONAL
     elif "--skips" in sys.argv:
         cases = SKIPS
+    elif "--bypass-position" in sys.argv:
+        cases = BYPASS_POSITION
     sys.exit(1 if run(sys.argv[1], cases, "--old" in sys.argv) else 0)
