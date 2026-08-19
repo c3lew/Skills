@@ -291,6 +291,9 @@ CONFLICT_LINES = (
     (re.compile(re.escape("worktree 與 branch 都留著")),
      "SKILL.md §7c: 停下時未合的 lane 要保留 worktree 與 branch — 這句不見了,"
      "client 決定之後那些 lane 就接不回去了"),
+    (re.compile(re.escape("git log --merges --full-history")),
+     "SKILL.md §7a: 查「跟誰撞」的那行少了 `--full-history` — 沒有它 git 會把合 lane 的 "
+     "merge commit 簡化掉,指令安靜回空的,agent 會誤判成查不出來(QA 第 1 輪實測)"),
     (re.compile(re.escape("git merge --abort")),
      "SKILL.md §7c: 停下之前要把沒合完的 merge 退掉 — 少了它,client 接手的是一個"
      "帶衝突標記的 index"),
@@ -655,6 +658,7 @@ JSON''')
     for original, label in (
         ("`/resolving-merge-conflicts`", "§7b 呼叫原件解"),
         ("worktree 與 branch 都留著", "§7c 未合的 lane 留著"),
+        ("git log --merges --full-history", "§7a 查跟誰撞要 --full-history"),
         ("git merge --abort", "§7c 退掉沒合完的 merge"),
     ):
         assert original in text, label
