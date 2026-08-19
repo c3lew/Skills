@@ -790,6 +790,27 @@ JSON''')
                            capture_output=True)
     assert child.returncode != 0 and not child.stdout.strip(), child.stdout
 
+    # #54:「當場停」的訊息全是中文,而且印在 stderr。stdout 那條路釘過了,
+    # stderr 沒釘的話 client 看到的是一串問號 — 停得對、看不懂,等於沒停。
+    # 每一種停法各跑一次真的子行程,console 假裝成 cp950。
+    for payload, want in (
+        (b'{"mode": "split", "numbers": [47], "fixing": [4]}', "#4"),
+        (b'{"mode": "summary", "numbers": [47, 42], "spec": 51, '
+         b'"coverage": {"47": ["a"]}}', "#42"),
+        (b'{"mode": "summary", "numbers": [47], "spec": 51, '
+         b'"coverage": {"#47": ["a"]}}', "票號"),
+        (b'{"mode": "fixing", "number": 47, "numbers": [47, 48], '
+         b'"fixing": [48]}', "#47"),
+    ):
+        child = subprocess.run(
+            [sys.executable, __file__], input=payload, capture_output=True,
+            env=dict(os.environ, PYTHONIOENCODING="cp950"))
+        assert child.returncode != 0 and not child.stdout.strip(), payload
+        err = child.stderr.decode("utf-8")
+        assert want in err, (payload, err)
+        # 沒釘 stderr 的話中文會變成 cp950 的問號串 / 壞碼,decode 得出來也不是原句
+        assert "?" not in err, (payload, err)
+
     # #53 固化:新加的每一段一樣要把資料餵進這支檔。哪天有人把「開工」改成
     # 在 SKILL.md 裡 echo 一行中文,那就是 #58 原封不動再來一次。
     assert skill_mode_issue(text) is None, skill_mode_issue(text)
@@ -815,6 +836,10 @@ if __name__ == "__main__":
     # #58 — both ends of the pipe are 中文 and a Windows console is cp950 on
     # both. See AGENTS.md 「會被跑到的 python 檔要釘 UTF-8」.
     sys.stdout.reconfigure(encoding="utf-8")
+    # stderr 同一條路:#54 之後「不猜、當場停」的訊息全是中文,而 SystemExit 的
+    # 訊息印在 stderr。沒釘的話 client 看到的是一串問號 — 停得對、看不懂,等於
+    # 沒停(QA #54 步驟 3c 抓到的就是這個)。
+    sys.stderr.reconfigure(encoding="utf-8")
     if "--self-check" in sys.argv:
         self_check()
         sys.exit(0)
