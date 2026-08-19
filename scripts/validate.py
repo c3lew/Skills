@@ -302,6 +302,53 @@ def own_scope(node):
             stack += list(ast.iter_child_nodes(n))
 
 
+def binds(node):
+    """Every name this one node introduces into the scope it sits in (#81).
+
+    A def's `return` hands back the *outer* `dump` only when `dump` is not a
+    name the def made itself, so what this collects is the node kinds that
+    make one. Eight branches cover them: `Name` in a `Store` context, `arg`,
+    `alias`, a nested `def` or `class`, an `except` handler, the three
+    `match` captures, and a PEP 695 type parameter. Two of those shipped with
+    the rule (#79) — `Name` and `arg` — and each of the rest shadows the same
+    name the same way, so leaving any one out hands `get()()` back as a
+    one-line switch that exempts the whole file, which is exactly what #81
+    hit. Collecting the whole face of one rule is what #75 had to do to
+    `bindings_in` for the same reason: patched shape by shape, the shapes not
+    yet named stay open. A `with ... as` target, a comprehension target and a
+    walrus need no branch of their own — each is already a `Name` in a
+    `Store` context; a `Lambda`'s args are unreachable because `own_scope`
+    stops at one.
+
+    Evidence: `self_check` pins six of the eight — the nested `def` and
+    `class` share one branch and only `class` is pinned, because a nested def
+    of the same name is *also* held down by the collapsed `defs` dict (#80),
+    so a pin there would pass whether this branch collects it or not. It is
+    covered by `79-return-sweep.py --own-names` instead, and turns into real
+    evidence once #80 stops shadowing it.
+
+    ponytail: a `global`/`nonlocal` name is *not* collected — it declares the
+    binding to be someone else's, so it is not a local shadow. That costs a
+    false red on a def that returns a `global dump` it rebinds, the noisy
+    direction, not the quiet one.
+    """
+    if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+        return {node.id}
+    if isinstance(node, ast.arg):
+        return {node.arg}
+    if isinstance(node, ast.alias):  # `import os as dump`, `import dump.sub`
+        return {node.asname or node.name.split(".")[0]}
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        return {node.name}
+    if isinstance(node, (ast.ExceptHandler, ast.MatchAs, ast.MatchStar)):
+        return {node.name} if node.name else set()
+    if isinstance(node, ast.MatchMapping):
+        return {node.rest} if node.rest else set()
+    if isinstance(node, (ast.TypeVar, ast.ParamSpec, ast.TypeVarTuple)):
+        return {node.name}  # PEP 695 `def get[dump]()`
+    return set()
+
+
 def bound_pairs(target, value):
     """`(name, source expression)` for one binding target, destructured.
 
@@ -381,9 +428,11 @@ def live_nodes(tree):
     (`get()()`, `f = get(); f()`), and not when the result is dropped
     (`get()`) or parked in a name nobody calls (`x = get()`) — there not one
     line of `dump` runs, so exempting the file would be the switch again
-    (#79). A name the def assigns itself is not what it hands back either:
+    (#79). A name the def makes itself is not what it hands back either:
     `def get(): dump = 1; return dump` returns its local, which merely
-    collides with the def's name.
+    collides with the def's name — and so does every other way Python binds a
+    local, `import as` and `except as` and a `match` capture and a nested
+    `class` alike, all collected by `binds` (#81).
 
     A bare mention does not count and must not: `x = [dump]`, a local
     `dump = 1` that happens to shadow the def, an unrelated `c.dump` — none of
@@ -405,9 +454,7 @@ def live_nodes(tree):
     returned = defaultdict(set)  # what calling a def hands back, by RET key
     for name, node in defs.items():
         own = list(own_scope(node))
-        local = {n.id for n in own if isinstance(n, ast.Name)
-                 and isinstance(n.ctx, ast.Store)}
-        local |= {n.arg for n in own if isinstance(n, ast.arg)}
+        local = set().union(*map(binds, own))
         for n in own:
             if isinstance(n, ast.Return) and n.value is not None:
                 returned[RET + name] |= names_in(n.value) - local
@@ -1146,6 +1193,31 @@ def self_check():
                 ("what it returns is its own local, colliding by name",
                  "def get():\n    dump = 1\n    return dump\n\n\n"
                  + runnable + "get()()\n    print('要開')\n"),
+                # #81: and its own local in every other shape that binds
+                # one. Collect only `Name`/`arg`, as #79 shipped, and each of
+                # these hands `get()()` back as a one-line exemption switch.
+                *[(f"what it returns is its own {label}, colliding by name",
+                   f"{head}\n{body}    return dump\n\n\n"
+                   + runnable + "get()()\n    print('要開')\n")
+                  for label, head, body in (
+                      ("`import as`", "def get():",
+                       "    import os as dump\n"),
+                      ("plain `import`", "def get():", "    import dump\n"),
+                      ("`from ... import as`", "def get():",
+                       "    from os import path as dump\n"),
+                      ("`except as`", "def get():",
+                       "    try:\n        pass\n"
+                       "    except Exception as dump:\n        pass\n"),
+                      ("nested class", "def get():",
+                       "    class dump:\n        pass\n"),
+                      ("`match` capture", "def get():", "    match []:\n"
+                       "        case [dump]:\n            pass\n"),
+                      ("`match` star capture", "def get():", "    match []:\n"
+                       "        case [*dump]:\n            pass\n"),
+                      ("`match` mapping rest", "def get():", "    match {}:\n"
+                       "        case {**dump}:\n            pass\n"),
+                      ("type parameter", "def get[dump]():", ""),
+                  )],
         ):
             still_dead = f"def dump():\n    {out_bypass}.write(b'x')\n\n\n" + tail
             bad.write_text(still_dead, encoding="utf-8")
