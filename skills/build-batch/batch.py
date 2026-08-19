@@ -155,8 +155,17 @@ def split_lanes(numbers, failed):
 
     誰進合併佇列、誰留在旁邊修,是這片唯一的新判斷,所以它落在這裡而不是 agent
     心算:漏掉一張就是把沒過 QA 的東西合上主線,或把過了的那張白白留置。
-    `failed` 裡出現不在這批的票號一律忽略 — 那是別批的 lane,不歸這裡處置。
+
+    `failed` 裡的票號不在這批就當場停。那個形狀有兩種來源,壞的那種比較常見:
+    `"fixing": [48]` 打成 `[4]`,沒過 QA 的 #48 就被算成已收、直接合上主線,
+    而終端機還印「3 張已合併」。無聲吃掉正是這支函式存在的理由要防的事。
     """
+    stray = [n for n in failed if n not in set(numbers)]
+    if stray:
+        raise SystemExit(
+            "fixing 裡有不在這批的票號:"
+            + "、".join(f"#{n}" for n in stray)
+            + " — 打錯一個數字就是把沒過 QA 的那張合上主線,不猜")
     failed = set(failed)
     merged = [n for n in numbers if n not in failed]
     fixing = [n for n in numbers if n in failed]
@@ -258,11 +267,26 @@ def coverage_of(numbers, coverage):
 
     coverage 拿票號當 key,不是一串要跟 `numbers` 排對的 list:整批驗證只該涵蓋
     已收的票,而「哪幾條屬於哪張票」如果靠呼叫端自己把順序排對,fail 那張的驗收
-    項會靜靜混進來 — 整批驗證必紅,好的那幾張也就收不進去。key 對不上就是空的:
-    寧可少驗一條被 §8 當場抓到,也不要驗一條根本沒合上主線的東西。
+    項會靜靜混進來 — 整批驗證必紅,好的那幾張也就收不進去。
+
+    已收的票沒有 key 就當場停,不是靜靜當空的:§8 要驗的那份清單就是這裡印出來
+    的,少一條沒有別人比得出來(§8 拿總結對帳等於拿自己比自己)。少一張 = 那張
+    票的覆蓋驗收項整批沒人跑過,而 client 收到的總結看起來一切正常。
     """
-    by_ticket = {int(k): v for k, v in coverage.items()}
-    return coverage_union(by_ticket.get(n, []) for n in numbers)
+    by_ticket = {}
+    for k, v in coverage.items():
+        try:
+            by_ticket[int(k)] = v
+        except (TypeError, ValueError):
+            raise SystemExit(f"coverage 的 key 要是票號,拿到 {k!r} — "
+                             "寫 47 不是 '#47'") from None
+    missing = [n for n in numbers if n not in by_ticket]
+    if missing:
+        raise SystemExit(
+            "coverage 少了這幾張已合併的票:"
+            + "、".join(f"#{n}" for n in missing)
+            + " — 少一張就是它的覆蓋驗收項整批沒人驗到,而總結看起來全綠")
+    return coverage_union(by_ticket[n] for n in numbers)
 
 
 def format_batch_summary(spec, numbers, titles, coverage, fixing=()):
@@ -282,13 +306,17 @@ def format_batch_summary(spec, numbers, titles, coverage, fixing=()):
         lines += ["", "### 還在修", ""]
         lines += [f"- {line}"
                   for line in format_lane_fixing(fixing, titles, label="")]
+    if not numbers:
+        # 一張都沒收 = §8 根本沒跑(SKILL.md §7.5)。這則 comment 是 client 唯一
+        # 看得到整批的地方,在這裡宣稱「整批驗證全綠」就是紙本版的半套狀態。
+        lines += ["", "主線沒動,整批驗證沒有跑 — 沒有東西合上去可以驗。"]
+        return "\n".join(lines)
     lines += ["",
               "整批驗證:regression + 下列覆蓋驗收項聯集(只含已收的票),全綠。",
               ""]
     lines += [f"- {item}" for item in coverage_of(numbers, coverage)]
-    if numbers:
-        lines += ["",
-                  f"下一步:`/client-demo #{spec}`(Codex: `$client-demo #{spec}`)"]
+    lines += ["",
+              f"下一步:`/client-demo #{spec}`(Codex: `$client-demo #{spec}`)"]
     return "\n".join(lines)
 
 
@@ -318,6 +346,10 @@ def main():
     elif mode == "merged":
         print(format_batch_done(merged, data["spec"], fixing, titles))
     elif mode == "fixing":
+        # 貼錯票比不貼更糟 — 一張已經合上主線的票上寫著「QA 沒過、還在修」
+        if data["number"] not in fixing:
+            raise SystemExit(f"#{data['number']} 不在 fixing 裡,這則 comment "
+                             "會貼到一張已收的票上")
         print(format_fixing_comment(data["number"], merged, titles))
     elif mode == "summary":
         print(format_batch_summary(data["spec"], merged, titles,
@@ -587,7 +619,21 @@ JSON''')
     assert coverage_of([47, 48], {str(k): v for k, v in cov.items()}) == [
         "a", "b", "c"]          # JSON 進來的 key 是字串
     assert "d" not in coverage_of([47, 48], cov)   # #54:fail 那張的不算
-    assert coverage_of([], cov) == [] and coverage_of([47], {}) == []
+    assert coverage_of([], cov) == []
+    # 已收的票沒給 coverage 要當場停 — 靜靜當空的就是「那張整批沒人驗到」
+    for numbers, coverage in (([47], {}), ([47, 48], {47: ["a"]})):
+        try:
+            coverage_of(numbers, coverage)
+        except SystemExit as e:
+            assert "#48" in str(e) or "#47" in str(e), e
+        else:
+            raise AssertionError((numbers, coverage))
+    try:
+        coverage_of([47], {"#47": ["a"]})       # key 寫成 '#47'
+    except SystemExit as e:
+        assert "票號" in str(e), e
+    else:
+        raise AssertionError("'#47' key")
 
     # spec 票的批次總結:每張都列到、聯集列到、結尾是交棒行
     summary = format_batch_summary(
@@ -606,7 +652,14 @@ JSON''')
     assert split_lanes([47, 48, 42], [48]) == ([47, 42], [48])
     assert split_lanes([47, 48, 42], []) == ([47, 48, 42], [])
     assert split_lanes([47, 48, 42], [47, 48, 42]) == ([], [47, 48, 42])
-    assert split_lanes([47, 48], [99]) == ([47, 48], [])
+    # fixing 裡有不在這批的票號 -> 當場停。無聲吃掉的另一半是「打錯一個數字,
+    # 沒過 QA 的那張被算成已收」,而終端機照樣印「3 張已合併」。
+    try:
+        split_lanes([47, 48], [4])
+    except SystemExit as e:
+        assert "#4" in str(e), e
+    else:
+        raise AssertionError("stray fixing number swallowed")
 
     # 進合併佇列前印的那份名單:誰收、誰留著不動,兩段都印得出來
     picked = format_split([47, 42], [48], {47: "名單", 48: "點頭", 42: "整批"})
@@ -669,10 +722,15 @@ JSON''')
     assert "- a" in split and "- b" in split, split
     assert "只有 #48 覆蓋的那條" not in split, split      # #54 驗收項
     assert "只含已收的票" in split, split
-    # 全部都沒過:總結收得乾淨,不指路 demo
+    # 全部都沒過:總結收得乾淨,不指路 demo,而且**不**宣稱整批驗證跑過 —
+    # §7.5 明寫那時候不跑 §8,印「全綠」就是紙本版的半套狀態
     allfail = format_batch_summary(51, [], {48: "點頭"}, {48: ["x"]}, [48])
     assert "## 批次總結(0 張已收 / 1 張還在修)" in allfail, allfail
     assert "- (無)" in allfail and "client-demo" not in allfail, allfail
+    assert "全綠" not in allfail and "整批驗證:regression" not in allfail, allfail
+    assert allfail.rstrip().endswith("主線沒動,整批驗證沒有跑 — "
+                                    "沒有東西合上去可以驗。"), allfail
+    assert "- x" not in allfail, allfail      # 沒合上主線的驗收項一條都不列
 
     # #53 的四種輸出同樣全是中文,同樣印在 cp950 的主控台上 — 名單走過一次的
     # 那條路,它們每一條都要自己再走一次(mode 是新的,__main__ 的 pin 不會自動
