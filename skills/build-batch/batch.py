@@ -44,6 +44,23 @@ CLIENT_LINES = (
      "SKILL.md §5: 說不之後乾淨結束、沒有殘留的承諾不見了"),
 )
 
+# #54 固化:「一張沒過 QA,好的先收」這條 client 拍板的行為,有三句是散文才講得
+# 清楚的處置 — 保留 fail 那張的工作區、整批驗證縮到已收的票、全部沒過就什麼都不
+# 合。程式端只認得資料(誰在 fixing 裡),認不得「所以 agent 該做什麼」;這三句
+# 被刪掉 batch.py 照樣全綠,而 agent 會回去做它出廠時的事:把 fail 那張一起收掉、
+# 拿全批的驗收項去驗、或留下半套狀態。所以在這裡咬住原句。
+FAIL_LANE_LINES = (
+    (re.compile(re.escape("沒過 QA 那張的 worktree 與 branch 都留著,不 remove")),
+     "SKILL.md: 沒過 QA 那張的工作區與 branch 要保留、不回收的那句不見了 — "
+     "agent 會照 §7 把它一起 remove 掉,client 回頭沒東西可以接著修"),
+    (re.compile(re.escape("整批驗證只涵蓋已合併那幾張的覆蓋驗收項")),
+     "SKILL.md: 整批驗證要縮到已合併那幾張的那句不見了 — 含 fail 那張就必定紅,"
+     "好的幾張也收不進去"),
+    (re.compile(re.escape("全部 lane 都沒過 → 一張都不合")),
+     "SKILL.md: 全部 lane 都沒過就不 merge 任何東西的那句不見了 — 剩下的是"
+     "一個沒人看得懂的半套狀態"),
+)
+
 
 def plan_batch(tickets, cap=CAP):
     """Split tickets into (ready, queued, blocked).
@@ -133,11 +150,92 @@ def format_lane_done(numbers, titles):
     return "\n".join(f"完成 {_titled(n, titles)} — build + QA 綠" for n in numbers)
 
 
-def format_batch_done(numbers, spec):
-    """整批驗證綠之後終端機的最後一行:合了幾張 + 下一棒。"""
-    return (f"{len(numbers)} 張已合併,"
-            f"下一步:`/client-demo #{spec}`(Codex: `$client-demo #{spec}`)"
-            " — 一次 demo 這批")
+def split_lanes(numbers, failed):
+    """一批 lane 拆成「已收」與「還在修」,兩邊都保序(#54)。
+
+    誰進合併佇列、誰留在旁邊修,是這片唯一的新判斷,所以它落在這裡而不是 agent
+    心算:漏掉一張就是把沒過 QA 的東西合上主線,或把過了的那張白白留置。
+    `failed` 裡出現不在這批的票號一律忽略 — 那是別批的 lane,不歸這裡處置。
+    """
+    failed = set(failed)
+    merged = [n for n in numbers if n not in failed]
+    fixing = [n for n in numbers if n in failed]
+    return merged, fixing
+
+
+def format_lane_fixing(numbers, titles, label="還在修 "):
+    """一張一行「還在修」— 工作區與 branch 都點名,因為它們**沒有**被回收。
+
+    §7 對已收的 lane 是 `git worktree remove`,對這幾張正好相反。把保留下來的
+    路徑印在 client 眼前,他回頭要接著修的時候不用去猜東西還在不在。
+
+    `label` 是行首那三個字:終端機是一坨混著已收與還在修的行,要它才分得出來;
+    批次總結已經有「### 還在修」的標題,再帶一次就是同一句話講兩遍。
+    """
+    def line(n):
+        lane = lane_of(n)
+        return (f"{label}{_titled(n, titles)} — QA 沒過,工作區 {lane['worktree']}"
+                f"(branch {lane['branch']})保留,"
+                f"下一步:`/build #{n}`(Codex: `$build #{n}`)")
+
+    return [line(n) for n in numbers]
+
+
+def format_split(merged, fixing, titles):
+    """§7 進合併佇列之前先印:哪幾張要合、哪幾張留著不動(#54)。
+
+    「好的先收」唯一的分岔點就在這裡。挑錯的兩種形狀(把沒過的合上主線、把過了的
+    漏掉)在 shell 裡都是無聲的,所以這份名單由 `split_lanes` 算、印在 client 眼前,
+    不是 agent 自己挑三張裡的哪兩張。
+    """
+    lines = [f"已收({len(merged)} 張)— 照這個順序 merge:"]
+    lines += [f"  {_titled(n, titles)}" for n in merged] or ["  (無)"]
+    lines.append(f"還在修({len(fixing)} 張)— worktree 與 branch 都留著,不 remove:")
+    lines += [f"  {_titled(n, titles)}" for n in fixing] or ["  (無)"]
+    return "\n".join(lines)
+
+
+def format_batch_done(numbers, spec, fixing=(), titles=None):
+    """整批驗證綠之後終端機的最後一行:合了幾張 + 下一棒。
+
+    `fixing` 有東西 = 有 lane 沒過 QA。好的照樣收、照樣指路 demo(client 拍板的
+    「好的先收」),沒過那幾張各自帶著保留下來的工作區與下一棒印在後面。全部都
+    沒過就一張都不合 — 那時候連 demo 的交棒都不該出現,主線根本沒動。
+    """
+    titles = titles or {}
+    tail = format_lane_fixing(fixing, titles)
+    if not numbers:
+        return "\n".join([f"{len(fixing)} 張都沒過 QA,沒有東西合併 — "
+                          "主線沒動,沒有半套狀態", *tail])
+    if not fixing:
+        return (f"{len(numbers)} 張已合併,"
+                f"下一步:`/client-demo #{spec}`(Codex: `$client-demo #{spec}`)"
+                " — 一次 demo 這批")
+    head = (f"{len(numbers)} 張已合併可以 demo,"
+            + "、".join(f"#{n}" for n in fixing) + " 還在修")
+    baton = (f"下一步:`/client-demo #{spec}`(Codex: `$client-demo #{spec}`)"
+             f" — 先 demo 已收的 {len(numbers)} 張")
+    return "\n".join([head, *tail, baton])
+
+
+def format_fixing_comment(number, merged, titles=None):
+    """沒過 QA 那張票上的留置 comment — 它沒被丟掉,只是還在修(#54)。
+
+    寫回票而不只印在終端機:client 離開電腦回來翻票,要看得出來這張為什麼沒跟著
+    另外幾張一起收,以及東西還放在哪、下一棒是什麼。
+    """
+    titles = titles or {}
+    lane = lane_of(number)
+    others = (f"另外 {len(merged)} 張已經合回主線" if merged
+              else "這批沒有任何一張合回主線")
+    return "\n".join([
+        f"QA 沒過 — {_titled(number, titles)} 還在修,{others}。",
+        "",
+        f"工作區 `{lane['worktree']}`(branch `{lane['branch']}`)保留、沒有回收 "
+        "— 接著在裡面繼續修。",
+        "",
+        f"下一步:`/build #{number}`(Codex: `$build #{number}`)",
+    ])
 
 
 def coverage_union(sections):
@@ -155,14 +253,42 @@ def coverage_union(sections):
     return out
 
 
-def format_batch_summary(spec, numbers, titles, sections):
-    """spec 票上那則批次總結 comment(整批唯一一個看得完全批的地方)。"""
-    lines = [f"## 批次總結({len(numbers)} 張)", ""]
-    lines += [f"- {_titled(n, titles)} — 已合併({lane_of(n)['branch']})"
-              for n in numbers]
-    lines += ["", "整批驗證:regression + 下列覆蓋驗收項聯集,全綠。", ""]
-    lines += [f"- {item}" for item in coverage_union(sections)]
-    lines += ["", f"下一步:`/client-demo #{spec}`(Codex: `$client-demo #{spec}`)"]
+def coverage_of(numbers, coverage):
+    """**已合併**那幾張的覆蓋驗收項聯集 — 沒過 QA 那張的不算(#54)。
+
+    coverage 拿票號當 key,不是一串要跟 `numbers` 排對的 list:整批驗證只該涵蓋
+    已收的票,而「哪幾條屬於哪張票」如果靠呼叫端自己把順序排對,fail 那張的驗收
+    項會靜靜混進來 — 整批驗證必紅,好的那幾張也就收不進去。key 對不上就是空的:
+    寧可少驗一條被 §8 當場抓到,也不要驗一條根本沒合上主線的東西。
+    """
+    by_ticket = {int(k): v for k, v in coverage.items()}
+    return coverage_union(by_ticket.get(n, []) for n in numbers)
+
+
+def format_batch_summary(spec, numbers, titles, coverage, fixing=()):
+    """spec 票上那則批次總結 comment(整批唯一一個看得完全批的地方)。
+
+    有 lane 沒過 QA 時分「已收 / 還在修」兩段:client 只看這一則就要知道這批收了
+    哪幾張、哪幾張還在旁邊修,不用自己去翻三張票對。
+    """
+    head = (f"## 批次總結({len(numbers)} 張已收 / {len(fixing)} 張還在修)"
+            if fixing else f"## 批次總結({len(numbers)} 張)")
+    lines = [head, ""]
+    if fixing:
+        lines += ["### 已收", ""]
+    lines += ([f"- {_titled(n, titles)} — 已合併({lane_of(n)['branch']})"
+               for n in numbers] or ["- (無)"])
+    if fixing:
+        lines += ["", "### 還在修", ""]
+        lines += [f"- {line}"
+                  for line in format_lane_fixing(fixing, titles, label="")]
+    lines += ["",
+              "整批驗證:regression + 下列覆蓋驗收項聯集(只含已收的票),全綠。",
+              ""]
+    lines += [f"- {item}" for item in coverage_of(numbers, coverage)]
+    if numbers:
+        lines += ["",
+                  f"下一步:`/client-demo #{spec}`(Codex: `$client-demo #{spec}`)"]
     return "\n".join(lines)
 
 
@@ -178,17 +304,24 @@ def main():
     titles = {int(k): v for k, v in data.get("titles", {}).items()}
     mode = data.get("mode", "plan")
     numbers = data.get("numbers", [])
+    # `numbers` 一律是整批的票號,`fixing` 是其中沒過 QA 的那幾張。誰收誰留由
+    # split_lanes 算,不要求呼叫端先把兩份名單分好 — 分錯是無聲的(#54)。
+    merged, fixing = split_lanes(numbers, data.get("fixing", []))
     if mode == "plan":
         print(format_plan(plan_batch(data["tickets"]), titles))
     elif mode == "start":
         print(format_lane_start(numbers, titles))
     elif mode == "done":
         print(format_lane_done(numbers, titles))
+    elif mode == "split":
+        print(format_split(merged, fixing, titles))
     elif mode == "merged":
-        print(format_batch_done(numbers, data["spec"]))
+        print(format_batch_done(merged, data["spec"], fixing, titles))
+    elif mode == "fixing":
+        print(format_fixing_comment(data["number"], merged, titles))
     elif mode == "summary":
-        print(format_batch_summary(data["spec"], numbers, titles,
-                                   data.get("coverage", [])))
+        print(format_batch_summary(data["spec"], merged, titles,
+                                   data.get("coverage", {}), fixing))
     else:
         raise SystemExit(f"unknown mode: {mode!r} (want one of plan, "
                          + ", ".join(MODES) + ")")
@@ -222,7 +355,19 @@ def client_lines_issue(text):
     return None
 
 
-MODES = ("start", "done", "merged", "summary")
+def fail_lane_issue(text):
+    """SKILL.md 還有沒有講「一張沒過 QA 的時候怎麼處置」那三句(#54)。
+
+    `client_lines_issue` 守的是 client 點頭前看到的兩句;這條守的是點頭之後、
+    有 lane 沒過時 agent 該做什麼 — 那三件事沒有一件是 batch.py 能自己做的。
+    """
+    for pattern, message in FAIL_LANE_LINES:
+        if not pattern.search(text):
+            return message
+    return None
+
+
+MODES = ("start", "done", "split", "merged", "fixing", "summary")
 
 
 def skill_mode_issue(text):
@@ -436,15 +581,98 @@ JSON''')
     assert coverage_union([["a", "b"], ["b", "c"], []]) == ["a", "b", "c"]
     assert coverage_union([]) == []
 
+    # 聯集只認已合併的票:coverage 拿票號當 key,沒合上主線那張的驗收項撿不進來
+    cov = {47: ["a", "b"], 48: ["b", "c"], 42: ["d"]}
+    assert coverage_of([47, 48], cov) == ["a", "b", "c"]
+    assert coverage_of([47, 48], {str(k): v for k, v in cov.items()}) == [
+        "a", "b", "c"]          # JSON 進來的 key 是字串
+    assert "d" not in coverage_of([47, 48], cov)   # #54:fail 那張的不算
+    assert coverage_of([], cov) == [] and coverage_of([47], {}) == []
+
     # spec 票的批次總結:每張都列到、聯集列到、結尾是交棒行
     summary = format_batch_summary(
-        51, [47, 48], {47: "名單", 48: "點頭"}, [["a"], ["a", "b"]])
+        51, [47, 48], {47: "名單", 48: "點頭"}, {47: ["a"], 48: ["a", "b"]})
     assert "#47 名單 — 已合併(batch/47)" in summary, summary
     assert "#48 點頭 — 已合併(batch/48)" in summary, summary
     assert "- a" in summary and "- b" in summary, summary
     assert summary.count("- a") == 1, summary
     assert summary.rstrip().endswith(
         "下一步:`/client-demo #51`(Codex: `$client-demo #51`)"), summary
+    # 全綠的總結不長出「已收 / 還在修」兩段 — #53 驗過的形狀原封不動
+    assert "### 已收" not in summary and "### 還在修" not in summary, summary
+
+    # ---- #54 一張沒過 QA:好的先收,壞的留在旁邊修 --------------------------
+    # 誰收誰留由這裡算,不由 agent 心算;兩邊都照原順序,不在這批的票號忽略
+    assert split_lanes([47, 48, 42], [48]) == ([47, 42], [48])
+    assert split_lanes([47, 48, 42], []) == ([47, 48, 42], [])
+    assert split_lanes([47, 48, 42], [47, 48, 42]) == ([], [47, 48, 42])
+    assert split_lanes([47, 48], [99]) == ([47, 48], [])
+
+    # 進合併佇列前印的那份名單:誰收、誰留著不動,兩段都印得出來
+    picked = format_split([47, 42], [48], {47: "名單", 48: "點頭", 42: "整批"})
+    assert picked.splitlines() == [
+        "已收(2 張)— 照這個順序 merge:",
+        "  #47 名單",
+        "  #42 整批",
+        "還在修(1 張)— worktree 與 branch 都留著,不 remove:",
+        "  #48 點頭",
+    ], picked
+    # 全綠 / 全紅兩端都印得出空的那一段,client 看得到「沒漏」
+    assert "還在修(0 張)— worktree 與 branch 都留著,不 remove:\n  (無)" in (
+        format_split([47], [], {}))
+    assert "已收(0 張)— 照這個順序 merge:\n  (無)" in format_split([], [48], {})
+
+    # 終端機那一行:2 張收了可以 demo、#48 還在修,而且它的工作區/branch 都點名
+    partial = format_batch_done([47, 42], 51, [48], {48: "點頭"})
+    assert partial.splitlines()[0] == "2 張已合併可以 demo,#48 還在修", partial
+    assert ("還在修 #48 點頭 — QA 沒過,工作區 .git/batch-worktrees/48"
+            "(branch batch/48)保留,"
+            "下一步:`/build #48`(Codex: `$build #48`)"
+            in partial.splitlines()), partial
+    # 好的照樣指路 demo — 「好的先收」就是這一句在兌現
+    assert "下一步:`/client-demo #51`(Codex: `$client-demo #51`)" in partial
+    assert "$client-demo #51" in partial and "$build #48" in partial, partial
+    # 兩張沒過就兩張都列
+    both = format_batch_done([47], 51, [48, 42], {})
+    assert both.splitlines()[0] == "1 張已合併可以 demo,#48、#42 還在修", both
+    assert len(both.splitlines()) == 4, both
+
+    # 全部都沒過 -> 一張都不合,而且**不**指路 demo(主線根本沒動)
+    none = format_batch_done([], 51, [47, 48, 42], {})
+    assert none.splitlines()[0] == (
+        "3 張都沒過 QA,沒有東西合併 — 主線沒動,沒有半套狀態"), none
+    assert "client-demo" not in none, none
+    assert len(none.splitlines()) == 4, none
+
+    # 沒過那張票上的留置 comment:寫明沒過、工作區保留、下一棒是 /build
+    note = format_fixing_comment(48, [47, 42], {48: "點頭"})
+    assert note.startswith("QA 沒過 — #48 點頭 還在修,另外 2 張已經合回主線。"), note
+    assert "`.git/batch-worktrees/48`" in note and "`batch/48`" in note, note
+    assert "保留、沒有回收" in note, note
+    assert note.rstrip().endswith(
+        "下一步:`/build #48`(Codex: `$build #48`)"), note
+    # 全部都沒過的時候同一則 comment 不能謊稱有別人合進去了
+    assert "這批沒有任何一張合回主線" in format_fixing_comment(48, [], {}), note
+
+    # 批次總結分「已收 / 還在修」兩段,而且聯集不含還在修那張的驗收項
+    split = format_batch_summary(
+        51, [47, 42], {47: "名單", 42: "整批", 48: "點頭"},
+        {47: ["a"], 48: ["只有 #48 覆蓋的那條"], 42: ["b"]}, [48])
+    assert split.splitlines()[0] == "## 批次總結(2 張已收 / 1 張還在修)", split
+    assert "### 已收" in split and "### 還在修" in split, split
+    assert split.index("### 已收") < split.index("### 還在修"), split
+    assert "- #48 點頭 — QA 沒過" in split and "batch/48" in split, split
+    # 「### 還在修」底下不再重複行首那三個字(標題已經講過一次)
+    assert "- 還在修 #48" not in split, split
+    assert "還在修 #48 點頭 — QA 沒過" in format_batch_done([47], 51, [48],
+                                                          {48: "點頭"})
+    assert "- a" in split and "- b" in split, split
+    assert "只有 #48 覆蓋的那條" not in split, split      # #54 驗收項
+    assert "只含已收的票" in split, split
+    # 全部都沒過:總結收得乾淨,不指路 demo
+    allfail = format_batch_summary(51, [], {48: "點頭"}, {48: ["x"]}, [48])
+    assert "## 批次總結(0 張已收 / 1 張還在修)" in allfail, allfail
+    assert "- (無)" in allfail and "client-demo" not in allfail, allfail
 
     # #53 的四種輸出同樣全是中文,同樣印在 cp950 的主控台上 — 名單走過一次的
     # 那條路,它們每一條都要自己再走一次(mode 是新的,__main__ 的 pin 不會自動
@@ -457,8 +685,25 @@ JSON''')
         ({"mode": "merged", "numbers": [47, 48], "spec": 51},
          format_batch_done([47, 48], 51)),
         ({"mode": "summary", "numbers": [47], "spec": 51,
-          "titles": {"47": "登入頁 → 🔑"}, "coverage": [["導向 → 🏠"]]},
-         format_batch_summary(51, [47], {47: "登入頁 → 🔑"}, [["導向 → 🏠"]])),
+          "titles": {"47": "登入頁 → 🔑"}, "coverage": {"47": ["導向 → 🏠"]}},
+         format_batch_summary(51, [47], {47: "登入頁 → 🔑"},
+                              {47: ["導向 → 🏠"]})),
+        # #54 的三條新路。`numbers` 是整批、`fixing` 是沒過的那幾張 — 分開的動作
+        # 在 main() 裡由 split_lanes 做,呼叫端不先分好(分錯是無聲的)。
+        ({"mode": "split", "numbers": [47, 48], "fixing": [48],
+          "titles": {"47": "登入頁 → 🔑", "48": "點頭 → 🔑"}},
+         format_split([47], [48], {47: "登入頁 → 🔑", 48: "點頭 → 🔑"})),
+        ({"mode": "fixing", "number": 48, "numbers": [47, 48], "fixing": [48],
+          "titles": {"48": "點頭 → 🔑"}},
+         format_fixing_comment(48, [47], {48: "點頭 → 🔑"})),
+        ({"mode": "merged", "numbers": [47, 48], "spec": 51, "fixing": [48],
+          "titles": {"48": "點頭 → 🔑"}},
+         format_batch_done([47], 51, [48], {48: "點頭 → 🔑"})),
+        ({"mode": "summary", "numbers": [47, 48], "spec": 51, "fixing": [48],
+          "titles": {"47": "登入頁 → 🔑", "48": "點頭 → 🔑"},
+          "coverage": {"47": ["導向 → 🏠"], "48": ["不該出現 → 🚫"]}},
+         format_batch_summary(51, [47], {47: "登入頁 → 🔑", 48: "點頭 → 🔑"},
+                              {47: ["導向 → 🏠"], 48: ["不該出現 → 🚫"]}, [48])),
     ):
         child = subprocess.run(
             [sys.executable, __file__],
@@ -496,6 +741,14 @@ JSON''')
         assert mutated != text, mode
         got = skill_mode_issue(mutated)
         assert got and mode in got, (mode, got)
+
+    # #54:一張沒過時那三句處置,程式端沒有任何 assert 碰得到 — 在真的 SKILL.md
+    # 上咬,而且逐句拿掉都要紅(只留一句就綠 = guard 等於沒裝)。
+    assert fail_lane_issue(text) is None, fail_lane_issue(text)
+    for pattern, _ in FAIL_LANE_LINES:
+        m = pattern.search(text)
+        assert m, pattern.pattern
+        assert fail_lane_issue(text.replace(m.group(0), "", 1)), m.group(0)
 
     print("OK batch self-check green")
 
