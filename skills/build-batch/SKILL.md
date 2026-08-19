@@ -120,43 +120,40 @@ git worktree remove .git/batch-worktrees/47
 
 ### 7a. 撞車:先查出「跟誰撞」
 
-`git merge` 紅了就是撞車。因為是一張一張合,衝突一次只會發生在一張票上 — 正在合的那張,跟這批裡先合進去、動到同一個東西的那張。兩張都要查出來:少了任何一張,票上的紀錄跟終端機那句都寫不出來。
-
-先看撞在哪些檔案、每個檔案是哪一種撞法:
+`git merge` 紅了就是撞車。因為是一張一張合,對面是這批裡先合進去、動到同一個檔案的那張(或那幾張)。先問撞在哪些檔案:
 
 ```bash
-git diff --name-only --diff-filter=U   # 撞在哪些檔案
-git status --short                     # UU / AA = 兩邊都改;DU / UD = 一邊刪一邊改
+git diff --name-only --diff-filter=U
 ```
 
-**兩邊都改到同一段(`UU`、`AA`)** — 問「主線那側那段文字是誰寫的」:
+再問**這批裡誰自己動過那個檔案** — 這是撞法無關的問法:文字、圖檔、刪檔、改名都一樣答得出來,因為它只問「哪條 lane 的工作碰過這個檔案」,不去讀內容:
 
 ```bash
-git diff -- <撞到的檔案>                                 # 衝突兩側各是什麼內容
-git log -S'<主線那側的那段內容>' --format=%h -1 HEAD --not MERGE_HEAD -- <撞到的檔案>
+current=batch/48        # 正在合的那張
+file=<撞到的檔案>
+for lane in $(git branch --list 'batch/*' --format='%(refname:short)'); do
+  if [ "$lane" = "$current" ]; then continue; fi
+  base=$(git merge-base "$lane" "$current")
+  if [ -n "$(git diff --name-only "$base" "$lane" -- "$file")" ]; then echo "$lane"; fi
+done
 ```
 
-**主線那側把檔案刪了(`DU`)** — 主線那側根本沒有內容可以問,改問「誰刪的」:
+(`base` 是這批共同的起點:同一批的 lane 都從 §6 那一刻的主線開出來,所以任兩條的 merge-base 就是那顆。`base..lane` 只含那條 lane 自己的工作。)
 
-```bash
-git log --diff-filter=D --format=%h -1 HEAD --not MERGE_HEAD -- <撞到的檔案>
-```
+印出來幾條,決定怎麼寫紀錄:
 
-(反過來 `UD` 是正在合的那張刪、主線那側改,主線那側有內容,走上面 `-S` 那條。)
+- **一條** → 就是它,branch 名字後半就是另一張的票號。(圖檔、刪檔、改名這些「不可能被兩張乾淨共改」的撞法一定落在這裡。)
+- **零條** → 這批沒人動過它,主線那側是主線自己的 commit 改的。不要猜票號:`conflict-resolved` / `conflict-stopped` 的 `numbers` 只給正在合的那一張,印出來會照實講「跟主線上既有的內容撞」。
+- **多條** → 有第三張乾淨地動過同一個檔案(改的是別的段落)。文字檔還可以再問一次「主線那側衝突那一行是誰寫的」:
 
-兩條都是拿到一顆 commit,最後一步一樣:
+  ```bash
+  git blame HEAD -- <撞到的檔案>                        # 找出衝突那一行的 sha
+  git branch --list 'batch/*' --contains <那一行的 sha>   # 換算成 lane
+  ```
 
-```bash
-git branch --list 'batch/*' --contains <上面給的 sha>   # 那顆 commit 屬於哪條 lane
-```
+  分得出來就用那一張。分不出來(圖檔沒有行可以 blame、那顆 commit 不在候選裡)就把候選**全部**放進 `numbers`,印出來會照實講「跟這批裡同樣改過這個檔案的 #A、#B 撞在一起」— 列出候選是誠實的,隨便挑一張講死,client 就會被指去看一張根本沒撞的票。
 
-branch 名字後半就是另一張的票號。
-
-**不要**改用「最近一次動到這個檔案的 merge」去猜:同一個檔案這批裡常有第三張乾淨地動過(改的是別的段落),那個問法會回報第三張的票號 — 撞的明明是另一張,client 讀到的卻是錯的票。`-S` 問的是「那段文字」、`--diff-filter=D` 問的是「那次刪除」,都不是「那個檔案」,所以第三張插在中間也不會被誤認(QA 步驟 5 有並排實測)。
-
-`--not MERGE_HEAD` 把正在合的那張排掉,剩下的才是主線這側;`--contains` 用 git 自己的 commit 歸屬回答,不靠 parse merge 訊息。
-
-**只有**最後那行 `--contains` 印不出任何 `batch/*`(那段內容或那次刪除不是這批任何一條 lane 做的,例如檔案是主線本來就有的)才算查不出來 — 這時候不要猜票號,直接走 §7c,`conflict-stopped` 的 `numbers` 只給正在合的那一張,印出來會照實講「跟主線上既有的內容撞」。前面幾行問不出東西不是「查不出來」,是問錯問題:回頭照撞法挑對的那一條再問一次。
+**不要**用「最近一次動到這個檔案的 merge 是誰」或 `git log -S'<那段內容>'` 去認票:前者會回報中間那張乾淨的票;後者問的是「這個字串的出現次數在哪顆 commit 變了」,兩張票剛好各自加了同一句 boilerplate(`- [ ] 待補說明` 這種)就會回報錯的那張,而且錯得完全看不出來(QA 步驟 5 有並排實測)。上面那個 for 迴圈問的是「哪條 lane 碰過這個檔案」,不是內容鑑識,所以沒有這種失手。
 
 ### 7b. 解得掉:自己解,不打擾 client
 
