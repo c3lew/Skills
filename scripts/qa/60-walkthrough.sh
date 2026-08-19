@@ -24,8 +24,8 @@ python "$ROOT/scripts/install.py" --self-check
 python "$ROOT/scripts/hooks/triage-to-maintain.py" --self-check
 
 echo "==== STEP 1b  self-check 真的咬得到「散文當 code」:副本裡把豁免改回 substring -> self-check 轉紅 ===="
-grep -n 'norm(bypass) in whole' "$CP/scripts/validate.py"
-sed -i 's|if norm(bypass) in whole or|if bypass in py.read_text(encoding="utf-8") or|' "$CP/scripts/validate.py"
+grep -n 'norm(bypass) in live' "$CP/scripts/validate.py"
+sed -i 's|if norm(bypass) in live or|if bypass in py.read_text(encoding="utf-8") or|' "$CP/scripts/validate.py"
 grep -n 'bypass in py.read_text' "$CP/scripts/validate.py"
 set +e
 python "$CP/scripts/validate.py" --self-check
@@ -77,16 +77,13 @@ set -e
 echo "==== STEP 6c  對照組:同樣三個 case 在改之前(d3cc9ed^)是判紅的 ===="
 python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --skips --old
 
-echo "==== STEP 6d  本輪同型全掃:豁免的位置判準(AC1 原句的「會執行的位置」)===="
-set +e
+echo "==== STEP 6d  上一輪的 blocking(#70)已修:豁免的位置判準(AC1 原句的「會執行的位置」)全綠 ===="
 python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --bypass-position
-echo "exit $?  <- 非 0 是本輪 finding"
-set -e
 
-echo "==== STEP 6e  對照組:同一組 case 在改之前也全綠 -> 是天花板沒抬,不是 regression ===="
+echo "==== STEP 6e  對照組:同一組 case 在改之前(d3cc9ed^)4 條不合 -> 這輪真的抬了天花板 ===="
 set +e
 python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --bypass-position --old
-echo "exit $?"
+echo "exit $?  <- 非 0 是要的:對照組該紅"
 set -e
 
 echo "==== STEP 6f  AC1 括號裡的第二支路(「或檔案裡沒有裸 print(」)有沒有實作 — 純證據,不是 finding ===="
@@ -110,6 +107,31 @@ for name, src in CASES.items():
     print(f"{name.ljust(34)}  第二支路會判 GREEN  實際 {got}")
 print("\n三條都 RED -> 第二支路沒實作(守門不看 print,只看 pin/bypass)")
 PY
+
+echo "==== STEP 6g  本輪同型全掃(一):可達性判準只裝在 bypass 那半,pin 那半沒有 ===="
+# #70 拿「死碼裡的 bypass 不算數」當尺。同一把尺量 pin:__main__ block 裡跑不到的
+# reconfigure 算不算 pin 到了?判準同型,實作只做了一半。
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --pin-position
+echo "exit $?  <- 非 0 是本輪 finding"
+set -e
+
+echo "==== STEP 6h  對照組:同一組 case 在 d3cc9ed^ 也 4 條不合 -> 天花板沒抬,不是 regression ===="
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --pin-position --old
+echo "exit $?"
+set -e
+
+echo "==== STEP 6i  本輪同型全掃(二):拿 live_exprs docstring 的字面重新推導 ===="
+# docstring 逐字:「透過 alias / handler dict / callback 才走到的 bypass 仍算 live」。
+# written-evidence:第二個人拿字面重推,要推得出同一個結果。
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --callgraph
+echo "exit $?  <- 非 0 是本輪 finding"
+set -e
+
+echo "==== STEP 6j  對照組:同一組 case 在 d3cc9ed^ 全綠 -> 這 3 條誤紅是 #70 修法引入的 ===="
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --callgraph --old
 
 echo "==== STEP 7  repo 本體沒被動過 ===="
 python "$ROOT/scripts/validate.py"

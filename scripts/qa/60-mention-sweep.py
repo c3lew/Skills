@@ -10,6 +10,8 @@ docstring、字串常數、f-string、變數名)都是同一形狀。這支把�
     python scripts/qa/60-mention-sweep.py <repo> --positional # 位置判準(#58 原病)
     python scripts/qa/60-mention-sweep.py <repo> --skips      # 守門靜默跳過的路
     python scripts/qa/60-mention-sweep.py <repo> --bypass-position  # 豁免的位置判準
+    python scripts/qa/60-mention-sweep.py <repo> --pin-position     # pin 的位置判準
+    python scripts/qa/60-mention-sweep.py <repo> --callgraph        # call graph 的解析度
     ... --old                                                 # 對照組:#60 修之前那版守門
 """
 import subprocess
@@ -85,6 +87,42 @@ BYPASS_POSITION = [
 ]
 
 
+# 第五型(#70 修完重跑這輪抓到):#70 把可達性判準裝上去了,但只裝在 bypass 那半 ——
+# pin 那半仍是 `code_exprs(main)`,__main__ block 裡**任何地方**出現一次 reconfigure
+# 就算 pin 到了,不管那行跑不跑得到。死碼裡的 pin 跟死碼裡的 bypass 是同一形狀:
+# 一個誰都能翻的開關,守門閉嘴而 console 上一個字元都沒被 pin 到。
+PIN_POSITION = [
+    ("pin 在 __main__ 內的 `if False:` 死碼裡",
+     f'import sys\nif __name__ == "__main__":\n    if False:\n        {PIN}\n    print("要開的票")\n', "RED"),
+    ("pin 在 __main__ 內 `raise SystemExit` 之後的死碼",
+     f'import sys\nif __name__ == "__main__":\n    print("要開的票")\n    raise SystemExit\n    {PIN}\n', "RED"),
+    ("pin 在 __main__ 內定義但沒人呼叫的 nested def",
+     f'import sys\nif __name__ == "__main__":\n    def never():\n        {PIN}\n    print("要開的票")\n', "RED"),
+    ("pin 只出現在跑不到的 except 分支",
+     f'import sys\nif __name__ == "__main__":\n    try:\n        pass\n    except Exception:\n        {PIN}\n    print("要開的票")\n', "RED"),
+    ("pin 真的在 __main__ block 裡(不得誤紅)",
+     RUNNABLE + f'{PIN}\n    print("要開的票")\n', "GREEN"),
+    ("pin 在 block 內的 try body 裡(不得誤紅)",
+     f'import sys\nif __name__ == "__main__":\n    try:\n        {PIN}\n    except Exception:\n        pass\n    print("要開的票")\n', "GREEN"),
+]
+
+
+# 第六型:`live_exprs` 的 call graph 是 name-only。build 在它的 docstring 裡逐字寫
+# 「透過 alias / handler dict / callback 才走到的 bypass 仍算 live」—— 這張表就是拿那句
+# 字面重新推導(written-evidence)。方向是誤紅(fail-safe,壞 script 不會溜過去),
+# 但散文宣稱與行為相反,下一個人照字面推會推錯。
+CALLGRAPH = [
+    ("bypass 在 handler dict 裡被呼叫的 function(docstring 說仍算 live)",
+     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\nH = {"a": dump}\nif __name__ == "__main__":\n    H["a"]()\n', "GREEN"),
+    ("bypass 在 alias 呼叫的 function(docstring 說仍算 live)",
+     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\nf = dump\nif __name__ == "__main__":\n    f()\n', "GREEN"),
+    ("bypass 當 callback 傳進去被呼叫(docstring 說仍算 live)",
+     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\ndef run(cb):\n    cb()\nif __name__ == "__main__":\n    run(dump)\n', "GREEN"),
+    ("bypass 在 class method,__main__ 直接呼叫(對照:.attr 名字對得上)",
+     'import sys\nclass W:\n    def go(self):\n        sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    W().go()\n', "GREEN"),
+]
+
+
 def guard_module(repo, old):
     """`stream_encoding_issues` 的來源:現況,或 #60 修之前那版(對照組)。"""
     if not old:
@@ -130,4 +168,8 @@ if __name__ == "__main__":
         cases = SKIPS
     elif "--bypass-position" in sys.argv:
         cases = BYPASS_POSITION
+    elif "--pin-position" in sys.argv:
+        cases = PIN_POSITION
+    elif "--callgraph" in sys.argv:
+        cases = CALLGRAPH
     sys.exit(1 if run(sys.argv[1], cases, "--old" in sys.argv) else 0)
