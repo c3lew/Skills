@@ -1,6 +1,6 @@
 ---
 name: build-batch
-description: 一批彼此不卡的票一次跑完 — 算出「要開(最多 3 張)/ 排隊 / 還卡著」名單等 client 點頭,點頭後每張各自在獨立 git worktree 平行跑 build + QA,全綠依序合回主線、整批再驗一次,交棒 client-demo。當一份 spec 切完票、想一次推進多張彼此不卡的票時使用;只有一張能跑就指路單張 /build。
+description: 一批彼此不卡的票一次跑完 — 算出「要開(最多 3 張)/ 排隊 / 還卡著」名單等 client 點頭,點頭後每張各自在獨立 git worktree 平行跑 build + QA,做完一張從佇列補一張,中斷可續跑,全綠依序合回主線、整批再驗一次,交棒 client-demo。當一份 spec 切完票、想一次推進多張彼此不卡的票時使用;只有一張能跑就指路單張 /build。
 ---
 
 # build-batch
@@ -62,11 +62,37 @@ cap 寫死 3,不做設定。blocker 已關的票會被放行;blocker 還開著�
 - **說不** → 乾淨結束。什麼都沒開、什麼都沒改,不用回收。
 - **說好** → 往下走 §6。從這一刻起才會動到檔案。
 
-本版只走全綠路徑。**有票 QA 沒過、merge 撞車、能開的超過 3 張要排隊** — 這三件事都還沒接上,遇到就停下來把現況講給 client 聽,不要自己發明處置。
+**有票 QA 沒過、merge 撞車** — 這兩件事還沒接上,遇到就停下來把現況講給 client 聽,不要自己發明處置。能開的超過 3 張不在此列:那是 §6 的排隊補位,照跑。
 
-## 6. 平行開工
+## 6. 平行開工 — 最多 3 條,做完一張補一張
 
-「要開」名單上每張票各自一個 git worktree — lane 之間是檔案系統層級隔離,不共用工作目錄,所以不可能互相把對方寫到一半的東西吃進去。branch 與工作區路徑由 [`batch.py`](batch.py) 算,不要自己拼:
+同時最多 3 條 lane(cap 同 §3),名單上其餘的票排隊。**排隊中的票在被開工前完全不動它** — 不開 worktree、不貼 comment、不改它一個字:它可能根本輪不到(client 中途喊停),而一張被貼過「開工」卻沒人在做的票,下一個看到的人只能靠猜。
+
+### 6.1 先接續上一次中斷的 lane
+
+`/build-batch` 重跑的時候,先問 git 有沒有既有的 lane — 有就是上一次中斷留下的(§7),接續它,**不重開**:
+
+```bash
+git worktree list --porcelain | grep -F /.git/batch-worktrees/
+```
+
+沒有輸出(`grep` 回 exit 1,正常)就是乾淨的一批,直接往 §6.2。有輸出就把那幾行**原封不動**貼進 `worktrees`,票號由 [`batch.py`](batch.py) 從路徑認 — 別自己讀,認錯一條就是等一下去 merge 一條根本不是這條線開的 branch:
+
+```bash
+python <skill dir>/batch.py <<'JSON'
+{"mode": "resume", "worktrees": "worktree D:/repo/.git/batch-worktrees/47", "titles": {"47": "..."}}
+JSON
+```
+
+```
+接續 #47 <title> — 既有工作區 .git/batch-worktrees/47(branch batch/47)還在,不重開
+```
+
+接續的 lane 就是「已經在跑」的 lane:它們佔掉的名額不能再開新的。這件事不要自己數 — 把它們當成 §6.3 的 `running` 餵進去,名額由程式算。
+
+### 6.2 開頭那幾條
+
+「要開」名單上每張票(扣掉 §6.1 已經接續的那幾條)各自一個 git worktree — lane 之間是檔案系統層級隔離,不共用工作目錄,所以不可能互相把對方寫到一半的東西吃進去。branch 與工作區路徑由 [`batch.py`](batch.py) 算,不要自己拼:
 
 ```bash
 python <skill dir>/batch.py <<'JSON'
@@ -106,7 +132,49 @@ echo "$lane" | python <skill dir>/batch.py                                    # 
 echo "$lane" | python <skill dir>/batch.py | gh issue comment 47 --body-file -
 ```
 
-## 7. 依序合回主線
+### 6.3 做完一張補一張
+
+一條 lane 結束就**立刻**從佇列補一張進來,不等其他 lane、也不管它是綠的還是紅的 — 紅的那條停在原地等 client(§5),但沒有理由讓佇列裡其他票陪它一起卡著。
+
+補誰不要自己算。把現場事實餵進去:`running` 是這一刻還在跑的 lane(不含剛收掉的那條),`queue` 是還沒開過的票,照「要開 → 排隊」的順序:
+
+```bash
+python <skill dir>/batch.py <<'JSON'
+{"mode": "refill", "running": [48, 42], "queue": [50, 51], "titles": {"50": "..."}}
+JSON
+```
+
+```
+補位 #50 <title> — 工作區 .git/batch-worktrees/50(branch batch/50);同時跑 3 條,佇列剩 1 張
+```
+
+印出來的每一行就是 client 在終端機看到的「補位」,同一行也告訴你 branch 與路徑 — 照 §6.2 一模一樣的三步開下去(`git worktree add` → `git push -u` → 把這一行貼回該張票),然後照 §6.2 起一個 subagent 跑 `/build` + `/qa`。
+
+行尾那兩個數字是補完之後的狀態:`同時跑 N 條` 就是 cap 這條不變量的當場證據,client 不用自己去數 worktree。沒名額或佇列空了會印「不補位 …」,那就是等剩下的 lane 收完,不要硬開。
+
+全部票都跑完(佇列空、沒有 lane 在跑)才往 §8。
+
+## 7. 中斷與續跑
+
+Ctrl-C、lane 死掉、client 喊停 — **中斷不等於全部重來**。已經 merge 的留在主線,未合併的 lane 留著 worktree 與 branch,什麼都不回收:回收掉的那幾條下次得從零跑一次,那是這條線最貴的東西。
+
+每條沒合併的 lane 在自己票上留一行,client 之後翻票就知道它可以續:
+
+```bash
+lane='{"mode": "interrupted", "numbers": [47], "spec": 51, "titles": {"47": "..."}}'
+echo "$lane" | python <skill dir>/batch.py                                    # 印給 client
+echo "$lane" | python <skill dir>/batch.py | gh issue comment 47 --body-file -
+```
+
+```
+中斷,可續 #47 <title> — 未合併,工作區 .git/batch-worktrees/47 與 branch batch/47 都留著;重跑 `/build-batch #51`(Codex: `$build-batch #51`)會接續這條 lane
+```
+
+排隊中還沒開工的票不留任何紀錄 — 它們從頭到尾沒被碰過(§6),下次重跑就是一般的候選票。
+
+重跑就照 §6.1:偵測到既有的 `batch/*` worktree 就接續那幾條,不重開一份。
+
+## 8. 依序合回主線
 
 全部 lane 綠了才進這一段,而且**一張一張**合、不同時 — 同時 merge 撞在一起會留下一個沒人看得懂的中間狀態。回到主 repo,照「要開」的順序,每張:
 
@@ -120,16 +188,16 @@ git worktree remove .git/batch-worktrees/47
 
 撞車不在本版範圍 — 停下來把哪兩張撞在哪個檔案講給 client 聽,不要硬推。
 
-## 8. 整批驗證
+## 9. 整批驗證
 
 三個 lane 各自綠不蘊含合起來綠(語意衝突、共用檔案的互相假設)。這是平行化唯一真正新增的風險,所以合完之後在主線上再跑一次:
 
 1. regression suite。
-2. 這批**所有票**的「覆蓋驗收項」聯集 — 每張票 body 的 `## 覆蓋驗收項` 段,去重後的清單。這份清單跟 §9 批次總結裡列的是同一份;兩邊對不起來就是有一條沒驗到。
+2. 這批**所有票**的「覆蓋驗收項」聯集 — 每張票 body 的 `## 覆蓋驗收項` 段,去重後的清單。這份清單跟 §10 批次總結裡列的是同一份;兩邊對不起來就是有一條沒驗到。
 
 綠了才往下。紅了停下來報給 client,不要往 demo 送。
 
-## 9. 收尾
+## 10. 收尾
 
 整批驗證綠 → 終端機印最後一行:
 
@@ -151,14 +219,14 @@ JSON
 
 `<<'JSON'` 寫在 `|` 之前,整段連結尾的 `JSON` 一起複製。
 
-工作區已經在 §7 一張一張回收掉了,這裡不用再收。要確認有沒有漏收,母體只有 `.git/batch-worktrees/` 底下這幾個(路徑同 §7)— 只問這個母體,順便確認 branch 照 §7 留著:
+工作區已經在 §8 一張一張回收掉了,這裡不用再收。要確認有沒有漏收,母體只有 `.git/batch-worktrees/` 底下這幾個(路徑同 §8)— 只問這個母體,順便確認 branch 照 §8 留著:
 
 ```bash
 git worktree list --porcelain | grep -F /.git/batch-worktrees/   # 應該沒有輸出
 git branch --list 'batch/*'                                      # 應該還列得出來
 ```
 
-第一行沒有輸出(`grep` 回 exit 1,正常)就是工作區收乾淨了;印出來的每一列就是一條沒走完 §7 的 lane,照 §7 的 `git worktree remove` 收掉再往下。第二行反過來要**有**輸出 — `batch/*` 空掉表示有人連 branch 一起刪了,§7 明寫 branch 留著到票結案。兩行合起來才是「worktree 移除、branch 保留」這條驗收原句的判準,只跑第一行等於只驗了一半。
+第一行沒有輸出(`grep` 回 exit 1,正常)就是工作區收乾淨了;印出來的每一列就是一條沒走完 §8 的 lane,照 §8 的 `git worktree remove` 收掉再往下。第二行反過來要**有**輸出 — `batch/*` 空掉表示有人連 branch 一起刪了,§8 明寫 branch 留著到票結案。兩行合起來才是「worktree 移除、branch 保留」這條驗收原句的判準,只跑第一行等於只驗了一半。
 
 判準只看 `.git/batch-worktrees/` 這個母體、不看 `git worktree list` 的列數,因為完整輸出是整個 repo 的所有 worktree,包含別人開的 — 例如 Claude Code 給 subagent 常駐的 `.claude/worktrees/agent-*`,跟 `/build-batch` 無關卻一直住在這裡。#53 的 QA 實錄(步驟 6):0 個 lane 殘留,`git worktree list` 還是印 4 列(1 列主 repo + 3 列 subagent worktree),拿「只剩主 repo」判就是紅的;反過來真的殘留 1 條時,那一列混在同樣的 4 列裡也認不出來(#61)。
 
