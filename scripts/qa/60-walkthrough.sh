@@ -161,6 +161,39 @@ set -e
 echo "==== STEP 6n  對照組:同一組 case 在上一輪 HEAD(188c7d8)全綠 -> 是 #71 引入的 regression ===="
 python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --live-overapprox --prev
 
+echo "==== STEP 6o  上一輪的 blocking(#73)已修:死碼 bypass 配撞名的變數 / attribute 不再豁免 ===="
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --live-overapprox
+
+echo "==== STEP 6p  本輪同型全掃(一):同名的兩個 def 塌成一個節點 ===="
+# 同一把尺 —— 「live 集合有哪些放寬不是真的呼叫」。#76 量過「名字當 call 引數」那一格,
+# 這格是 `defs` 那張 {name: node} 平表:檔案裡任何地方有一個同名 def 被呼叫,死碼裡那個
+# 同名 def 就被拉成 live(誤放);反過來被呼叫的是帶 bypass 的那個時,又被另一個同名 def
+# 蓋掉(誤紅)。兩個方向都倒。
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --name-collision
+echo "exit $?  <- 非 0 是本輪 finding"
+set -e
+
+echo "==== STEP 6q  對照組:同一組 case 在 #75 修之前(39003a3)也 3 條不合 -> 不是 regression ===="
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --name-collision --prev75
+echo "exit $?"
+set -e
+
+echo "==== STEP 6r  本輪同型全掃(二):live def 回傳的名字一律算 live ===="
+# 同一把尺的第三格。`def get(): return dump` 加一行 `get()`(結果直接丟掉)就整檔豁免,
+# 連 get() 內部撞名的區域變數都算 —— 又是一個一行能翻的開關。
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --return-carry
+echo "exit $?  <- 非 0 是本輪 finding"
+set -e
+
+echo "==== STEP 6s  對照組:同一組 case 在 #75 修之前(39003a3)那三條是判紅的 -> 是 #75 引入的 ===="
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --return-carry --prev75
+echo "exit $?  <- 那 1 條不合是 #75 要修的誤紅,不是這三條"
+set -e
+
 echo "==== STEP 7  repo 本體沒被動過 ===="
 python "$ROOT/scripts/validate.py"
 git -C "$ROOT" status --short

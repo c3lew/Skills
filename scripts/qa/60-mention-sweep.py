@@ -14,9 +14,12 @@ docstring、字串常數、f-string、變數名)都是同一形狀。這支把�
     python scripts/qa/60-mention-sweep.py <repo> --callgraph        # call graph 的解析度
     python scripts/qa/60-mention-sweep.py <repo> --print-detect     # 沒-print 豁免的判準解析度
     python scripts/qa/60-mention-sweep.py <repo> --live-overapprox  # 可達性 over-approximate 的代價
+    python scripts/qa/60-mention-sweep.py <repo> --name-collision   # 同名 def 塌成一個節點
+    python scripts/qa/60-mention-sweep.py <repo> --return-carry     # 回傳的名字一律算 live
     ... --old                                                 # 對照組:#60 修之前那版(d3cc9ed^)
     ... --prev                                                # 對照組:上一輪 QA 的 HEAD(188c7d8)
     ... --prev73                                              # 對照組:#73 修之前(e56789c)
+    ... --prev75                                              # 對照組:#75 修之前(39003a3)
 """
 import subprocess
 import sys
@@ -167,8 +170,107 @@ LIVE_OVERAPPROX = [
 ]
 
 
-# 對照組能指的兩個歷史點:#60 動手前(--old),與上一輪 QA 的 HEAD(--prev,#71 修之前)。
-BASELINES = {"--old": "d3cc9ed^", "--prev": "188c7d8", "--prev73": "e56789c"}
+# 第九型(#73 / #75 修完重跑這輪抓到):同一把尺 —— 「live 集合有哪些放寬不是真的呼叫」。
+# #76 已經拿這把尺量過「名字交給任何 call 當引數」那一格。`live_nodes` 的 docstring 自己
+# 列了三個 approximation,另外兩格從沒被量過,量下去兩格都在漏。
+# 第一格:`defs` 是一個 `{name: node}` 平表,同名的兩個 def 塌成一個節點 —— 於是
+# 「檔案裡任何地方有一個同名的 def 被呼叫」就把死碼裡那個同名 def 拉成 live。加一個撞名的
+# function 就是一個誰都能翻的開關,跟 #60 原病同型(#73 收掉的是撞名的**變數 / attribute**,
+# 撞名的 **def** 沒收)。
+NAME_COLLISION = [
+    ("死碼 bypass 在沒被實例化的 class method,module 同名 def 被呼叫", """import sys
+def dump():
+    pass
+class W:
+    def dump(self):
+        sys.stdout.buffer.write(b"x")
+if __name__ == "__main__":
+    dump()
+    print("要開的票")
+""", "RED"),
+    ("死碼 bypass 在後面重新定義的同名 def,被呼叫的是前面那個", """import sys
+def dump():
+    pass
+if __name__ == "__main__":
+    dump()
+    print("要開的票")
+def dump():
+    sys.stdout.buffer.write(b"x")
+""", "RED"),
+    ("對照:死碼 bypass 的 def 沒有同名雙胞胎(#70 的天花板)", """import sys
+def dump():
+    sys.stdout.buffer.write(b"x")
+if __name__ == "__main__":
+    print("要開的票")
+""", "RED"),
+    ("對照:同名 def 但被呼叫的就是帶 bypass 的那個(不得誤紅)", """import sys
+class W:
+    def dump(self):
+        pass
+def dump():
+    sys.stdout.buffer.write(b"x")
+if __name__ == "__main__":
+    dump()
+    print("要開的票")
+""", "GREEN"),
+]
+
+
+# 第十型(同一把尺的第三格):live 的 def `return` 出去的名字一律算 live,不管那個回傳值
+# 有沒有被呼叫 —— 連 def 內部撞名的區域變數都算。`def get(): return dump` 加一行 `get()`
+# (結果直接丟掉)就整檔豁免,又是一個一行能翻的開關。
+RETURN_CARRY = [
+    ("死碼 bypass + `def get(): return dump`,`get()` 結果直接丟掉", """import sys
+def dump():
+    sys.stdout.buffer.write(b"x")
+def get():
+    return dump
+if __name__ == "__main__":
+    get()
+    print("要開的票")
+""", "RED"),
+    ("同上,回傳值存進變數但從未呼叫(`x = get()`)", """import sys
+def dump():
+    sys.stdout.buffer.write(b"x")
+def get():
+    return dump
+if __name__ == "__main__":
+    x = get()
+    print("要開的票")
+""", "RED"),
+    ("get() 回傳的是自己的區域變數,只是剛好撞名死碼 def", """import sys
+def dump():
+    sys.stdout.buffer.write(b"x")
+def get():
+    dump = 1
+    return dump
+if __name__ == "__main__":
+    get()
+    print("要開的票")
+""", "RED"),
+    ("對照:回傳值真的被呼叫 `get()()`(#75 立的天花板,不得誤紅)", """import sys
+def dump():
+    sys.stdout.buffer.write(b"x")
+def get():
+    return dump
+if __name__ == "__main__":
+    get()()
+    print("要開的票")
+""", "GREEN"),
+    ("對照:`get` 自己也沒被呼叫(死碼,必須維持 RED)", """import sys
+def dump():
+    sys.stdout.buffer.write(b"x")
+def get():
+    return dump
+if __name__ == "__main__":
+    print("要開的票")
+""", "RED"),
+]
+
+
+# 對照組能指的歷史點:#60 動手前(--old),與上一輪 QA 的 HEAD(--prev,#71 修之前)。
+BASELINES = {"--old": "d3cc9ed^", "--prev": "188c7d8", "--prev73": "e56789c",
+             "--prev75": "39003a3"}
 
 
 def guard_module(repo, old):
@@ -223,5 +325,9 @@ if __name__ == "__main__":
         cases = PRINT_DETECT
     elif "--live-overapprox" in sys.argv:
         cases = LIVE_OVERAPPROX
+    elif "--name-collision" in sys.argv:
+        cases = NAME_COLLISION
+    elif "--return-carry" in sys.argv:
+        cases = RETURN_CARRY
     base = next((BASELINES[f] for f in BASELINES if f in sys.argv), None)
     sys.exit(1 if run(sys.argv[1], cases, base) else 0)
