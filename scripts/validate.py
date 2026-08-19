@@ -234,7 +234,7 @@ def runs(body):
 
     Cut: a branch whose test is a constant the other way (`if False:`),
     everything after a `raise`/`return`, and the body of a def — a def only
-    runs when something calls it, which `live_exprs` resolves separately.
+    runs when something calls it, which `live_nodes` resolves separately.
     An `except` handler counts as dead too: it is the error path, not the
     path a script prints its output on.
     """
@@ -264,34 +264,35 @@ def runs(body):
     return out
 
 
-def live_exprs(tree):
-    """`code_exprs` restricted to code the module actually reaches (#70).
+def live_nodes(tree):
+    """Every AST node the module actually reaches (#70).
 
     The bypass half of the guard has to be positional like the pin half: a
     `sys.stdout.buffer` sitting in a never-called function or behind
     `if False:` is not "the script writes bytes", it is a switch anyone can
     flip to silence the guard — the same failure shape #60 closed for prose.
-
-    Reachability is a name-only call graph from the module's top level:
-    a call by bare name (or `.attr`) pulls that def's body in, transitively.
-    ponytail: a bypass reached only through an alias, a dict of handlers or a
-    callback still counts as live, and two defs sharing a name are one node.
-    Upgrade to real resolution if that ever shows up — the cheap version
-    already kills every dead-code case in #70.
+    Reachability is a name-only call graph from the module's top level, and a
+    *mention* of a def's name pulls its body in — not just a call by that
+    name. An alias (`f = dump`), a handler dict (`{"a": dump}`) and a callback
+    argument (`run(dump)`) all reach the body, and none of them is a `Call`
+    whose func is `dump` (#71).
+    ponytail: deliberately over-approximates — a local variable that happens
+    to shadow a def's name pulls that def in, and two defs sharing a name are
+    one node. Both err toward calling code live, which is the safe direction
+    for a guard whose bad outcome is stopping a legitimate script; dead code
+    is still cut by `runs`.
     """
     defs = {n.name: n for n in ast.walk(tree)
             if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
-    exprs, called, todo = set(), set(), runs(tree.body)
+    seen, called, todo = [], set(), runs(tree.body)
     while todo:
         for node in ast.walk(todo.pop()):
-            if isinstance(node, (ast.Attribute, ast.Call)):
-                exprs.add(ast.unparse(node))
-            if isinstance(node, ast.Call):
-                name = getattr(node.func, "id", getattr(node.func, "attr", None))
-                if name in defs and name not in called:
-                    called.add(name)
-                    todo += runs(defs[name].body)
-    return exprs
+            seen.append(node)
+            name = getattr(node, "id", getattr(node, "attr", None))
+            if name in defs and name not in called:
+                called.add(name)
+                todo += runs(defs[name].body)
+    return seen
 
 
 def stream_encoding_issues(repo):
@@ -319,6 +320,15 @@ def stream_encoding_issues(repo):
     block: `main()` legitimately writes bytes and `__main__` calls it, while a
     `.buffer` line in dead code or in a function nobody calls is a switch that
     silences the guard without printing a single byte (#70).
+
+    A script that never prints is exempt outright: with nothing on its way to
+    the console there is no 中文 to mangle, and demanding a pin there is a red
+    against a legitimate script (#71). Unlike the bypass, this half reads the
+    *whole file*, not the live set — #60 AC1 says 「檔案裡沒有裸 `print(`」, and
+    a print sitting in dead code still means someone wrote this script to talk
+    to a console. ponytail: `print(` is the whole test — a live
+    `sys.stdout.write("中文")` with no `print` slips through; tighten if that
+    shape ever ships.
     """
     errors = []
     for py in sorted(repo.rglob("*.py")):
@@ -335,12 +345,18 @@ def stream_encoding_issues(repo):
         if main is None:
             continue
         whole, inside = code_exprs(tree), code_exprs(main)
-        live = live_exprs(tree)
+        reached = {ast.unparse(n) for n in live_nodes(tree)
+                   if isinstance(n, (ast.Attribute, ast.Call))}
+        prints = any(isinstance(n, ast.Call)
+                     and getattr(n.func, "id", None) == "print"
+                     for n in ast.walk(tree))
         label = py.relative_to(repo).as_posix()
         for stream, pin, bypass, symptom in STREAM_PINS:
             if stream == "stdin" and f"sys.{stream}" not in whole:
                 continue  # a script that never reads stdin has nothing to pin
-            if norm(bypass) in live or norm(pin) in inside:
+            if stream == "stdout" and not prints:
+                continue  # nothing reaches the console — nothing to mangle
+            if norm(bypass) in reached or norm(pin) in inside:
                 continue
             errors.append(
                 f"{label}: runnable script does not pin {stream} to UTF-8 "
@@ -863,12 +879,13 @@ def self_check():
         # the pin has to be *in* the __main__ block. A reconfigure sitting in
         # main() is the shape AGENTS.md warns about — self_check calls main()
         # with a StringIO, which has no reconfigure — so it must still be red.
-        bad.write_text(f"def main():\n    {out_pin}\n\n\n{runnable}main()\n",
-                       encoding="utf-8")
+        bad.write_text(f"def main():\n    {out_pin}\n    print('要開')\n\n\n"
+                       f"{runnable}main()\n", encoding="utf-8")
         assert len(stream_encoding_issues(repo)) == 1, stream_encoding_issues(repo)
         # ...while .buffer in main() is fine: it carries no encoding to get wrong
-        bad.write_text(f"def main():\n    {out_bypass}.write(b'x')\n\n\n"
-                       f"{runnable}main()\n", encoding="utf-8")
+        bad.write_text(f"def main():\n    {out_bypass}.write(b'x')\n"
+                       f"    print('要開')\n\n\n{runnable}main()\n",
+                       encoding="utf-8")
         assert stream_encoding_issues(repo) == []
 
         # reading stdin is its own half of #58 — a pinned stdout is not enough
@@ -907,8 +924,9 @@ def self_check():
             assert len(stream_encoding_issues(repo)) == 1, dead
         # ...and the two shapes that do reach it stay green
         for alive in (
-            runnable + f"{out_bypass}.write('要開'.encode())\n",
-            f"def main():\n    {out_bypass}.write(b'x')\n" + runnable + "main()\n",
+            runnable + f"{out_bypass}.write('要開'.encode())\n    print('要開')\n",
+            f"def main():\n    {out_bypass}.write(b'x')\n    print('要開')\n"
+            + runnable + "main()\n",
         ):
             bad.write_text(alive, encoding="utf-8")
             assert stream_encoding_issues(repo) == [], alive
@@ -922,9 +940,43 @@ def self_check():
             bad.write_text(nested, encoding="utf-8")
             assert len(stream_encoding_issues(repo)) == 1, nested
             pinned = wrapper.format(
-                body=indent(runnable + out_pin + "\n", "    "))
+                body=indent(runnable + out_pin + "\n    print('要開')\n", "    "))
             bad.write_text(pinned, encoding="utf-8")
             assert stream_encoding_issues(repo) == [], pinned
+
+        # #71(a): the call graph counts a *mention* of a def, not only a call
+        # by that name. Alias, handler dict and callback all reach the body —
+        # and every one of these really does write its bytes when you run it.
+        for reach in ("f = dump\n    f()",
+                      "H = {'a': dump}\n    H['a']()",
+                      "run(dump)"):
+            indirect = (f"def dump():\n    {out_bypass}.write(b'x')\n\n\n"
+                        f"def run(cb):\n    cb()\n\n\n"
+                        + runnable + reach + "\n    print('要開')\n")
+            bad.write_text(indirect, encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], indirect
+        # the dead-code cases above must not come back green through the new
+        # mention rule: nothing names `dump`, so nothing pulls it in.
+        never = f"def dump():\n    {out_bypass}.write(b'x')\n" + naked
+        bad.write_text(never, encoding="utf-8")
+        assert len(stream_encoding_issues(repo)) == 1, never
+
+        # #71(b): #60 AC1's second branch — a script with no live `print(` has
+        # nothing on its way to the console, so it owes no pin.
+        for quiet in (
+            runnable + "open('out', 'w').write('要開')\n",
+            runnable + "pass  # print('要開') only in a comment\n",
+        ):
+            bad.write_text(quiet, encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], quiet
+        # ...but a print anywhere in the file counts, live or not: #65 keeps a
+        # `__main__` block nested in a def red, and that print is not reachable.
+        parked = "def dump():\n    print('nobody calls this')\n" + runnable + "pass\n"
+        bad.write_text(parked, encoding="utf-8")
+        assert len(stream_encoding_issues(repo)) == 1, parked
+        # ...and one live print brings the pin back
+        bad.write_text(naked, encoding="utf-8")
+        assert len(stream_encoding_issues(repo)) == 1, naked
 
     # and the live repo is clean — every script that can be run pins its streams
     assert stream_encoding_issues(REPO) == [], stream_encoding_issues(REPO)

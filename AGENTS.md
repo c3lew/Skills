@@ -38,7 +38,13 @@ Windows 主控台預設 cp950,而這條線印給 client 的東西全是中文 �
 釘在 `__main__` 不是 `main()`:self-check 會拿 StringIO 呼叫 `main()`,
 StringIO 沒有 `reconfigure`。另一條合法路是整段繞過 text layer 走
 `sys.stdout.buffer.write(...)` / `sys.stdin.buffer.read()`(hook 走這條,因為
-hook 掛了比壞碼更慘)— 這條沒有 encoding 可以搞錯,放哪都行。
+hook 掛了比壞碼更慘)— 這條沒有 encoding 可以搞錯,但要寫在 module 真的走得到的
+地方:死碼或沒人叫的 function 裡那行,執行時一個 byte 都不會寫出去(#70)。
+「走得到」認的是名字被提到,不限呼叫 — alias、handler dict、callback 傳進去
+都算(#71)。
+
+整支檔案完全沒有裸 `print(` 的 script 不用釘 stdout:沒有東西要送到主控台,
+就沒有中文可以壞(#71)。
 
 `scripts/validate.py` 的 `stream_encoding_issues` 兩條都會抓,而且抓位置:
 `reconfigure` 寫在 `__main__` 之外照樣紅。

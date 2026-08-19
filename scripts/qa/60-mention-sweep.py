@@ -45,7 +45,7 @@ MENTION = [
 # #58 的原病:pin 只要文字上在 __main__ 之後就算數。位置判準要擋住這些。
 POSITIONAL = [
     ("pin 在 main(),__main__ 只呼叫它",
-     f'import sys\ndef main():\n    {PIN}\n\n\nif __name__ == "__main__":\n    main()\n', "RED"),
+     f'import sys\ndef main():\n    {PIN}\n    print("要開的票")\n\n\nif __name__ == "__main__":\n    main()\n', "RED"),
     ("pin 在 __main__ 之前的 top-level",
      f'import sys\n{PIN}\nif __name__ == "__main__":\n    print("要開的票")\n', "RED"),
     ("pin 真的在 __main__ block 裡", RUNNABLE + f'{PIN}\n    print("要開的票")\n', "GREEN"),
@@ -107,19 +107,20 @@ PIN_POSITION = [
 ]
 
 
-# 第六型:`live_exprs` 的 call graph 是 name-only。build 在它的 docstring 裡逐字寫
-# 「透過 alias / handler dict / callback 才走到的 bypass 仍算 live」—— 這張表就是拿那句
-# 字面重新推導(written-evidence)。方向是誤紅(fail-safe,壞 script 不會溜過去),
-# 但散文宣稱與行為相反,下一個人照字面推會推錯。
+# 第六型:call graph 的解析度。#70 的版本是 name-only,只認 `f()` 這種呼叫,
+# 於是 alias / handler dict / callback 走到的 bypass 一律誤紅 —— 而 `live_exprs`
+# 的 docstring 逐字寫的是相反的話。#71 改成「名字被提到就算走得到」,這張表就是拿
+# 那句散文的字面重新推導(written-evidence)。每條都留一個真的 print,不然 #71(b)
+# 的「沒 print 就豁免」會讓它們用另一個理由變綠,測不到 call graph。
 CALLGRAPH = [
     ("bypass 在 handler dict 裡被呼叫的 function(docstring 說仍算 live)",
-     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\nH = {"a": dump}\nif __name__ == "__main__":\n    H["a"]()\n', "GREEN"),
+     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\nH = {"a": dump}\nif __name__ == "__main__":\n    H["a"]()\n    print("要開的票")\n', "GREEN"),
     ("bypass 在 alias 呼叫的 function(docstring 說仍算 live)",
-     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\nf = dump\nif __name__ == "__main__":\n    f()\n', "GREEN"),
+     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\nf = dump\nif __name__ == "__main__":\n    f()\n    print("要開的票")\n', "GREEN"),
     ("bypass 當 callback 傳進去被呼叫(docstring 說仍算 live)",
-     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\ndef run(cb):\n    cb()\nif __name__ == "__main__":\n    run(dump)\n', "GREEN"),
+     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\ndef run(cb):\n    cb()\nif __name__ == "__main__":\n    run(dump)\n    print("要開的票")\n', "GREEN"),
     ("bypass 在 class method,__main__ 直接呼叫(對照:.attr 名字對得上)",
-     'import sys\nclass W:\n    def go(self):\n        sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    W().go()\n', "GREEN"),
+     'import sys\nclass W:\n    def go(self):\n        sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    W().go()\n    print("要開的票")\n', "GREEN"),
 ]
 
 
