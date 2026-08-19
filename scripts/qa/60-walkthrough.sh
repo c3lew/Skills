@@ -24,8 +24,8 @@ python "$ROOT/scripts/install.py" --self-check
 python "$ROOT/scripts/hooks/triage-to-maintain.py" --self-check
 
 echo "==== STEP 1b  self-check 真的咬得到「散文當 code」:副本裡把豁免改回 substring -> self-check 轉紅 ===="
-grep -n 'norm(bypass) in live' "$CP/scripts/validate.py"
-sed -i 's|if norm(bypass) in live or|if bypass in py.read_text(encoding="utf-8") or|' "$CP/scripts/validate.py"
+grep -n 'norm(bypass) in reached' "$CP/scripts/validate.py"
+sed -i 's|if norm(bypass) in reached or|if bypass in py.read_text(encoding="utf-8") or|' "$CP/scripts/validate.py"
 grep -n 'bypass in py.read_text' "$CP/scripts/validate.py"
 set +e
 python "$CP/scripts/validate.py" --self-check
@@ -86,9 +86,8 @@ python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --bypass-position --old
 echo "exit $?  <- 非 0 是要的:對照組該紅"
 set -e
 
-echo "==== STEP 6f  AC1 括號裡的第二支路(「或檔案裡沒有裸 print(」)有沒有實作 — 純證據,不是 finding ===="
-# AC1 是「或」:兩支實作路擇一即可。這一步證明守門走的是第一支(bypass 語意判準),
-# 第二支完全沒實作 — 沒有裸 print( 的檔案照樣要求 pin。所以 AC1 只能拿第一支來判。
+echo "==== STEP 6f  上一輪的 blocking(#71)已修(b):AC1 第二支路「或檔案裡沒有裸 print(」現在實作了 ===="
+# 上一輪這三條全 RED(第二支路根本沒實作)。這輪應該全 GREEN。
 python - "$ROOT" <<'PY'
 import sys, tempfile, pathlib
 sys.path.insert(0, sys.argv[1] + "/scripts")
@@ -101,14 +100,17 @@ CASES = {
     "只寫檔案、完全不印到 console": 'import sys\nimport pathlib\nif __name__ == "__main__":\n    pathlib.Path("o.txt").write_text("要開的票", encoding="utf-8")\n',
 }
 tmp = pathlib.Path(tempfile.mkdtemp())
+bad = 0
 for name, src in CASES.items():
     (tmp / "probe.py").write_text(src, encoding="utf-8")
     got = "RED" if V.stream_encoding_issues(tmp) else "GREEN"
-    print(f"{name.ljust(34)}  第二支路會判 GREEN  實際 {got}")
-print("\n三條都 RED -> 第二支路沒實作(守門不看 print,只看 pin/bypass)")
+    bad += got != "GREEN"
+    print(f"{name.ljust(34)}  期望 GREEN  實際 {got}")
+print(f"\n不合 {bad}(上一輪 3 條全 RED)")
+assert bad == 0
 PY
 
-echo "==== STEP 6g  本輪同型全掃(一):可達性判準只裝在 bypass 那半,pin 那半沒有 ===="
+echo "==== STEP 6g  已知天花板(#72,known issue)複驗:可達性判準只裝在 bypass 那半,pin 那半沒有 ===="
 # #70 拿「死碼裡的 bypass 不算數」當尺。同一把尺量 pin:__main__ block 裡跑不到的
 # reconfigure 算不算 pin 到了?判準同型,實作只做了一半。
 set +e
@@ -122,16 +124,42 @@ python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --pin-position --old
 echo "exit $?"
 set -e
 
-echo "==== STEP 6i  本輪同型全掃(二):拿 live_exprs docstring 的字面重新推導 ===="
-# docstring 逐字:「透過 alias / handler dict / callback 才走到的 bypass 仍算 live」。
-# written-evidence:第二個人拿字面重推,要推得出同一個結果。
-set +e
+echo "==== STEP 6i  上一輪的 blocking(#71)已修(a):alias / handler dict / callback 三種形狀不再誤紅 ===="
 python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --callgraph
+
+echo "==== STEP 6j  對照組:同一組 case 在上一輪 HEAD(188c7d8)3 條誤紅 -> 天花板真的抬了 ===="
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --callgraph --prev
+echo "exit $?  <- 非 0 是要的:對照組該紅"
+set -e
+
+echo "==== STEP 6k  本輪同型全掃(一):沒-print 豁免的判準解析度 ===="
+# #71(b) 用 `Call.func.id == "print"` 當「檔案裡有沒有裸 print(」。名字對得上才算,
+# 於是每一種「印中文到 console 但不寫 print(」的形狀都變成豁免 —— 守門對一支
+# 印滿中文的 script 一聲不吭。同一把尺量完所有同型寫法。
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --print-detect
 echo "exit $?  <- 非 0 是本輪 finding"
 set -e
 
-echo "==== STEP 6j  對照組:同一組 case 在 d3cc9ed^ 全綠 -> 這 3 條誤紅是 #70 修法引入的 ===="
-python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --callgraph --old
+echo "==== STEP 6l  對照組:同一組 case 在上一輪 HEAD(188c7d8)只有 1 條不合 ===="
+# 那 1 條就是 #71 要修的誤紅(不印 console 卻被要求 pin)。其餘 5 條上一輪都判紅
+# (正確),現在變綠 -> 是 #71 引入的。
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --print-detect --prev
+echo "exit $?"
+set -e
+
+echo "==== STEP 6m  本輪同型全掃(二):可達性 over-approximate 的代價 ===="
+# #71(a) 把「走得到」放寬成「名字在 live 區被提到」。代價:#70 立的天花板
+# 一行就能還原 —— 死碼裡的 bypass 配任何一個同名的 Name/Attribute 即整檔豁免。
+set +e
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --live-overapprox
+echo "exit $?  <- 非 0 是本輪 finding"
+set -e
+
+echo "==== STEP 6n  對照組:同一組 case 在上一輪 HEAD(188c7d8)全綠 -> 是 #71 引入的 regression ===="
+python "$ROOT/scripts/qa/60-mention-sweep.py" "$ROOT" --live-overapprox --prev
 
 echo "==== STEP 7  repo 本體沒被動過 ===="
 python "$ROOT/scripts/validate.py"

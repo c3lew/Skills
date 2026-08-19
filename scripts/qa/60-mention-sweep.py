@@ -12,7 +12,10 @@ docstring、字串常數、f-string、變數名)都是同一形狀。這支把�
     python scripts/qa/60-mention-sweep.py <repo> --bypass-position  # 豁免的位置判準
     python scripts/qa/60-mention-sweep.py <repo> --pin-position     # pin 的位置判準
     python scripts/qa/60-mention-sweep.py <repo> --callgraph        # call graph 的解析度
-    ... --old                                                 # 對照組:#60 修之前那版守門
+    python scripts/qa/60-mention-sweep.py <repo> --print-detect     # 沒-print 豁免的判準解析度
+    python scripts/qa/60-mention-sweep.py <repo> --live-overapprox  # 可達性 over-approximate 的代價
+    ... --old                                                 # 對照組:#60 修之前那版(d3cc9ed^)
+    ... --prev                                                # 對照組:上一輪 QA 的 HEAD(188c7d8)
 """
 import subprocess
 import sys
@@ -124,21 +127,63 @@ CALLGRAPH = [
 ]
 
 
+# 第七型(#71 修完重跑這輪抓到):#71 補上 AC1 的第二支路「檔案裡沒有裸 print(」,
+# 判準是 AST 上 `Call.func.id == "print"`。名字對得上才算 —— 於是每一種「印到 console
+# 但不寫 print(」的形狀都變成豁免:守門對一支印滿中文的 script 一聲不吭。這是 #60
+# 那條病的形狀(一個誰都能翻的開關),只是開關從註解換成 `p = print`。
+PRINT_DETECT = [
+    ("print 用 alias 呼叫(p = print; p(中文))",
+     'import sys\np = print\nif __name__ == "__main__":\n    p("要開的票")\n', "RED"),
+    ("print 走 builtins(builtins.print(中文))",
+     'import sys\nimport builtins\nif __name__ == "__main__":\n    builtins.print("要開的票")\n', "RED"),
+    ("print 當 callback 傳進去(run(print))",
+     'import sys\ndef run(cb):\n    cb("要開的票")\nif __name__ == "__main__":\n    run(print)\n', "RED"),
+    ("print 放在 handler dict 裡(H = {p: print}; H[p](中文))",
+     'import sys\nH = {"p": print}\nif __name__ == "__main__":\n    H["p"]("要開的票")\n', "RED"),
+    ("sys.stdout.write(中文)(build 已宣告的天花板)",
+     'import sys\nif __name__ == "__main__":\n    sys.stdout.write("要開的票")\n', "RED"),
+    ("對照:真的裸 print(,沒 pin(不得漏放)", NAKED, "RED"),
+    ("對照:真的完全不印 console(不得誤紅)",
+     'import sys\nimport pathlib\nif __name__ == "__main__":\n    pathlib.Path("o.txt").write_text("要開的票", encoding="utf-8")\n', "GREEN"),
+]
+
+
+# 第八型(同上):#71(a) 把可達性從「呼叫」放寬成「名字被提到」,刻意 over-approximate。
+# 代價是 #70 立的天花板一行就能還原 —— 死碼裡的 bypass 配上 live 區任何一個同名的
+# Name/Attribute(連撞名的區域變數、無關物件的 attribute 都算),整支檔案就豁免。
+# 對照組是 --bypass-position 的第一條(名字沒被提到),它仍須 RED。
+LIVE_OVERAPPROX = [
+    ("死碼裡的 bypass + live 區提到名字(不是呼叫)",
+     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    x = [dump]\n    print("要開的票")\n', "RED"),
+    ("死碼裡的 bypass + 剛好撞名的區域變數",
+     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    dump = 1\n    print("要開的票")\n', "RED"),
+    ("死碼裡的 bypass + 無關物件的同名 attribute",
+     'import sys\nclass C:\n    pass\ndef dump():\n    sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    c = C()\n    c.dump\n    print("要開的票")\n', "RED"),
+    ("對照:死碼裡的 bypass,名字沒被提到(#70 的天花板)",
+     'import sys\ndef dump():\n    sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    print("要開的票")\n', "RED"),
+    ("對照:bypass 在真的被呼叫的 main()(不得誤紅)",
+     'import sys\ndef main():\n    sys.stdout.buffer.write(b"x")\nif __name__ == "__main__":\n    main()\n', "GREEN"),
+]
+
+
+# 對照組能指的兩個歷史點:#60 動手前(--old),與上一輪 QA 的 HEAD(--prev,#71 修之前)。
+BASELINES = {"--old": "d3cc9ed^", "--prev": "188c7d8"}
+
+
 def guard_module(repo, old):
-    """`stream_encoding_issues` 的來源:現況,或 #60 修之前那版(對照組)。"""
+    """`stream_encoding_issues` 的來源:現況,或某個歷史對照點。"""
     if not old:
         sys.path.insert(0, str(Path(repo) / "scripts"))
         import validate
 
         return validate
-    src = subprocess.run(["git", "-C", str(repo), "show", "d3cc9ed^:scripts/validate.py"],
+    src = subprocess.run(["git", "-C", str(repo), "show", f"{old}:scripts/validate.py"],
                          capture_output=True, check=True).stdout
     box = Path(tempfile.mkdtemp())
-    (box / "validate_old.py").write_bytes(src)
+    name = "validate_" + old.replace("^", "p")
+    (box / f"{name}.py").write_bytes(src)
     sys.path.insert(0, str(box))
-    import validate_old
-
-    return validate_old
+    return __import__(name)
 
 
 def run(repo, cases, old=False):
@@ -173,4 +218,9 @@ if __name__ == "__main__":
         cases = PIN_POSITION
     elif "--callgraph" in sys.argv:
         cases = CALLGRAPH
-    sys.exit(1 if run(sys.argv[1], cases, "--old" in sys.argv) else 0)
+    elif "--print-detect" in sys.argv:
+        cases = PRINT_DETECT
+    elif "--live-overapprox" in sys.argv:
+        cases = LIVE_OVERAPPROX
+    base = next((BASELINES[f] for f in BASELINES if f in sys.argv), None)
+    sys.exit(1 if run(sys.argv[1], cases, base) else 0)
