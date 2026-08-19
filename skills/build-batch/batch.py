@@ -17,11 +17,17 @@ Usage:
 """
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 CAP = 3  # 平行上限,client 拍板寫死
+
+# #58 固化:§3 那段指令是 client 真的貼進終端機的一行。名單印在 `python -c` 裡的
+# 時候,這支檔的斷言一條都碰不到它,stdout 也沒地方釘 — 那正是 #58 的形狀。
+BASH_BLOCK_RE = re.compile("```bash(.*?)```", re.S)
+INLINE_PYTHON_RE = re.compile("(?:python[0-9]?|py) +-c(?![a-zA-Z0-9])")
 
 
 def plan_batch(tickets, cap=CAP):
@@ -86,6 +92,23 @@ def main():
     data = json.load(sys.stdin)
     titles = {int(k): v for k, v in data.get("titles", {}).items()}
     print(format_plan(plan_batch(data["tickets"]), titles))
+
+
+def skill_command_issue(text):
+    """SKILL.md 的指令要把 JSON 餵進這支檔,不是自己把名單印出來(#58)。
+
+    別的 guard 守「程式有沒有釘 stream」,這條守「文件的指令還有沒有走進程式」。
+    §3 換回 inline `python -c`,印就又跑到所有測試與所有 pin 的外面 —
+    batch.py 照樣全綠,client 照樣看到壞碼,那就是 #58 出廠時的樣子。
+    """
+    blocks = BASH_BLOCK_RE.findall(text)
+    if not any("batch.py" in b and "<<" in b for b in blocks):
+        return ("SKILL.md: no bash block feeds the ticket JSON into batch.py "
+                "— the 名單 is printed somewhere no test can reach (#58)")
+    if any(INLINE_PYTHON_RE.search(b) for b in blocks):
+        return ("SKILL.md: an inline `python -c` prints for the client — "
+                "outside this self-check and outside the __main__ pin (#58)")
+    return None
 
 
 def _ticket(number, blocked_by=(), state="open"):
@@ -187,6 +210,35 @@ def self_check():
     assert child.returncode == 0, child.stderr.decode("utf-8", "replace")
     got = child.stdout.decode("utf-8").splitlines()
     assert got == format_plan(plan_batch(tickets), titles).splitlines(), got
+
+    # #58 固化:文件裡那行指令要一直指著這支檔。先手寫案例,再拿真的 SKILL.md
+    # 咬兩種 mutation — 改壞(把 batch.py 那段拿掉)與繞過(自己 inline 印)。
+    def fence(body):
+        return f"""```bash
+{body}
+```
+"""
+
+    piped = fence('''python batch.py <<'JSON'
+{}
+JSON''')
+    assert skill_command_issue(piped) is None
+    assert skill_command_issue(fence("gh issue list"))
+    for variant in ("python -c 'print(1)'", "python3 -c 'print(1)'",
+                    "py -c 'print(1)'"):
+        got = skill_command_issue(piped + fence(variant))
+        assert got and "python -c" in got, (variant, got)
+
+    assert skill_command_issue(text) is None, skill_command_issue(text)
+    # 改壞:§3 不再把 JSON 餵進來
+    mutated = text.replace("python <skill dir>/batch.py <<'JSON'",
+                           "python -c print", 1)
+    assert mutated != text
+    got = skill_command_issue(mutated)
+    assert got and "batch.py" in got, got
+    # 繞過:§3 留著,另外多一段自己印的指令
+    got = skill_command_issue(text + fence("python3 -c 'print(1)'"))
+    assert got and "python -c" in got, got
 
     print("OK batch self-check green")
 
