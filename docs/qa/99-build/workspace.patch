@@ -1,0 +1,42 @@
+diff --git a/dashboard.html b/dashboard.html
+index 3d031c0..e30c98e 100644
+--- a/dashboard.html
++++ b/dashboard.html
+@@ -62,2 +62,2 @@
+-  <div class="where">現在在哪:「程式會不會在中文終端機印出亂碼」這道檢查,已經從<strong>猜程式會不會跑</strong>換成<strong>照固定位置檢查</strong>。你也逐條確認了三個最後缺口:同一支程式有兩段入口時每段都要檢查、程式寫壞讀不懂時要判不合格、常見的主檔名不能被誤跳過。這些情況都已交給日常自動檢查守住。<strong>接下來只剩整理舊帳</strong>:把舊做法留下、現在已經失效的單子一次關掉,並把說明數字對齊現況。</div>
+-  <div class="release"><strong>這次不用換裝:</strong>改的是<strong>專案自己的檢查程式</strong>,不是會裝到你電腦上的那一份 — 你這邊不用做任何事,現在裝著的版本還是最新的。<span class="rb">反悔的話</span>:這次只動了檢查程式,退掉就是一個指令的事。</div>
++  <div class="where">現在在哪:<strong>舊帳已整理完</strong>。原本 22 張圍繞舊做法的單子,21 張已逐張說明並結案,只留下 1 張刻意保留的規則邊界。歷史檢查的說明也已校正:現有 12 支舊工具仍跑得起來,看到舊答案不合不代表現在的規則壞掉。#99 建立後新開的 #103、#104 是另外兩個已決定之後再修的小毛病,沒有藏進這批舊帳。</div>
++  <div class="release"><strong>這次不用換裝:</strong>改的是工作紀錄、說明與這份儀表板,不是會裝到你電腦上的功能。<span class="rb">反悔的話</span>:儀表板與說明檔可由回復腳本還原;票面修改前的內容與狀態另有快照留存。</div>
+@@ -66 +66 @@
+-    <div><strong>下一步:</strong>把過期的單子一次清掉 — 走<code>/build #99</code>(Codex:<code>$build #99</code>)。那批單子量的是已經下架的舊做法,留下只會讓數字失真;同一輪也會把歷史說明整理清楚。</div>
++    <div><strong>下一步:</strong>獨立核對 21 張結案紀錄、保留的規則邊界與歷史說明 — 走<code>/qa #99</code>(Codex:<code>$qa #99</code>)。</div>
+@@ -87 +87 @@
+-    <div class="slice-row"><span class="slice-name">清掉舊規則留下的過期單子</span><span class="badge">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
++    <div class="slice-row"><span class="slice-name">清掉舊規則留下的過期單子</span><span class="badge">測試中</span><span class="bar"><i style="width:70%"></i></span></div>
+@@ -94 +94 @@
+-      <div class="tile"><div class="num" style="color:var(--warn)">28</div><div class="lbl">小毛病(帶著走)</div></div>
++      <div class="tile"><div class="num" style="color:var(--warn)">7</div><div class="lbl">小毛病(帶著走)</div></div>
+@@ -97,0 +98 @@
++      <li><span class="when">今天</span><span>舊做法留下的 22 張單子已完成對帳:<strong>21 張結案、1 張保留成講清楚的規則邊界</strong>。每張結案都能追回這次改規矩的決定;後來才新增的 #103、#104 繼續照你的決定留著之後修。</span></li>
+@@ -132,0 +134 @@
++      <li><span class="when">8/20</span><span>把當初拍錯的原因<strong>直接記回原單</strong>:我們曾把「程式執行時會不會到某一行」誤當成能列舉完的規格,於是修法一直在冤枉好程式與放過壞程式之間來回。這次沒有再補一種例外,而是把規格收成固定位置的約定;代價是一種少見寫法不認,已留成明講的邊界。</span></li>
+@@ -189,2 +191,2 @@
+-      <li><span class="when">剛完成</span><span>「亂碼檢查最後三個缺口」已逐條演給你看,你三條都點頭;兩個帶著走的小毛病也都決定之後再修。高價值情況已交給日常自動檢查守住。</span></li>
+-      <li><span class="when">接下來</span><span>目前沒有排定的驗收會。下一張單子只整理舊帳:關掉已失效的單子、校正說明,完成與否由自動檢查把關。</span></li>
++      <li><span class="when">剛完成</span><span>「整理舊帳」已完成:21 張逐張結案、1 張保留成規則邊界,原本寫錯的歷史工具數字與使用說明也已校正。</span></li>
++      <li><span class="when">接下來</span><span>這張沒有新的畫面要演;下一輪會獨立核對每張結案理由、保留邊界與說明是否能按字面重推。</span></li>
+diff --git a/scripts/qa/README.md b/scripts/qa/README.md
+index 47cbaaa..00cd236 100644
+--- a/scripts/qa/README.md
++++ b/scripts/qa/README.md
+@@ -3,4 +3,6 @@
+-`56-` 到 `95-` 這批(15 支 sweep、222 格 fixture)量的是舊判準「那行 bypass 到底跑不跑
+-得到」。#96 拍板把判準換成約定(pin 要在 `__main__` 第一層,沒有豁免),那個判斷不存在
+-了,所以這批**留著當 #60–#95 這條線的紀錄,不再跑** —— 它們 import 的
+-`live_nodes` / `asyncio_graph` 那些 function 已經從 `validate.py` 刪掉,直接跑會炸。
++`scripts/qa/*-sweep.py` 現有 12 支。它們與同一時期的 walkthrough / mutation 腳本量的是
++舊判準「那行 bypass 到底跑不跑得到」。#96 把判準換成固定約定(pin 要在 `__main__`
++第一層,沒有豁免),所以這批**留著當 #60–#95 這條線的歷史紀錄,不列入目前的 regression**。
++
++這 12 支仍跑得起來；部分會印出整片 `MISMATCH`，因為 fixture 的期望值釘的是舊判準，
++不是目前 repo 壞掉。要驗現行規則，跑下面列出的工具。

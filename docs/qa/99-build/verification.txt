@@ -1,0 +1,143 @@
+# #99 verification
+
+COMMAND: (Get-ChildItem scripts/qa -Filter '*-sweep.py' -File).Count
+12
+EXIT: 0
+
+COMMAND: python scripts/qa/73-reach-sweep.py .
+對照:alias `f = dump; f()`(#71 修好的形狀,不得誤紅)                  期望 GREEN  實際 RED    MISMATCH
+for 迴圈變數 `for f in [dump]: f()`                           期望 GREEN  實際 RED    MISMATCH
+tuple 解包 `a, b = dump, dump; a()`                         期望 GREEN  實際 RED    MISMATCH
+帶型別註記的綁定 `f: object = dump; f()`                          期望 GREEN  實際 RED    MISMATCH
+factory 回傳 callable `def get(): return dump` + `get()()`  期望 GREEN  實際 RED    MISMATCH
+class 屬性 `class W: run = dump` + `W.run()`                期望 GREEN  實際 RED    MISMATCH
+
+母體 6,不合 6
+EXIT: 1
+
+COMMAND: python scripts/qa/65-nesting-sweep.py .
+top-level(對照組,沒包) — 裸 print                 期望 RED    實際 RED    ok
+top-level(對照組,沒包) — 有 pin(不得誤紅)             期望 GREEN  實際 GREEN  ok
+try / except — 裸 print                      期望 RED    實際 RED    ok
+try / except — 有 pin(不得誤紅)                  期望 GREEN  實際 GREEN  ok
+try / finally — 裸 print                     期望 RED    實際 RED    ok
+try / finally — 有 pin(不得誤紅)                 期望 GREEN  實際 GREEN  ok
+if True — 裸 print                           期望 RED    實際 RED    ok
+if True — 有 pin(不得誤紅)                       期望 GREEN  實際 GREEN  ok
+if / else 的 else 半邊 — 裸 print               期望 RED    實際 RED    ok
+if / else 的 else 半邊 — 有 pin(不得誤紅)           期望 GREEN  實際 GREEN  ok
+with — 裸 print                              期望 RED    實際 RED    ok
+with — 有 pin(不得誤紅)                          期望 GREEN  實際 GREEN  ok
+for — 裸 print                               期望 RED    實際 RED    ok
+for — 有 pin(不得誤紅)                           期望 GREEN  實際 GREEN  ok
+while — 裸 print                             期望 RED    實際 RED    ok
+while — 有 pin(不得誤紅)                         期望 GREEN  實際 GREEN  ok
+包兩層(try 裡再一個 if True) — 裸 print             期望 RED    實際 RED    ok
+包兩層(try 裡再一個 if True) — 有 pin(不得誤紅)         期望 GREEN  實際 GREEN  ok
+def 裡(import 時不會跑,但守門往嚴的方向偏) — 裸 print      期望 RED    實際 RED    ok
+def 裡(import 時不會跑,但守門往嚴的方向偏) — 有 pin(不得誤紅)  期望 GREEN  實際 GREEN  ok
+class body 裡 — 裸 print                      期望 RED    實際 RED    ok
+class body 裡 — 有 pin(不得誤紅)                  期望 GREEN  實際 GREEN  ok
+
+母體 22,不合 0
+EXIT: 0
+
+COMMAND: python scripts/validate.py
+OK validate green
+EXIT: 0
+
+COMMAND: python scripts/validate.py --self-check
+OK validate self-check green
+EXIT: 0
+
+COMMAND: python scripts/batch.py --self-check
+OK batch self-check green
+OK §8a/§8c conflict scenarios green
+EXIT: 0
+
+COMMAND: python skills/build-batch/batch.py --self-check
+OK batch self-check green
+EXIT: 0
+
+COMMAND: python scripts/install.py --self-check
+[fixture] FAIL skills/bad: missing SKILL.md
+OK install self-check green
+EXIT: 0
+
+COMMAND: python scripts/hooks/triage-to-maintain.py --self-check
+OK triage-to-maintain self-check green
+EXIT: 0
+
+COMMAND: python scripts/qa/97-mutate.py --run
+咬住  buffer_exempt          self-check exit=1
+咬住  decode_error_uncaught  self-check exit=1
+咬住  filter_off             self-check exit=1
+咬住  first_main_only        self-check exit=1
+咬住  guard_off              self-check exit=1
+咬住  main_body_only         self-check exit=1
+咬住  no_norm                self-check exit=1
+咬住  pin_anywhere_in_file   self-check exit=1
+咬住  pin_anywhere_in_main   self-check exit=1
+咬住  print_exempt           self-check exit=1
+咬住  stdin_always           self-check exit=1
+咬住  stdin_by_text          self-check exit=1
+咬住  stdin_never            self-check exit=1
+咬住  underscore_filter      self-check exit=1
+咬住  unreadable_skip        self-check exit=1
+
+15/15 個 knob 被 self-check 咬住
+EXIT: 0
+
+COMMAND: python scripts/qa/96-newrule-probe.py .
+OK 新規則下全綠
+
+不合 0
+EXIT: 0
+
+COMMAND: python -c dashboard HTML parse/assert
+  File "<string>", line 1
+    from html.parser import HTMLParser; from pathlib import Path; p=Path('dashboard.html').read_text(encoding='utf-8'); HTMLParser().feed(p); assert '/qa #99' in p and ' #99' in p and '>7</div><div class=\
+                                                                                                                                                                                        ^
+SyntaxError: unterminated string literal (detected at line 1)
+EXIT: 1
+
+COMMAND: powershell -NoProfile -ExecutionPolicy Bypass -File docs/qa/99-build/rollback.ps1
+OK #99 workspace rollback
+EXIT: 0
+COMMAND: git apply --check --ignore-space-change --ignore-whitespace docs/qa/99-build/workspace.patch
+EXIT: 0
+COMMAND: git apply --ignore-space-change --ignore-whitespace docs/qa/99-build/workspace.patch
+EXIT: 0
+
+COMMAND: python -c <dashboard HTML parse/assert corrected>
+OK dashboard parse and hero/count assertions
+EXIT: 0
+
+COMMAND: .\docs\qa\99-build\rollback.ps1
+OK #99 workspace rollback
+EXIT: 0
+COMMAND: git apply --check --ignore-space-change --ignore-whitespace docs/qa/99-build/workspace.patch
+EXIT: 0
+COMMAND: git apply --ignore-space-change --ignore-whitespace docs/qa/99-build/workspace.patch
+EXIT: 0
+RESULT: dashboard/README match pre-rollback content after CRLF/LF normalization
+
+COMMAND: python scripts/validate.py
+OK validate green
+EXIT: 0
+
+COMMAND: python scripts/validate.py --self-check
+OK validate self-check green
+EXIT: 0
+
+COMMAND: python -c <final dashboard assertions>
+OK final dashboard assertions
+EXIT: 0
+COMMAND: .\docs\qa\99-build\rollback.ps1
+OK #99 workspace rollback
+EXIT: 0
+COMMAND: git apply --check --unidiff-zero --ignore-space-change --ignore-whitespace docs/qa/99-build/workspace.patch
+EXIT: 0
+COMMAND: git apply --unidiff-zero --ignore-space-change --ignore-whitespace docs/qa/99-build/workspace.patch
+EXIT: 0
+RESULT: dashboard/README match pre-rollback content after CRLF/LF normalization

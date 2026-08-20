@@ -1,11 +1,9 @@
 # QA sweeps
 
-`scripts/qa/*-sweep.py` 現有 12 支。它們與同一時期的 walkthrough / mutation 腳本量的是
-舊判準「那行 bypass 到底跑不跑得到」。#96 把判準換成固定約定(pin 要在 `__main__`
-第一層,沒有豁免),所以這批**留著當 #60–#95 這條線的歷史紀錄,不列入目前的 regression**。
-
-這 12 支仍跑得起來；部分會印出整片 `MISMATCH`，因為 fixture 的期望值釘的是舊判準，
-不是目前 repo 壞掉。要驗現行規則，跑下面列出的工具。
+`56-` 到 `95-` 這批(15 支 sweep、222 格 fixture)量的是舊判準「那行 bypass 到底跑不跑
+得到」。#96 拍板把判準換成約定(pin 要在 `__main__` 第一層,沒有豁免),那個判斷不存在
+了,所以這批**留著當 #60–#95 這條線的紀錄,不再跑** —— 它們 import 的
+`live_nodes` / `asyncio_graph` 那些 function 已經從 `validate.py` 刪掉,直接跑會炸。
 
 還在用的三支:
 
