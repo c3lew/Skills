@@ -880,6 +880,13 @@ def self_check():
         # Written the other way round this file is not seen as runnable at all,
         # so it owes nothing and gets nothing. Declared, not fixed — #96.
         assert reds('if "__main__" == __name__:\n    print("要開")\n') == []
+        # ...and the same body under the canonical spelling is red. Without
+        # this pair the green above cannot tell "the spelling is not
+        # recognised" apart from "recognised, and this file is fine".
+        assert len(reds('if __name__ == "__main__":\n    print("x")\n')) == 1
+        # the other half of the same ceiling: `in (...)` is equivalent
+        # Python and still not recognised.
+        assert reds('if __name__ in ("__main__",):\n    print("x")\n') == []
 
     # and the live repo is clean — every script that can be run pins its streams
     assert stream_encoding_issues(REPO) == [], stream_encoding_issues(REPO)
