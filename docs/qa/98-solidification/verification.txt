@@ -1,0 +1,75 @@
+=== full validate ===
+COMMAND: python scripts/validate.py
+INPUT: repository HEAD af3be9d plus scripts/validate.py solidification diff
+OUTPUT:
+OK validate green
+EXIT: 0
+
+=== validate self-check ===
+COMMAND: python scripts/validate.py --self-check
+INPUT: repository HEAD af3be9d plus scripts/validate.py solidification diff
+OUTPUT:
+OK validate self-check green
+EXIT: 0
+
+=== batch self-check ===
+COMMAND: python scripts/batch.py --self-check
+INPUT: repository HEAD af3be9d plus scripts/validate.py solidification diff
+OUTPUT:
+OK batch self-check green
+OK §8a/§8c conflict scenarios green
+EXIT: 0
+
+=== build-batch self-check ===
+COMMAND: python skills/build-batch/batch.py --self-check
+INPUT: repository HEAD af3be9d plus scripts/validate.py solidification diff
+OUTPUT:
+OK batch self-check green
+EXIT: 0
+
+=== install self-check ===
+COMMAND: python scripts/install.py --self-check
+INPUT: repository HEAD af3be9d plus scripts/validate.py solidification diff
+OUTPUT:
+[fixture] FAIL skills/bad: missing SKILL.md
+OK install self-check green
+EXIT: 0
+
+=== triage hook self-check ===
+COMMAND: python scripts/hooks/triage-to-maintain.py --self-check
+INPUT: repository HEAD af3be9d plus scripts/validate.py solidification diff
+OUTPUT:
+OK triage-to-maintain self-check green
+EXIT: 0
+
+=== mutation table ===
+COMMAND: python scripts/qa/97-mutate.py --run
+INPUT: repository HEAD af3be9d plus scripts/validate.py solidification diff
+OUTPUT:
+咬住  buffer_exempt          self-check exit=1
+咬住  decode_error_uncaught  self-check exit=1
+咬住  filter_off             self-check exit=1
+咬住  first_main_only        self-check exit=1
+咬住  guard_off              self-check exit=1
+咬住  main_body_only         self-check exit=1
+咬住  no_norm                self-check exit=1
+咬住  pin_anywhere_in_file   self-check exit=1
+咬住  pin_anywhere_in_main   self-check exit=1
+咬住  print_exempt           self-check exit=1
+咬住  stdin_always           self-check exit=1
+咬住  stdin_by_text          self-check exit=1
+咬住  stdin_never            self-check exit=1
+咬住  underscore_filter      self-check exit=1
+咬住  unreadable_skip        self-check exit=1
+
+15/15 個 knob 被 self-check 咬住
+EXIT: 0
+
+=== independent probe ===
+COMMAND: python scripts/qa/96-newrule-probe.py .
+INPUT: repository HEAD af3be9d plus scripts/validate.py solidification diff
+OUTPUT:
+OK 新規則下全綠
+
+不合 0
+EXIT: 0

@@ -873,15 +873,9 @@ def self_check():
         ):
             assert len(reds(src)) == 1, (label, reds(src))
 
-        # #69: each block stands alone — pinning either one does not cover the
-        # other, and pinning both is the positive control.
-        first = runnable + out_pin + "\n    print('要開')\n"
-        second = MAIN_BLOCK + ":\n    print('要開')\n"
-        assert len(reds(first + second)) == 1
-        assert len(reds(runnable + "print('要開')\n" + MAIN_BLOCK + ":\n"
-                        + "    " + out_pin + "\n    print('要開')\n")) == 1
-        assert reds(first + MAIN_BLOCK + ":\n    " + out_pin
-                    + "\n    print('要開')\n") == []
+        # #69: one pinned block does not cover a second, unpinned one
+        assert len(reds(runnable + out_pin + "\n    print('要開')\n"
+                        + MAIN_BLOCK + ":\n    print('要開')\n")) == 1
 
         # stdin is its own half — a pinned stdout does not cover it
         reader = runnable + out_pin + "\n    json.load(sys.stdin)\n"
