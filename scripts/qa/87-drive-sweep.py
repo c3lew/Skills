@@ -156,7 +156,8 @@ AWAIT_SHAPES = [
      DUMP + AIO + ADEF + MAIN + '    c = adump()\n' + TAIL, "RED"),
 ]
 
-BASELINES = {"--prev87": "55fc8eb", "--prev86": "cb7e030"}
+BASELINES = {"--prev87": "55fc8eb", "--prev86": "cb7e030",
+             "--prev91": "fa9d0c3"}  # #91 修之前(/qa #91 登記)
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")

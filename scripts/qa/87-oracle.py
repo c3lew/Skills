@@ -15,6 +15,7 @@ ground truth 很直白 —— 真的跑到 = 期望 GREEN,沒跑到 = 期望 RED
 用法:
     python scripts/qa/87-oracle.py <repo>
     python scripts/qa/87-oracle.py <repo> --all   # 連跑起來就爆的也列細節
+    python scripts/qa/87-oracle.py <repo> --91    # 併掃 `/qa #91` 開的三把尺
 """
 import importlib.util
 import os
@@ -30,6 +31,9 @@ GROUPS = {
     "86-async-sweep": ["ASYNC_DEFER", "SHADOW_SCOPE", "ATTR_CONSUMER"],
     "87-drive-sweep": ["DRIVEN_SHADOW", "DRIVEN_ATTR", "AWAIT_SHAPES"],
 }
+# `/qa #91` 開的三把尺 —— 同一把實跑 oracle,不另外複製一支
+EXTRA = {"--91": {"91-graph-sweep": ["GRAPH_SCOPE", "LOOP_BINDING",
+                                     "LOOP_SOURCE"]}}
 
 # 記帳用的殼:把 bypass 換成 proxy,再照 __main__ 跑 probe。守門的規則一行都沒讀。
 SHELL = """import runpy
@@ -80,8 +84,13 @@ if __name__ == "__main__":
     probe = tmp / "probe.py"
     env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONWARNINGS="ignore")
 
+    groups = dict(GROUPS)
+    for flag, extra in EXTRA.items():
+        if flag in sys.argv:
+            groups.update(extra)
+
     rows, bad = [], 0
-    for stem, names in GROUPS.items():
+    for stem, names in groups.items():
         mod = load(stem)
         for group in names:
             for name, src, want in getattr(mod, group):

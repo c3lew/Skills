@@ -153,7 +153,8 @@ ATTR_CONSUMER = [
      + TAIL, "GREEN"),
 ]
 
-BASELINES = {"--prev86": "cb7e030", "--prev87": "55fc8eb"}
+BASELINES = {"--prev86": "cb7e030", "--prev87": "55fc8eb",
+             "--prev91": "fa9d0c3"}  # #91 修之前(/qa #91 登記)
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")

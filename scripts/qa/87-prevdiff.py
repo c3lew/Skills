@@ -9,6 +9,7 @@ sweep 的每一組 case**(23 組 fixture,含本輪新開的尺)各跑兩次 —�
 用法:
     python scripts/qa/87-prevdiff.py <repo>              # 只列翻面的格
     python scripts/qa/87-prevdiff.py <repo> --all        # 每一格都列
+    python scripts/qa/87-prevdiff.py <repo> --prev=fa9d0c3  # 換一個對照點(/qa #91 加)
 """
 import importlib.util
 import sys
@@ -56,9 +57,12 @@ if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     repo = sys.argv[1]
     show_all = "--all" in sys.argv
+    prev = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--prev=")),
+                PREV)
     sweep60 = load("60-mention-sweep")
     now = sweep60.guard_module(repo, None)
-    old = sweep60.guard_module(repo, PREV)
+    old = sweep60.guard_module(repo, prev)
+    print(f"對照點:{prev}")
 
     flips, total = [], 0
     for stem in SWEEPS:
