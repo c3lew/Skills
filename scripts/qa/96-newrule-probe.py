@@ -36,7 +36,11 @@ PINS = [("stdout", norm('sys.stdout.reconfigure(encoding="utf-8")')),
 def issues(repo):
     out = []
     for py in sorted(Path(repo).rglob("*.py")):
-        if any(p.startswith((".", "__")) for p in py.parts):
+        # 跟 validate.py 的 `is_source` 同步:只擋 __pycache__ 與 . 開頭的目錄。
+        # 這支是第二把尺,判準要各自寫;但受檢範圍對不齊的話,兩邊的答案不同
+        # 就分不出是判準有差還是根本沒看到同一批檔(#68)。
+        if any(p == "__pycache__" or p.startswith(".")
+               for p in py.relative_to(repo).parts):
             continue
         try:
             tree = ast.parse(py.read_text(encoding="utf-8"))
@@ -55,9 +59,13 @@ def issues(repo):
         for stream, pin in PINS:
             if stream == "stdin" and not reads_stdin:
                 continue
-            # 「第一層」= block body 的直屬 statement,巢狀進 if/try 的不算
-            ok = any(isinstance(s, ast.Expr) and ast.unparse(s) == pin
-                     for m in mains for s in m.body)
+            # 「第一層」= block body 的直屬 statement,巢狀進 if/try 的不算。
+            # 每一個 __main__ 都要自己寫到 —— 一個 block 有 pin 不會蓋過另一個
+            # 沒 pin 的(#69)。這裡寫成 any 的話,兩把尺對同一份 repo 會給
+            # 相反的答案,而 repo 裡剛好沒有雙 block 的檔,誰都不會發現。
+            ok = all(any(isinstance(s, ast.Expr) and ast.unparse(s) == pin
+                         for s in m.body)
+                     for m in mains)
             if not ok:
                 out.append(f"{py.relative_to(repo).as_posix()}: 缺 {stream} pin")
     return out

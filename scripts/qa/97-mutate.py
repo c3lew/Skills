@@ -84,6 +84,27 @@ KNOBS = {
         "                   and getattr(n.func, \"id\", None) == \"print\"\n"
         "                   for n in ast.walk(tree)):\n"
         "            continue"),
+    # 檔名過濾退回「`__` 開頭一律跳過」—— `__main__.py` 這個 package entry point
+    # 又變成免檢區(#68 重開)
+    "underscore_filter": (
+        '    return not any(part == "__pycache__" or part.startswith(".")\n'
+        "                   for part in rel.parts)",
+        '    return not any(part.startswith((".", "__"))\n'
+        "                   for part in rel.parts)"),
+    # 過濾整條關掉 —— 反面:`__pycache__` / `.venv` 裡的東西也開始受檢,誤紅那面
+    "filter_off": (
+        '    return not any(part == "__pycache__" or part.startswith(".")',
+        "    return True\n"
+        '    return not any(part == "__pycache__" or part.startswith(".")'),
+    # 讀不進來退回「靜靜跳過」—— 打錯字的檔重新變成免檢區(#66 重開)
+    "unreadable_skip": (
+        "        except (SyntaxError, UnicodeDecodeError) as exc:",
+        "        except (SyntaxError, UnicodeDecodeError) as exc:\n"
+        "            continue"),
+    # 只接 SyntaxError —— 非 UTF-8 的 .py 不是判紅,是整支守門 traceback 掛掉
+    "decode_error_uncaught": (
+        "        except (SyntaxError, UnicodeDecodeError) as exc:",
+        "        except SyntaxError as exc:"),
     # 守門整條關掉 —— 對照組:確認 self-check 真的在量這支,不是在量別的
     "guard_off": (
         "    errors = []\n"
@@ -116,7 +137,7 @@ def run_table():
             apply(copy, knob)
             # cwd=ROOT 只影響相對路徑的輸出；self_check 最後一條的 REPO 是從
             # __file__ 解的，副本跑起來打的是這份只有 validate.py 的暫存副本，
-            # 不是 repo 本體 —— 11/11 全靠 inline fixture 咬住（#101）。
+            # 不是 repo 本體 —— 整張表全靠 inline fixture 咬住（#101）。
             r = subprocess.run([sys.executable, str(copy / "scripts" / "validate.py"),
                                 "--self-check"], cwd=ROOT, capture_output=True)
             out.append((knob, r.returncode))

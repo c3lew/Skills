@@ -251,6 +251,18 @@ def reads_stdin(tree):
                for n in ast.walk(tree))
 
 
+def is_source(rel):
+    """True if `rel` is source someone could actually run.
+
+    Only two things are excluded: `__pycache__` and dot-directories. The
+    filter used to drop every path part starting with `__`, which swallowed
+    `__main__.py` — the one filename that is *always* a package entry point,
+    so package entries were permanently exempt from this guard (#68).
+    """
+    return not any(part == "__pycache__" or part.startswith(".")
+                   for part in rel.parts)
+
+
 def stream_encoding_issues(repo):
     """Every runnable script pins its streams to UTF-8, by convention (#58, #96).
 
@@ -281,16 +293,26 @@ def stream_encoding_issues(repo):
     """
     errors = []
     for py in sorted(repo.rglob("*.py")):
-        if any(part.startswith((".", "__")) for part in py.parts):
-            continue  # __pycache__, .venv — not source anyone runs
+        rel = py.relative_to(repo)
+        if not is_source(rel):
+            continue
+        label = rel.as_posix()
         try:
             tree = ast.parse(py.read_text(encoding="utf-8"))
-        except SyntaxError:
-            continue  # nothing runs it either — not this guard's failure
+        except (SyntaxError, UnicodeDecodeError) as exc:
+            # Not a skip (#66): "the guard cannot read this" and "this file is
+            # fine" are different answers, and only one of them is safe to
+            # report as green. Decoding belongs in the same breath as parsing —
+            # a .py this guard cannot decode is exactly as unreadable, and left
+            # uncaught it takes the whole run down with a traceback instead.
+            errors.append(
+                f"{label}: cannot be read as Python source — {exc}; a file this "
+                f"guard cannot read counts as a fail, not a skip (#66)"
+            )
+            continue
         mains = main_blocks(tree)
         if not mains:
             continue
-        label = py.relative_to(repo).as_posix()
         for stream, pin, symptom in STREAM_PINS:
             if stream == "stdin" and not reads_stdin(tree):
                 continue  # a script that never reads stdin has nothing to pin
@@ -887,6 +909,52 @@ def self_check():
         # the other half of the same ceiling: `in (...)` is equivalent
         # Python and still not recognised.
         assert reds('if __name__ in ("__main__",):\n    print("x")\n') == []
+
+        # #68: `__main__.py` is how a package is run, not a `__pycache__`
+        # artefact — filtering every part that starts with `__` swallowed the
+        # one filename that is always an entry point, so a package entry was
+        # permanently exempt.
+        pkg = repo / "scripts" / "pkg"
+        pkg.mkdir()
+        entry = pkg / "__main__.py"
+        entry.write_text(runnable + "print('要開')\n", encoding="utf-8")
+        assert [e.split(":")[0] for e in stream_encoding_issues(repo)] == [
+            "scripts/pkg/__main__.py"], stream_encoding_issues(repo)
+        entry.write_text(runnable + out_pin + "\n    print('要開')\n",
+                         encoding="utf-8")
+        assert stream_encoding_issues(repo) == [], stream_encoding_issues(repo)
+        # ...and the filter still keeps out what it was actually for. The
+        # `__pycache__` half is pinned above; this is the dot-directory half.
+        (repo / ".venv").mkdir()
+        (repo / ".venv" / "y.py").write_text(MAIN_BLOCK + ":\n    pass\n",
+                                             encoding="utf-8")
+        assert stream_encoding_issues(repo) == [], stream_encoding_issues(repo)
+
+        # #66: a file that does not parse is a file this guard cannot clear.
+        # Skipping it made "unreadable" and "fine" the same answer, so one typo
+        # exempted a whole script.
+        broken = repo / "scripts" / "typo.py"
+        broken.write_text("def f(\n", encoding="utf-8")
+        errs = stream_encoding_issues(repo)
+        assert len(errs) == 1 and errs[0].startswith("scripts/typo.py: "), errs
+        assert "cannot be read" in errs[0], errs
+        broken.unlink()
+        assert stream_encoding_issues(repo) == [], stream_encoding_issues(repo)
+        # ...and 「讀不進來」 covers decoding too. Uncaught, a cp950-saved .py
+        # raises UnicodeDecodeError and kills the whole run instead of failing
+        # one file — a crash is not a verdict.
+        latin = repo / "scripts" / "cp950.py"
+        latin.write_text("x = '要開'\n", encoding="cp950")
+        errs = stream_encoding_issues(repo)
+        assert len(errs) == 1 and errs[0].startswith("scripts/cp950.py: "), errs
+        latin.unlink()
+        assert stream_encoding_issues(repo) == [], stream_encoding_issues(repo)
+
+        # the dot half of the scope filter applies to filenames too, not just
+        # directories — `.hidden.py` is not source anyone runs either.
+        (repo / "scripts" / ".hidden.py").write_text(
+            MAIN_BLOCK + ":\n    pass\n", encoding="utf-8")
+        assert stream_encoding_issues(repo) == [], stream_encoding_issues(repo)
 
     # and the live repo is clean — every script that can be run pins its streams
     assert stream_encoding_issues(REPO) == [], stream_encoding_issues(REPO)
