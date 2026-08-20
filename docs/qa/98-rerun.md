@@ -1,7 +1,8 @@
 # #98 QA 重跑：PASS
 
-**受測 HEAD**：`eadd3c574702e0582acef2ffabf8f9af7e49924a`  
-**逐字實錄**：[`98-rerun.txt`](98-rerun.txt)  
+**受測 HEAD**：`eadd3c574702e0582acef2ffabf8f9af7e49924a`
+
+**逐字實錄**：[`98-rerun.txt`](98-rerun.txt)
 **一鍵重開**：`"C:\Program Files\Git\bin\bash.exe" scripts/qa/98-walkthrough.sh "$(mktemp -d)/qa98"`
 
 ## 白話摘要
