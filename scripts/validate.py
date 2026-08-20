@@ -328,7 +328,11 @@ def free_in(lam):
     cases require `def get(): return lambda: dump` to stay dead under
     `get()()`. Two false reds fall out of that, both the noisy direction: one
     call level further (`get()()()`), and a returned lambda that does call
-    what it was handed (`return lambda x=dump: x()`).
+    what it was handed (`return lambda x=dump: x()`). A third falls out of
+    the same flattening at the spot-call position: `(lambda: dump)()` merely
+    *hands `dump` back*, and this reads it as running it — #84 declared that
+    one a ceiling rather than close it, because separating the two needs the
+    lambda to carry its own `RET` key.
     """
     a = lam.args
     slots = [p.arg for p in a.posonlyargs + a.args]
@@ -338,6 +342,44 @@ def free_in(lam):
     bound = {p.arg for p in ast.walk(a) if isinstance(p, ast.arg)}
     return (reads - bound).union(*[names_in(d) for n, d in pairs if n in reads]
                                  or [set()])
+
+
+def nodes_in(stmt, through=()):
+    """Every node executing `stmt` reaches — a `Lambda` stops it (#84).
+
+    The third face of the boundary #83 drew through `names_in` and `own_scope`:
+    a lambda literal parked in a live statement is *built* there, not run
+    there. Walking in read the `Call` inside an uncalled lambda's body as a
+    call this statement makes, so `f = lambda: dump()` — bound to a name
+    nobody ever calls — marked `dump` live and exempted a file where not one
+    line of it runs. Six ways to park a lambda (a name, a list, a dict, a bare
+    literal, a comprehension, a conditional) all rode on that one walk.
+
+    A parameter *default* is not deferred: it is evaluated where the literal
+    sits, so `f = lambda x=dump(): 1` really does run `dump` — those keep
+    going.
+
+    `through` is the set of lambdas something really does call, and their
+    bodies are walked like any other live code. The name half of that answer
+    is `free_in`, which carries the *names* a called lambda reaches; this
+    carries the *nodes*, which is what the bypass is looked up in — a
+    `sys.stdout.buffer.write` written straight into a callback body has to
+    stay reachable, and `free_in` alone cannot say so.
+
+    ponytail: `through` is only ever handed in for the node list, never for
+    the scan that decides what is invoked. Walking a called lambda's body
+    there would read its *arguments* as the module's names again and hand
+    back the shadowed-argument shapes #83 closed (`(lambda dump: dump())(1)`).
+    """
+    out, stack = [], [stmt]
+    while stack:
+        n = stack.pop()
+        out.append(n)
+        if isinstance(n, ast.Lambda) and n not in through:
+            stack += [d for d in n.args.defaults + n.args.kw_defaults if d]
+            continue
+        stack += list(ast.iter_child_nodes(n))
+    return out
 
 
 def own_scope(node):
@@ -429,6 +471,25 @@ def bound_pairs(target, value):
         yield target.id, value
 
 
+def binding_pairs(node):
+    """`(name, source expression)` for every name the statement `node` binds.
+
+    Split out of `bindings_in` because `live_nodes` needs the *expression* as
+    well as the names it reaches: a name bound to a lambda has to be able to
+    say *which* lambda, so calling that name can walk the right body (#84).
+    """
+    if isinstance(node, ast.Assign):
+        pairs = [(t, node.value) for t in node.targets]
+    elif isinstance(node, ast.AnnAssign) and node.value is not None:
+        pairs = [(node.target, node.value)]
+    elif isinstance(node, (ast.For, ast.AsyncFor)):
+        pairs = [(node.target, node.iter)]
+    else:
+        return
+    for target, value in pairs:
+        yield from bound_pairs(target, value)
+
+
 def bindings_in(node):
     """`{name: names it was bound to}` for the one statement `node` (#75).
 
@@ -450,22 +511,13 @@ def bindings_in(node):
     not the direction that makes the guard go quiet. The 6 shapes that are
     covered are the `--binding` sweep's; this is not one of them.
     """
-    if isinstance(node, ast.Assign):
-        pairs = [(t, node.value) for t in node.targets]
-    elif isinstance(node, ast.AnnAssign) and node.value is not None:
-        pairs = [(node.target, node.value)]
-    elif isinstance(node, (ast.For, ast.AsyncFor)):
-        pairs = [(node.target, node.iter)]
-    else:
-        return {}
     out = defaultdict(set)
-    for target, value in pairs:
-        for name, src in bound_pairs(target, value):
-            out[name] |= names_in(src)
-            if isinstance(src, ast.Lambda):  # calling the name runs the body
-                out[name] |= free_in(src)
-            if isinstance(src, ast.Call):
-                out[name] |= {RET + f for f in names_in(src.func) if f}
+    for name, src in binding_pairs(node):
+        out[name] |= names_in(src)
+        if isinstance(src, ast.Lambda):  # calling the name runs the body
+            out[name] |= free_in(src)
+        if isinstance(src, ast.Call):
+            out[name] |= {RET + f for f in names_in(src.func) if f}
     return out
 
 
@@ -505,6 +557,12 @@ def live_nodes(tree):
     #70 took away, since one colliding name anywhere live would exempt the
     whole file (#73).
 
+    A lambda literal parked in a live statement is *built* there, not run
+    there, so `reaches` stops the walk at it: `f = lambda: dump()` bound to a
+    name nobody calls does not make `dump` live (#84). The two positions that
+    really do call one still carry — on the spot via `free_in`, through a name
+    via `bindings_in`.
+
     ponytail: two approximations remain — two defs sharing a name are one
     node, and a name handed to a call is assumed called by it. Both widen the
     live set, which is the direction that makes this guard go *silent* on a
@@ -525,21 +583,28 @@ def live_nodes(tree):
                 returned[RET + name] |= names_in(n.value) - local
     live, body = set(), runs(tree.body)
     while True:
-        invoked = set()
+        invoked, called, lam_of = set(), set(), defaultdict(set)
         bound = defaultdict(set, {k: set(v) for k, v in returned.items()})
         for stmt in body:
-            for n in ast.walk(stmt):
+            for n in nodes_in(stmt):
                 if isinstance(n, ast.Call):
                     invoked |= names_in(n.func)
                     if isinstance(n.func, ast.Lambda):  # `(lambda: x)()` — #83
                         invoked |= free_in(n.func)
+                        called.add(n.func)
                     if isinstance(n.func, ast.Call):  # `get()()` — #79
                         invoked |= {RET + f for f in names_in(n.func.func) if f}
                     for arg in list(n.args) + [k.value for k in n.keywords]:
                         invoked |= names_in(arg)
+                        if isinstance(arg, ast.Lambda):  # `sorted(key=…)` — #84
+                            invoked |= free_in(arg)
+                            called.add(arg)
                 else:
                     for name, srcs in bindings_in(n).items():
                         bound[name] |= srcs
+                    for name, src in binding_pairs(n):
+                        if isinstance(src, ast.Lambda):
+                            lam_of[name].add(src)
         todo = list(invoked)
         while todo:  # an invoked binding invokes whatever it was bound to
             for name in bound.get(todo.pop(), ()):
@@ -548,7 +613,9 @@ def live_nodes(tree):
                     todo.append(name)
         fresh = (invoked & set(defs)) - live
         if not fresh:
-            return [n for stmt in body for n in ast.walk(stmt)]
+            through = called.union(*[lam_of[n] for n in invoked & set(lam_of)]
+                                   or [set()])
+            return [n for stmt in body for n in nodes_in(stmt, through)]
         live |= fresh
         body = runs(tree.body) + [s for name in live for s in runs(defs[name].body)]
 
@@ -1305,6 +1372,37 @@ def self_check():
                       ("return (lambda: dump,)[0]", "get()()"),
                       ("return (lambda: (lambda: dump))()", "get()()"),
                   )],
+                # #84: the other face of #83's boundary. `live_nodes` walked
+                # each live statement with `ast.walk`, so a `Call` sitting in
+                # a lambda *body* counted as invoked whether or not anything
+                # ever called that lambda. Park a lambda in a live statement —
+                # any of the six ways an expression gets parked — and the
+                # `dump()` inside it exempted the file without running a line
+                # of `dump`: the one-line switch #70 took away.
+                *[(f"uncalled lambda in a live statement: {label}", tail)
+                  for label, tail in (
+                      ("f = lambda: dump()",
+                       "f = lambda: dump()\n" + runnable + "print('要開')\n"),
+                      ("xs = [lambda: dump()]",
+                       "xs = [lambda: dump()]\n" + runnable + "print('要開')\n"),
+                      ("d = {'k': lambda: dump()}",
+                       "d = {'k': lambda: dump()}\n" + runnable + "print('要開')\n"),
+                      ("bare literal (lambda: dump())",
+                       runnable + "(lambda: dump())\n    print('要開')\n"),
+                      ("[lambda: dump() for _ in []]",
+                       "xs = [lambda: dump() for _ in []]\n"
+                       + runnable + "print('要開')\n"),
+                      ("None if xs else (lambda: dump())",
+                       "f = None if xs else (lambda: dump())\n"
+                       + runnable + "print('要開')\n"),
+                  )],
+                # #84: the same walk hands back the node list the bypass is
+                # looked up in, so the write does not even need a dead def to
+                # hide behind — parking it in an uncalled lambda's body was
+                # the switch on its own.
+                ("bypass written inside an uncalled lambda body",
+                 f"f = lambda: {out_bypass}.write(b'x')\n"
+                 + runnable + "print('要開')\n"),
         ):
             still_dead = f"def dump():\n    {out_bypass}.write(b'x')\n\n\n" + tail
             bad.write_text(still_dead, encoding="utf-8")
@@ -1316,6 +1414,16 @@ def self_check():
         # A parameter default is the same story from the other side: it is
         # evaluated out here, so reaching the parameter reaches what it named.
         for body, call in (
+                # #84: a lambda's parameter *default* is not deferred — it
+                # is evaluated where the literal sits, so this one really does
+                # run `dump` even though nothing ever calls the lambda.
+                ("f = lambda x=dump(): 1\n    return 1", "get()"),
+                # #84: the two positions that really do call the lambda
+                # right where the literal sits — stopping at a `Lambda` must
+                # not touch either. `free_in` carries the spot call, and
+                # `bindings_in` carries the name it was bound to.
+                ("f = lambda: dump()\n    f()\n    return 1", "get()"),
+                ("(lambda: dump())()\n    return 1", "get()"),
                 ("f = lambda: dump\n    return f()", "get()()"),   # bound, called
                 ("return (lambda: dump)()", "get()()"),        # called on the spot
                 ("f = lambda x=dump: x()\n    return f()", "get()"),   # default run
@@ -1323,6 +1431,25 @@ def self_check():
             alive = (f"def dump():\n    {out_bypass}.write(b'x')\n\n\n"
                      f"def get():\n    {body}\n\n\n"
                      + runnable + f"{call}\n    print('要開')\n")
+            bad.write_text(alive, encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], alive
+
+        # #84 (the cost side): stopping at a `Lambda` must not take the bypass
+        # away from a lambda something really does call. `free_in` carries the
+        # *names* at those positions, never the *nodes*, so without `through`
+        # every one of these — a name called later, a spot call, and the two
+        # ordinary callback shapes — turned red on a script that writes its
+        # bytes on every run.
+        for alive in (
+            f"f = lambda: {out_bypass}.write(b'x')\n" + runnable
+            + "f()\n    print('要開')\n",
+            runnable + f"(lambda: {out_bypass}.write(b'x'))()\n"
+            "    print('要開')\n",
+            f"def dump():\n    {out_bypass}.write(b'x')\n" + runnable
+            + "sorted([1], key=lambda v: dump())\n    print('要開')\n",
+            f"def dump():\n    {out_bypass}.write(b'x')\n" + runnable
+            + "list(map(lambda v: dump(), [1]))\n    print('要開')\n",
+        ):
             bad.write_text(alive, encoding="utf-8")
             assert stream_encoding_issues(repo) == [], alive
 

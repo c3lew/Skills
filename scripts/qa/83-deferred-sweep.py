@@ -20,6 +20,11 @@
 
 **不是 #83 的 regression**:`--prev83`(`d192aa9`,#83 修之前)同一組數字一模一樣。
 
+#84 收掉前六格(`live_nodes` 走 live 語句時停在 `Lambda`,見 `nodes_in`)。第七格
+`return (lambda: dump)()` 配 `get()` 留在天花板:根因是 `free_in` 把「body 讀到這個
+名字」壓平成「呼叫這個 lambda 就等於跑了它」,要收得讓 lambda 有自己的 `RET` key。
+不改成 GREEN —— 它還是誤放,只是這片沒收,所以 `--deferred` 現在是 11/1。
+
 用法:
     python scripts/qa/83-deferred-sweep.py <repo> --deferred
     ... --prev83                                # 對照組:#83 修之前(d192aa9)
@@ -50,7 +55,7 @@ DEFERRED = [
      DUMP + 'xs = [lambda: dump() for _ in []]\n' + MAIN + TAIL, "RED"),
     ("三元裡的 lambda 沒呼叫 `None if xs else (lambda: dump())`",
      DUMP + 'f = None if xs else (lambda: dump())\n' + MAIN + TAIL, "RED"),
-    ("def 內就地呼叫但結果丟掉 `return (lambda: dump)()` 配 `get()`",
+    ("天花板(#84 留,仍是誤放):def 內就地呼叫但結果丟掉 `return (lambda: dump)()` 配 `get()`",
      DUMP + 'def get():\n    return (lambda: dump)()\n' + MAIN + '    get()\n' + TAIL, "RED"),
     ("對照:`return (lambda: dump())()` 配 `get()` —— lambda 就地被呼叫、dump 真的跑(不得誤紅)",
      DUMP + 'def get():\n    return (lambda: dump())()\n' + MAIN + '    get()\n' + TAIL, "GREEN"),
