@@ -1,0 +1,68 @@
+Issue #105 dashboard verification
+
+Shared check program:
+  $code='import re,sys; h=open(sys.argv[1],encoding="utf-8").read(); tile=int(re.search(r''<div class="num" style="color:var\(--warn\)">(\d+)</div><div class="lbl">小毛病\(帶著走\)</div>'',h).group(1)); rows=h.count(''<span class="when">帶著走</span>''); boundary=h.count(''<span class="when">規則邊界</span>''); stale=sum(x in h for x in (''漏看了<strong>寫在條件那一行上的東西'',''還有六種寫法它認不得'',''當成資料傳給任何一個指令'',''換五種等價寫法'',''只要在註解裡提到那個字'')); print(f"tile={tile} rows={rows} boundary={boundary} stale={stale}"); sys.exit((tile,rows,boundary,stale)!=tuple(map(int,sys.argv[2:])))'
+
+Baseline command and input:
+  python -c $code 'docs\qa\105-build\dashboard-original.html' 7 14 0 5
+Literal output:
+  tile=7 rows=14 boundary=0 stale=5
+Exit status:
+  0
+
+Modified command and input:
+  python -c $code 'dashboard.html' 8 8 1 0
+Literal output:
+  tile=8 rows=8 boundary=1 stale=0
+Exit status:
+  0
+
+Repository validation command:
+  python scripts/validate.py
+Literal output:
+  OK validate green
+Exit status:
+  0
+
+Patch reopen/check command:
+  git apply --check --reverse --ignore-space-change --ignore-whitespace docs/qa/105-build/workspace.patch
+Literal output:
+  (no output)
+Exit status:
+  0
+
+Rollback execution command:
+  & docs\qa\105-build\rollback.ps1
+Literal output:
+  restored dashboard.html
+  rollback_success=True
+  rollback_hash_match=True
+Exit status:
+  0
+
+Modified artifact restored after rollback; modified check rerun:
+  python -c $code 'dashboard.html' 8 8 1 0
+Literal output:
+  tile=8 rows=8 boundary=1 stale=0
+Exit status:
+  0
+
+Live tracker state command:
+  $nums=42,47,48,50,59,63,67,103,104,60,74,76,77,78; foreach($n in $nums){ $i=gh issue view $n --repo c3lew/Skills --json number,state | ConvertFrom-Json; '#{0}={1}' -f $i.number,$i.state }
+Literal output:
+  #42=OPEN
+  #47=OPEN
+  #48=OPEN
+  #50=OPEN
+  #59=OPEN
+  #63=OPEN
+  #67=OPEN
+  #103=OPEN
+  #104=OPEN
+  #60=CLOSED
+  #74=CLOSED
+  #76=CLOSED
+  #77=CLOSED
+  #78=CLOSED
+Exit status:
+  0

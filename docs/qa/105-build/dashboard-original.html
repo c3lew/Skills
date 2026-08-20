@@ -91,7 +91,7 @@
     <h2><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>品質現況</h2>
     <div class="qa-tiles">
       <div class="tile"><div class="num" style="color:var(--ok)">0</div><div class="lbl">必須先修</div></div>
-      <div class="tile"><div class="num" style="color:var(--warn)">8</div><div class="lbl">小毛病(帶著走)</div></div>
+      <div class="tile"><div class="num" style="color:var(--warn)">7</div><div class="lbl">小毛病(帶著走)</div></div>
       <div class="tile"><div class="num" style="color:var(--ok)">8</div><div class="lbl">既有功能全數正常</div></div>
     </div>
     <ul class="list" style="margin-top:14px">
@@ -99,9 +99,13 @@
       <li><span class="when">今天</span><span>收尾前把所有自動檢查重跑一次:<strong>8 道全綠</strong>。另外故意把新規矩改壞 15 個地方,15 處全部被抓到;三個最後缺口也都留了正反對照,以後改壞會立即出聲。</span></li>
       <li><span class="when">今天 · 已驗收</span><span>那道「會不會印出亂碼」的檢查,<strong>整個換了做法</strong>:從「猜這段會不會跑到」改成「照規矩寫在固定位置」。你逐條看過七種情況都對:寫對的位置過、搬到別處吵、藏在條件裡吵、只印英文也一樣要寫、同一支程式寫兩段執行區只釘一段也吵。<strong>檢查程式少了 557 行</strong>,整個專案實跑全綠。當時講好的兩個小毛病:一個當場修掉了,另一個(說明檔裡三個數字對不上)你決定併到下一張單子一起改。</span></li>
       <li><span class="when">已結案</span><span>同一道檢查在判斷「這段程式會不會真的跑到」時,只認得<strong>一種</strong>「把一個功能換個名字、再叫那個名字」的寫法 —— 換成一次指派兩個、順便標註型別、用迴圈變數、或由另一個功能交出來,它就當成「這段沒在跑」,<strong>把明明寫對的程式攔下來亂叫</strong>。已經修好:四種寫法全認得,<strong>六種情況全部答對</strong>(修之前六種爛五種)。這次一樣<strong>沒有只驗撞到的那三種</strong> —— 另外列了 <strong>31 種同類寫法</strong>一起跑,順手挖出兩族老毛病(見下面兩條)。也特別驗了<strong>反方向</strong>:放寬之後,那些「換了名字但根本沒叫」的程式<strong>要繼續被攔下來</strong> —— 11 種情況 10 種正確,唯一一種是事先講好的取捨。</span></li>
+      <li><span class="when">帶著走</span><span>同一道檢查判斷「會不會跑到」的時候,漏看了<strong>寫在條件那一行上的東西</strong> —— 例如「如果這件事成立就…」的<strong>那個條件本身</strong>就會執行,它卻整行跳過。這是很常見的寫法,漏看的後果是<strong>把寫對的程式判成錯的</strong>。這次順手把同一族的五種寫法一次列完了。不是這輪弄壞的,是本來就在的。<strong>已開單子</strong>。</span></li>
+      <li><span class="when">帶著走</span><span>「換個名字再叫」這件事,還有六種寫法它認不得,一樣會<strong>把寫對的程式判成錯的</strong>。最莫名其妙的一種:同一件事<strong>寫成一行是好的、拆成兩行就被判錯</strong> —— 換行不該改變對錯。<strong>已開單子</strong>。</span></li>
+      <li><span class="when">帶著走</span><span>同一道檢查的另一個豁免條件,只要把某個名字<strong>當成資料傳給任何一個指令</strong>(就算那個指令根本不會去執行它),它就當作「有在跑」而放行 —— 一行字就能讓守門閉嘴。<strong>已開單子</strong>。</span></li>
+      <li><span class="when">帶著走</span><span>同一道檢查判斷「這支程式會不會印東西給你看」時只認一種寫法,換五種等價寫法(先換個名字再印、走另一條輸出管道…)它就當成「這支不印東西」而整支放行 —— 一支印滿中文、完全沒設定編碼的程式會就這樣過關。<strong>已開單子</strong>。</span></li>
       <li><span class="when">已結案</span><span>上一輪修這道檢查時,把「會不會跑到」放得太寬:只要<strong>名字在別的地方被提到</strong>(哪怕只是剛好同名的另一個東西),就當作有在跑而整支放行 —— 等於一行字就能把守門關掉。已經收回成「名字要真的出現在<strong>叫它</strong>的位置」,五種情況全部答對。</span></li>
       <li><span class="when">已結案</span><span>同一道檢查在看一支程式裡有沒有「開始執行」那段 —— 那段只要被<strong>往內縮一格</strong>,整支程式就連看都不看直接放行,一支會印亂碼的程式就這樣無聲過關。已經修好:現在整支程式從頭翻到尾。這次<strong>沒有只驗撞到的那兩種寫法</strong> —— 把「往內縮一格」的所有可能寫法一次列成 <strong>22 種情況</strong>全跑過,全部抓得到;拿修之前那版跑同一批,有 <strong>10 種是無聲放行</strong>的,所以修掉的是一整族,不是單一一條。順手確認寫對的程式<strong>不會被誤判成錯的</strong>。</span></li>
-      <li><span class="when">規則邊界</span><span>「開始執行」只認一種固定寫法,是這次明講並保留的範圍,<strong>不是等著修的項目</strong>。</span></li>
+      <li><span class="when">帶著走</span><span>同一道檢查,在找「開始執行」那段時<strong>只認一種寫法</strong> —— 同樣意思換個寫法(把左右對調、拆成兩行寫)它就找不到,一樣整支放行。這不是這次弄壞的,是從一開始就在的。<strong>已開單子</strong>,等你決定什麼時候修。</span></li>
       <li><span class="when">已驗收</span><span>「跳過暫存資料夾」以前會誤傷常見主檔名;現在主檔會正常受檢,真正的暫存與隱藏資料仍會跳過。</span></li>
       <li><span class="when">已驗收</span><span>一支程式有兩段「開始執行」時,現在每段都要各自寫對;只寫對其中一段仍會被抓到。</span></li>
       <li><span class="when">帶著走</span><span>目前判定範圍是正確的,但還缺一格專門防止日後把範圍改回舊寫法的檢查。你決定<strong>之後修</strong>,已有獨立單子。</span></li>
@@ -112,6 +116,7 @@
       <li><span class="when">帶著走</span><span>貼總結的那行指令裡,單子編號要在兩個地方各寫一次 — 改一個忘另一個,總結會安靜地貼到別張單子上,不會報錯。你決定之後再修(要動程式的輸出格式,不適合順手做)。</span></li>
       <li><span class="when">已結案</span><span>助理列「現在可以同時開哪幾張單子」那份名單,在你的黑底終端機上三段標題(要開 / 排隊 / 還卡著)是一堆亂碼,讀不出來哪張屬於哪段;單子標題裡只要有 emoji 或箭頭,指令還會當場中斷。已經修好、演給你看、你點頭收掉,新版已換裝,而且自動檢查會守住:以後誰把「印名單」搬回說明書裡的臨時指令、或漏了設定文字編碼,檢查當場變紅。</span></li>
       <li><span class="when">帶著走</span><span>上面那份名單的說明書,只寫了一種終端機的貼法;你如果用 Windows 內建的那兩種終端機,照抄會貼不動。你決定之後再修。</span></li>
+      <li><span class="when">帶著走</span><span>守著「文字編碼有沒有設好」的那道檢查,有一個合法的例外寫法認得太寬鬆 — 只要在註解裡提到那個字,檢查就會放行。現在沒有人這樣繞過,但以後有可能無聲繞過。你決定之後再修。</span></li>
       <li><span class="when">已解決</span><span>那兩句對不上實況的驗收標準,你已經點頭改成正確版本,原始的需求文件也同步改好了 — 下次重驗會照新的標準跑,不會再拿舊句子對。沒有程式要改。</span></li>
       <li><span class="when">已修好</span><span>有三份說明檔案,裝到別台電腦之後會叫你去看一個沒被一起裝過去的檔案 — 照著讀就是「找不到檔案」。已經修掉,而且順手讓自動檢查以後會自己抓到同一種問題:把當初那句話種回去,檢查當場就變紅並指出是哪一份檔案。</span></li>
       <li><span class="when">帶著走</span><span>你問「接下來做什麼」時,如果那件工作上沒有留下現成的交接說明,助理會改照一張對照表回答 — 那張表還沒有電腦自動把關,少寫一種寫法不會被擋下來。你先前決定這條之後再修。</span></li>
