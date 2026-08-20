@@ -1,0 +1,78 @@
+QA #102 walkthrough 2026-08-20T19:17:13.1061340+08:00
+
+=== python scripts/qa/102-walkthrough.py ===
+修前：mutation 表 exit=0；未套 knob 控制組 exit=1
+修後 phase A：control_exit=1；mutations_started=0；第一格前中止
+修後 phase B：另起綠控制組，執行有效 mutation 表
+咬住  buffer_exempt          self-check exit=1
+
+咬住  decode_error_uncaught  self-check exit=1
+
+咬住  filter_off             self-check exit=1
+
+咬住  first_main_only        self-check exit=1
+
+咬住  guard_off              self-check exit=1
+
+咬住  main_body_only         self-check exit=1
+
+咬住  no_norm                self-check exit=1
+
+咬住  pin_anywhere_in_file   self-check exit=1
+
+咬住  pin_anywhere_in_main   self-check exit=1
+
+咬住  print_exempt           self-check exit=1
+
+咬住  stdin_always           self-check exit=1
+
+咬住  stdin_by_text          self-check exit=1
+
+咬住  stdin_never            self-check exit=1
+
+咬住  underscore_filter      self-check exit=1
+
+咬住  unreadable_skip        self-check exit=1
+
+
+
+15/15 個 knob 被 self-check 咬住
+判定：修前假綠已重現；修後控制組綠、紅控制組在第一格前中止、15/15 mutation 全紅
+exit=0
+
+=== python scripts/qa/98-mutate-control.py ===
+控制組綠；完整副本 15/15 個 knob 被咬住
+控制組刻意改紅：表在第一格前中止
+exit=0
+
+=== python scripts/validate.py --self-check ===
+OK validate self-check green
+exit=0
+
+=== python scripts/batch.py --self-check ===
+OK batch self-check green
+OK §8a/§8c conflict scenarios green
+exit=0
+
+=== python scripts/install.py --self-check ===
+[fixture] FAIL skills/bad: missing SKILL.md
+OK install self-check green
+exit=0
+
+=== python scripts/hooks/triage-to-maintain.py --self-check ===
+OK triage-to-maintain self-check green
+exit=0
+
+=== python skills/build-batch/batch.py --self-check ===
+OK batch self-check green
+exit=0
+
+=== python scripts/qa/96-newrule-probe.py . ===
+OK 新規則下全綠
+
+不合 0
+exit=0
+
+=== python scripts/validate.py ===
+OK validate green
+exit=0
