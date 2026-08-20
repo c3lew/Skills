@@ -1,0 +1,2 @@
+OK batch self-check green
+OK §8a/§8c conflict scenarios green

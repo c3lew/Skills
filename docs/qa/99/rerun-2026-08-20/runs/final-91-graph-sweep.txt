@@ -1,0 +1,12 @@
+`import asyncio` 之後名字被綁走 `asyncio = MagicMock()`                       期望 RED    實際 RED    ok
+別名版:`import asyncio as aio` 之後 `aio = MagicMock()`                     期望 RED    實際 RED    ok
+永遠不會跑的 def 裡有 `loop = asyncio.new_event_loop()`,模組層的 `loop` 是別的東西      期望 RED    實際 RED    ok
+`from asyncio import run` 寫在別的 def 裡,模組自己有 `def run(x)`                期望 RED    實際 RED    ok
+`from asyncio import Runner` 之後 `Runner = MagicMock`,`r = Runner()`    期望 RED    實際 RED    ok
+class body 裡 `loop = asyncio.new_event_loop()`,模組層的 `loop` 是別的東西       期望 RED    實際 RED    ok
+對照:`from asyncio import sleep` 之後 `x = sleep`,`x.run(...)` 不是驅動(不得放掉)  期望 RED    實際 RED    ok
+對照:`ok = asyncio.iscoroutinefunction(adump)` 之後 `ok.run(...)`(不得放掉)    期望 RED    實際 RED    ok
+對照:沒有任何重綁,`asyncio.run(adump())` 真的驅動(不得誤紅)                            期望 GREEN  實際 RED    MISMATCH
+對照:`from asyncio import run` 在模組層,`run(adump())` 真的驅動(不得誤紅)            期望 GREEN  實際 RED    MISMATCH
+
+母體 10,不合 2

@@ -1,0 +1,62 @@
+[
+  {
+    "name": "validate",
+    "command": "python scripts/validate.py",
+    "exit": 0,
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\validate.txt"
+  },
+  {
+    "name": "validate-self-check",
+    "command": "python scripts/validate.py --self-check",
+    "exit": 0,
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\validate-self-check.txt"
+  },
+  {
+    "name": "batch-self-check",
+    "command": "python scripts/batch.py --self-check",
+    "exit": 0,
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\batch-self-check.txt"
+  },
+  {
+    "name": "build-batch-self-check",
+    "command": "python skills/build-batch/batch.py --self-check",
+    "exit": 0,
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\build-batch-self-check.txt"
+  },
+  {
+    "name": "install-self-check",
+    "command": "python scripts/install.py --self-check",
+    "exit": 0,
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\install-self-check.txt"
+  },
+  {
+    "name": "triage-hook-self-check",
+    "command": "python scripts/hooks/triage-to-maintain.py --self-check",
+    "exit": 0,
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\triage-hook-self-check.txt"
+  },
+  {
+    "name": "mutation",
+    "command": "python scripts/qa/97-mutate.py --run",
+    "exit": 0,
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\mutation.txt"
+  },
+  {
+    "name": "newrule-probe",
+    "command": "python scripts/qa/96-newrule-probe.py .",
+    "exit": 0,
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\newrule-probe.txt"
+  },
+  {
+    "name": "oracle",
+    "command": "python scripts/qa/87-oracle.py .",
+    "exit": 0,
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\oracle.txt"
+  },
+  {
+    "name": "dashboard-check",
+    "command": "python docs/qa/105/check_dashboard.py",
+    "exit": 0,
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\dashboard-check.txt"
+  }
+]

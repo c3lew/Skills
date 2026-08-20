@@ -1,0 +1,52 @@
+#99 QA rerun verification record
+
+BASELINE/MODIFIED BEHAVIOR
+command: python docs/qa/105/check_dashboard.py
+inputs:
+  baseline: docs/qa/105-build/dashboard-original.html
+  modified: dashboard.html
+literal output:
+  tile=8
+  baseline_known_rows=14
+  current_known_rows=8
+  removed_stale_rows=6
+  live_known_issues=#42,#47,#48,#50,#59,#63,#103,#104
+  closed_removed_issues=#60,#74,#76,#77,#78
+  boundary=#67 OPEN, shown only as a declared rule boundary
+  PASS dashboard ledger matches live issue state
+exit: 0
+
+REGRESSION
+command: python scripts/validate.py
+literal output: OK validate green
+exit: 0
+
+command: python scripts/validate.py --self-check
+literal output: OK validate self-check green
+exit: 0
+
+command: python scripts/qa/97-mutate.py --run
+literal tail: 15/15 個 knob 被 self-check 咬住
+exit: 0
+
+command: python scripts/qa/87-oracle.py .
+literal tail: 母體 84,fixture 期望與實跑不合 0
+exit: 0
+
+ROLLBACK/RESTORE
+command: powershell -File docs/qa/99/rollback-rerun-2026-08-20.ps1
+literal output: ROLLBACK_OK D:\Self Project\Skills\docs\qa\99\rerun-2026-08-20
+target exists after rollback: False
+
+command: git apply --check docs/qa/99/rerun-2026-08-20.patch
+exit: 0
+
+command: git apply docs/qa/99/rerun-2026-08-20.patch
+exit: 0
+restored files: 29
+SHA-256 mismatches after normalized baseline: 0
+
+HASHES
+baseline-report.md SHA-256: 9A77E5FA8FE5E3E0902F662627C2D3EF29FD37C202936E297C6402B96C5E8C26
+report.md SHA-256: 82596D43E0DE60F75176E3E8EB75ECBC227009FBAE2AA91A3AC7A1992E754D20
+rerun-2026-08-20.patch SHA-256: 45049A112FD99283E518FF395D689FF847EA434ABD8AFE4F3DF6AD79EFB0AC75

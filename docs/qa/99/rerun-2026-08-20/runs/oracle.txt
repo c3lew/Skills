@@ -1,0 +1,86 @@
+DEFERRED / 綁著沒呼叫 `f = lambda: dump()`                                                     fixture 期望 RED   真跑 RED    ok
+DEFERRED / list 裡的 lambda 沒呼叫 `xs = [lambda: dump()]`                                     fixture 期望 RED   真跑 RED    ok
+DEFERRED / dict 裡的 lambda 沒呼叫 `d = {"k": lambda: dump()}`                                 fixture 期望 RED   真跑 RED    ok
+DEFERRED / 裸 lambda literal 在 live 位置沒呼叫 `(lambda: dump())`                               fixture 期望 RED   真跑 RED    ok
+DEFERRED / comprehension 裡的 lambda 沒呼叫 `[lambda: dump() for _ in []]`                     fixture 期望 RED   真跑 RED    ok
+DEFERRED / 三元裡的 lambda 沒呼叫 `None if xs else (lambda: dump())`                             fixture 期望 RED   真跑 RED    ok (跑爆)
+DEFERRED / 天花板(#84 留,仍是誤放):def 內就地呼叫但結果丟掉 `return (lambda: dump)()` 配 `get()`             fixture 期望 RED   真跑 RED    ok
+DEFERRED / 對照:`return (lambda: dump())()` 配 `get()` —— lambda 就地被呼叫、dump 真的跑(不得誤紅)        fixture 期望 GREEN 真跑 GREEN  ok
+DEFERRED / 對照:`def g(cb=lambda: dump())` 預設引數,g 沒被呼叫(現在就是 RED,不得放掉)                       fixture 期望 RED   真跑 RED    ok
+DEFERRED / 對照:`f = lambda: dump()` 且真的 `f()`(不得誤紅)                                        fixture 期望 GREEN 真跑 GREEN  ok
+DEFERRED / 對照:`(lambda: dump())()` 就地呼叫(不得誤紅)                                             fixture 期望 GREEN 真跑 GREEN  ok
+GENERATOR / genexp 綁著沒消費 `g = (dump() for _ in [1])`                                      fixture 期望 RED   真跑 RED    ok
+GENERATOR / 裸 genexp 在 live 語句 `(dump() for _ in [1])`                                    fixture 期望 RED   真跑 RED    ok
+GENERATOR / genexp 進容器沒消費 `xs = [(dump() for _ in [1])]`                                  fixture 期望 RED   真跑 RED    ok
+GENERATOR / genexp 交給不消費的 def `keep(dump() for _ in [1])`                                 fixture 期望 RED   真跑 RED    ok
+GENERATOR / generator function 呼叫了但沒 iterate `gen()`                                      fixture 期望 RED   真跑 RED    ok
+GENERATOR / bypass 直接寫在沒人消費的 genexp body 裡                                                fixture 期望 RED   真跑 RED    ok
+GENERATOR / 對照:generator function 綁著沒呼叫(現在就是 RED,不得放掉)                                    fixture 期望 RED   真跑 RED    ok
+GENERATOR / 對照:`sum(1 for _ in (dump() for _ in [1]))` 真的消費(不得誤紅)                         fixture 期望 GREEN 真跑 GREEN  ok
+GENERATOR / 對照:`g = (dump() for _ in [1])` 之後 `list(g)`(不得誤紅)                             fixture 期望 GREEN 真跑 GREEN  ok
+GENERATOR / 對照:`for _ in gen(): pass` 真的 iterate(不得誤紅)                                    fixture 期望 GREEN 真跑 GREEN  ok
+GENERATOR / 對照:listcomp 不是 deferred,真的跑 `[dump() for _ in [1]]`(不得誤紅)                     fixture 期望 GREEN 真跑 GREEN  ok
+GENERATOR / 對照:bypass 寫在真的被消費的 genexp body(不得誤紅)                                          fixture 期望 GREEN 真跑 GREEN  ok
+ASYNC_DEFER / coroutine 綁著沒 await `c = adump()`                                           fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / 裸 coroutine 在 live 語句 `adump()`                                             fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / coroutine 進容器沒 await `xs = [adump()]`                                       fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / coroutine 交給不 await 的 def `keep(adump())`                                   fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / bypass 直接寫在呼叫了但沒 await 的 async def body 裡                                   fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / 對照:async def 綁著沒呼叫(現在就是 RED,不得放掉)                                           fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / 對照:async generator 呼叫了沒 iterate `agen()`(現在就是 RED,不得放掉)                     fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / 對照:`await adump()` 只在沒人跑的 outer 裡(現在就是 RED,不得放掉)                            fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / 對照:`asyncio.run(adump())` 真的跑(不得誤紅)                                         fixture 期望 GREEN 真跑 GREEN  ok
+ASYNC_DEFER / 對照:`await adump()` 在被 `asyncio.run` 的 outer 裡(不得誤紅)                         fixture 期望 GREEN 真跑 GREEN  ok
+ASYNC_DEFER / 對照:bypass 寫在真的被 run 的 coroutine body(不得誤紅)                                  fixture 期望 GREEN 真跑 GREEN  ok
+ASYNC_DEFER / 對照:`async for _ in agen()` 真的 iterate(不得誤紅)                                 fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / 別的 def 裡的 local 叫 list `def u(): list = 1`                                 fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / 別的 def 的 parameter 叫 list `def u(list)`                                    fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / comprehension target 叫 list `[list for list in []]`                        fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / `with … as list` 在別的 def 裡                                                 fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / `except … as list` 在別的 def 裡                                               fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / class body 裡的 attribute 叫 list `class W: list = 1`                         fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / import alias 叫 list `from collections import deque as list`                fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / 巢狀 def 叫 list `def u(): def list(): …`                                     fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / 連死碼分支裡的 for target 都算 `if False: for list in []`                           fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / 對照:模組真的 `def sorted(g): return g`(#86 review 收的那條,不得放掉)                    fixture 期望 RED   真跑 RED    ok
+SHADOW_SCOPE / 對照:沒有任何撞名,`list(g)` 照常消費(不得誤紅)                                             fixture 期望 GREEN 真跑 GREEN  ok
+ATTR_CONSUMER / import 進來的物件 `.extend(genexp)`,它根本不抽乾                                     fixture 期望 RED   真跑 RED    ok (跑爆)
+ATTR_CONSUMER / bypass 直接寫在交給 `.extend` 的 genexp body 裡                                   fixture 期望 RED   真跑 RED    ok (跑爆)
+ATTR_CONSUMER / bypass 交給 `.next` —— 名單上任一個名字當 method 都行                                  fixture 期望 RED   真跑 RED    ok (跑爆)
+ATTR_CONSUMER / 對照:同模組自己 `class B: def extend`(被尺二那個過寬的 shadowed 擋掉,現在是 RED)              fixture 期望 RED   真跑 RED    ok
+ATTR_CONSUMER / 對照:真的 `"".join(…)`(修法留下 attribute 判讀的理由,不得誤紅)                             fixture 期望 GREEN 真跑 GREEN  ok
+ATTR_CONSUMER / 對照:真的 `list.extend(…)`(不得誤紅)                                              fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def run(x)`,`asyncio.run(adump())` 真的在跑                             fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def gather(x)`,`await asyncio.gather(adump())` 真的在跑                 fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def wait_for(x)`,`await asyncio.wait_for(adump(), 5)` 真的在跑          fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def create_task(x)`,`asyncio.create_task(adump())` 真的在跑             fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def ensure_future(x)`,`await asyncio.ensure_future(adump())` 真的在跑   fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def run_until_complete(x)`,`loop.run_until_complete(adump())` 真的在跑  fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 別的 def 的參數叫 run `def u(run)`                                              fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 別的 def 裡的 local 叫 wait_for `def u(): wait_for = 1`                        fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / comprehension target 叫 gather `[gather for gather in []]`                 fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / `import json as run` 撞名                                                   fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 對照:沒有任何撞名,`asyncio.run(adump())` 照常驅動(不得誤紅)                               fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 對照:自己的 `def run(x): return x` 真的沒驅動(shadowed 這半的價值,不得放掉)                  fixture 期望 RED   真跑 RED    ok
+DRIVEN_ATTR / 任意物件的 `.run(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                            fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.gather(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                         fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.wait(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                           fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.wait_for(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                       fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.create_task(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                    fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.ensure_future(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                  fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.run_until_complete(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡             fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / `subprocess.run(coroutine)` —— 名字撞得最兇的那個                                    fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / `MagicMock().run(coroutine)` —— receiver 不炸,純粹就是沒驅動                         fixture 期望 RED   真跑 RED    ok
+DRIVEN_ATTR / `MagicMock().create_task(coroutine)` —— 同上,換一個名字                            fixture 期望 RED   真跑 RED    ok
+DRIVEN_ATTR / 對照:`loop.run_until_complete(adump())` 真的驅動(attribute 判讀的理由,不得誤紅)            fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_ATTR / 對照:`asyncio.Runner().run(adump())` 真的驅動(不得誤紅)                               fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 綁到名字再 await `c = adump()` + `await c`                                      fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 綁到名字再交給 event loop `c = adump()` + `asyncio.run(c)`                        fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / `asyncio.gather(*cs)` 的 Starred 展開                                         fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / async comprehension 裡的 await `[await c for c in [adump()]]`                fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 對照:`asyncio.run(adump())` 一步到位(不得誤紅)                                       fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 對照:`asyncio.run(main=adump())` 走 keyword(不得誤紅)                             fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 對照:兩層 await `outer -> mid -> adump`(不得誤紅)                                  fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 對照:`c = adump()` 綁著沒人驅動(#87 母體第一格,不得放掉)                                    fixture 期望 RED   真跑 RED    ok
+
+母體 84,fixture 期望與實跑不合 0

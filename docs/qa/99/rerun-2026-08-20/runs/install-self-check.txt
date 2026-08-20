@@ -1,0 +1,2 @@
+[fixture] FAIL skills/bad: missing SKILL.md
+OK install self-check green

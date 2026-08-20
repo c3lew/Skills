@@ -1,0 +1,14 @@
+genexp 綁著沒消費 `g = (dump() for _ in [1])`                   期望 RED    實際 RED    ok
+裸 genexp 在 live 語句 `(dump() for _ in [1])`                 期望 RED    實際 RED    ok
+genexp 進容器沒消費 `xs = [(dump() for _ in [1])]`               期望 RED    實際 RED    ok
+genexp 交給不消費的 def `keep(dump() for _ in [1])`              期望 RED    實際 RED    ok
+generator function 呼叫了但沒 iterate `gen()`                   期望 RED    實際 RED    ok
+bypass 直接寫在沒人消費的 genexp body 裡                             期望 RED    實際 RED    ok
+對照:generator function 綁著沒呼叫(現在就是 RED,不得放掉)                 期望 RED    實際 RED    ok
+對照:`sum(1 for _ in (dump() for _ in [1]))` 真的消費(不得誤紅)      期望 GREEN  實際 RED    MISMATCH
+對照:`g = (dump() for _ in [1])` 之後 `list(g)`(不得誤紅)          期望 GREEN  實際 RED    MISMATCH
+對照:`for _ in gen(): pass` 真的 iterate(不得誤紅)                 期望 GREEN  實際 RED    MISMATCH
+對照:listcomp 不是 deferred,真的跑 `[dump() for _ in [1]]`(不得誤紅)  期望 GREEN  實際 RED    MISMATCH
+對照:bypass 寫在真的被消費的 genexp body(不得誤紅)                       期望 GREEN  實際 RED    MISMATCH
+
+母體 12,不合 5

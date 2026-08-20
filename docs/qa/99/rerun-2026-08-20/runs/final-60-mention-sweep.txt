@@ -1,0 +1,15 @@
+對照:裸 print,什麼都沒有              期望 RED    實際 RED    ok
+提到 bypass — 行內 comment        期望 RED    實際 RED    ok
+提到 bypass — 檔頭 comment        期望 RED    實際 RED    ok
+提到 bypass — module docstring  期望 RED    實際 RED    ok
+提到 bypass — 字串常數              期望 RED    實際 RED    ok
+提到 bypass — f-string          期望 RED    實際 RED    ok
+提到 bypass — 變數名近似             期望 RED    實際 RED    ok
+提到 pin — 行內 comment           期望 RED    實際 RED    ok
+提到 pin — docstring            期望 RED    實際 RED    ok
+提到 pin — 字串常數                 期望 RED    實際 RED    ok
+用到 bypass — 真的 write          期望 GREEN  實際 RED    MISMATCH
+用到 pin — 雙引號                  期望 GREEN  實際 GREEN  ok
+用到 pin — 單引號(unparse 正規化)     期望 GREEN  實際 GREEN  ok
+
+母體 13,不合 1

@@ -1,0 +1,15 @@
+`dump = 1`(#79 已收:Name Store)           期望 RED    實際 RED    ok
+參數同名 `def get(dump)`(#79 已收:arg)        期望 RED    實際 RED    ok
+`with open() as dump`(Name Store,順帶收到)  期望 RED    實際 RED    ok
+`for dump in [1]`(Name Store,順帶收到)      期望 RED    實際 RED    ok
+walrus `(dump := 1)`(Name Store,順帶收到)   期望 RED    實際 RED    ok
+巢狀 def 同名 `def dump():` 在 get 裡         期望 RED    實際 RED    ok
+巢狀 class 同名 `class dump:` 在 get 裡       期望 RED    實際 RED    ok
+`import os as dump` 在 get 裡             期望 RED    實際 RED    ok
+`import dump` 在 get 裡                   期望 RED    實際 RED    ok
+`from os import path as dump` 在 get 裡   期望 RED    實際 RED    ok
+`except Exception as dump` 在 get 裡      期望 RED    實際 RED    ok
+`match` 的 case 捕獲同名 `case [dump]`       期望 RED    實際 RED    ok
+對照:`return dump` 真的是外面那個死碼 def(不得誤紅)    期望 GREEN  實際 RED    MISMATCH
+
+母體 13,不合 1

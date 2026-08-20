@@ -1,0 +1,11 @@
+lambda 的參數撞名,馬上呼叫 `return (lambda dump: dump)(1)`              期望 RED    實際 RED    ok
+lambda 存進變數再呼叫 `f = lambda dump: dump; return f(1)`            期望 RED    實際 RED    ok
+交出去的就是 lambda 本身 `return lambda dump: dump`                    期望 RED    實際 RED    ok
+交出去的 lambda 只是把 dump 再交出來 `return lambda: dump`                期望 RED    實際 RED    ok
+dump 只當 lambda 的預設引數 `return lambda x=dump: x`                 期望 RED    實際 RED    ok
+lambda 包在容器裡再取出來 `return (lambda: dump,)[0]`                   期望 RED    實際 RED    ok
+巢狀 lambda `return (lambda: (lambda: dump))()`                  期望 RED    實際 RED    ok
+對照:lambda 呼叫的結果真的是外面那個死碼 `f = lambda: dump; return f()`(不得誤紅)  期望 GREEN  實際 RED    MISMATCH
+對照:`return dump` 真的是外面那個死碼 def(不得誤紅)                           期望 GREEN  實際 RED    MISMATCH
+
+母體 9,不合 2

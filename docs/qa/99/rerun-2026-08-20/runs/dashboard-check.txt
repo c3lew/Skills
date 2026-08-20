@@ -1,0 +1,8 @@
+tile=8
+baseline_known_rows=14
+current_known_rows=8
+removed_stale_rows=6
+live_known_issues=#42,#47,#48,#50,#59,#63,#103,#104
+closed_removed_issues=#60,#74,#76,#77,#78
+boundary=#67 OPEN, shown only as a declared rule boundary
+PASS dashboard ledger matches live issue state

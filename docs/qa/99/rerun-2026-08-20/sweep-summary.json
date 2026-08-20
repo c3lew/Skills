@@ -1,0 +1,98 @@
+[
+  {
+    "name": "57-guard-sweep.py",
+    "command": "python scripts/qa/57-guard-sweep.py .",
+    "exit": 0,
+    "traceback": false,
+    "tail": "   繞過(Codex 半移到 span 外)   -> ['qa'] (非空 = 咬到)\n   對照組 2 個方向咬到 2 個 -> 驗法本身有效:上面那 4 個格子的值是那幾支 guard 的性質,不是這支掃描壞掉。",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-57-guard-sweep.txt"
+  },
+  {
+    "name": "60-mention-sweep.py",
+    "command": "python scripts/qa/60-mention-sweep.py .",
+    "exit": 1,
+    "traceback": false,
+    "tail": "\n母體 13,不合 1",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-60-mention-sweep.txt"
+  },
+  {
+    "name": "65-nesting-sweep.py",
+    "command": "python scripts/qa/65-nesting-sweep.py .",
+    "exit": 0,
+    "traceback": false,
+    "tail": "\n母體 22,不合 0",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-65-nesting-sweep.txt"
+  },
+  {
+    "name": "73-reach-sweep.py",
+    "command": "python scripts/qa/73-reach-sweep.py .",
+    "exit": 1,
+    "traceback": false,
+    "tail": "\n母體 6,不合 6",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-73-reach-sweep.txt"
+  },
+  {
+    "name": "75-binding-sweep.py",
+    "command": "python scripts/qa/75-binding-sweep.py .",
+    "exit": 1,
+    "traceback": false,
+    "tail": "\n母體 12,不合 12",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-75-binding-sweep.txt"
+  },
+  {
+    "name": "79-return-sweep.py",
+    "command": "python scripts/qa/79-return-sweep.py .",
+    "exit": 1,
+    "traceback": false,
+    "tail": "\n母體 13,不合 1",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-79-return-sweep.txt"
+  },
+  {
+    "name": "81-lambda-sweep.py",
+    "command": "python scripts/qa/81-lambda-sweep.py .",
+    "exit": 1,
+    "traceback": false,
+    "tail": "\n母體 9,不合 2",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-81-lambda-sweep.txt"
+  },
+  {
+    "name": "83-deferred-sweep.py",
+    "command": "python scripts/qa/83-deferred-sweep.py .",
+    "exit": 1,
+    "traceback": false,
+    "tail": "\n母體 11,不合 3",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-83-deferred-sweep.txt"
+  },
+  {
+    "name": "84-generator-sweep.py",
+    "command": "python scripts/qa/84-generator-sweep.py .",
+    "exit": 1,
+    "traceback": false,
+    "tail": "\n母體 12,不合 5",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-84-generator-sweep.txt"
+  },
+  {
+    "name": "86-async-sweep.py",
+    "command": "python scripts/qa/86-async-sweep.py .",
+    "exit": 1,
+    "traceback": false,
+    "tail": "\n母體 11,不合 10",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-86-async-sweep.txt"
+  },
+  {
+    "name": "87-drive-sweep.py",
+    "command": "python scripts/qa/87-drive-sweep.py .",
+    "exit": 1,
+    "traceback": false,
+    "tail": "\n母體 12,不合 11",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-87-drive-sweep.txt"
+  },
+  {
+    "name": "91-graph-sweep.py",
+    "command": "python scripts/qa/91-graph-sweep.py .",
+    "exit": 1,
+    "traceback": false,
+    "tail": "\n母體 10,不合 2",
+    "output": "C:\\Users\\user\\AppData\\Local\\Temp\\skills-qa99-rerun-b2857d41dcd04245877f74612772eea3\\final-91-graph-sweep.txt"
+  }
+]
