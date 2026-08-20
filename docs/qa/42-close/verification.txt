@@ -1,0 +1,73 @@
+COMMAND: python scripts/validate.py
+OK validate green
+EXIT: 0
+
+COMMAND: python scripts/validate.py --self-check
+OK validate self-check green
+EXIT: 0
+
+COMMAND: python scripts/install.py
+OK installed build -> C:\Users\user\.claude\skills\build
+OK installed build-batch -> C:\Users\user\.claude\skills\build-batch
+OK installed client-demo -> C:\Users\user\.claude\skills\client-demo
+OK installed close -> C:\Users\user\.claude\skills\close
+OK installed implement -> C:\Users\user\.claude\skills\implement
+OK installed maintain -> C:\Users\user\.claude\skills\maintain
+OK installed next -> C:\Users\user\.claude\skills\next
+OK installed pm-intake -> C:\Users\user\.claude\skills\pm-intake
+OK installed qa -> C:\Users\user\.claude\skills\qa
+OK installed retro -> C:\Users\user\.claude\skills\retro
+OK installed slice-tickets -> C:\Users\user\.claude\skills\slice-tickets
+OK installed to-spec -> C:\Users\user\.claude\skills\to-spec
+OK installed to-tickets -> C:\Users\user\.claude\skills\to-tickets
+OK installed tracking-viz -> C:\Users\user\.claude\skills\tracking-viz
+OK installed triage -> C:\Users\user\.claude\skills\triage
+OK installed ui-mockup -> C:\Users\user\.claude\skills\ui-mockup
+OK installed build -> C:\Users\user\.agents\skills\build
+OK installed build-batch -> C:\Users\user\.agents\skills\build-batch
+OK installed client-demo -> C:\Users\user\.agents\skills\client-demo
+OK installed close -> C:\Users\user\.agents\skills\close
+OK installed implement -> C:\Users\user\.agents\skills\implement
+OK installed maintain -> C:\Users\user\.agents\skills\maintain
+OK installed next -> C:\Users\user\.agents\skills\next
+OK installed pm-intake -> C:\Users\user\.agents\skills\pm-intake
+OK installed qa -> C:\Users\user\.agents\skills\qa
+OK installed retro -> C:\Users\user\.agents\skills\retro
+OK installed slice-tickets -> C:\Users\user\.agents\skills\slice-tickets
+OK installed to-spec -> C:\Users\user\.agents\skills\to-spec
+OK installed to-tickets -> C:\Users\user\.agents\skills\to-tickets
+OK installed tracking-viz -> C:\Users\user\.agents\skills\tracking-viz
+OK installed triage -> C:\Users\user\.agents\skills\triage
+OK installed ui-mockup -> C:\Users\user\.agents\skills\ui-mockup
+EXIT: 0
+
+COMMAND: python - (dashboard acceptance checker)
+current_known_issues_7=True
+green_checks_11=True
+seven_listed_known_issues=True
+issue_42_marked_accepted=True
+next_dual_written=True
+old_issue_42_copy_removed=True
+OK dashboard acceptance green
+EXIT: 0
+
+COMMAND: rollback.ps1 against isolated targets
+OK restored dashboard and the pre-#42 next skill
+dashboard_match=True
+claude_next_match=True
+agents_next_match=True
+EXIT: 0
+
+HASHES:
+25F0B78CD75461E1895CCFD57E9E4916EB5B11D4FD9CE219623EC8F07060AFD4  D:\Self Project\Skills\dashboard.html
+C61F0997B40E97648FC06FD708C9A74096E6C85839ABEFD212BC45E734924C08  D:\Self Project\Skills\docs\qa\42-close\dashboard.original.html
+72C91550E45421E5F4B346933FB186B2A4CD2E1E11FB68919119184EB524B7D4  D:\Self Project\Skills\docs\qa\42-close\dashboard.patch
+2AB21DA84545B182249B2666C8FEF363FBB860B9E2398C19B37DAD83B3DCAD4B  D:\Self Project\Skills\docs\qa\42-close\rollback.ps1
+581761219A987EAE03B22BDDF3572649635BDC5A0D8883769A3165BC80D640A4  D:\Self Project\Skills\skills\next\SKILL.md
+581761219A987EAE03B22BDDF3572649635BDC5A0D8883769A3165BC80D640A4  C:\Users\user\.claude\skills\next\SKILL.md
+581761219A987EAE03B22BDDF3572649635BDC5A0D8883769A3165BC80D640A4  C:\Users\user\.agents\skills\next\SKILL.md
+
+STATUS BEFORE COMMIT:
+## build/42...origin/build/42
+ M dashboard.html
+?? docs/qa/42-close/
