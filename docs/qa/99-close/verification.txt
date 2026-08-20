@@ -1,0 +1,52 @@
+#99 close dashboard verification
+
+BASELINE
+artifact: dashboard.html
+preserved copy: docs/qa/99-close/dashboard-original.html
+SHA-256: 80798FBD052CA2416ED9A21960F06CDBBAF6A3FC46E060420EF0D260A6B127E1
+behavior: #99 row is 測試中 at 70%; hero next action is /qa #99; regression tile is 8.
+
+MODIFIED
+artifact: dashboard.html
+SHA-256: 531439D7136AC814C780E3E1C8FA862C1691727BD164A1EBB9D341211F6E7379
+behavior: #99 row is 你已驗收 at 100%; hero states 7/7 checks passed and next action is /next; regression tile is 10.
+
+VALIDATION
+command: python scripts/validate.py
+literal output: OK validate green
+exit: 0
+
+command: python scripts/validate.py --self-check
+literal output: OK validate self-check green
+exit: 0
+
+command: python docs/qa/105/check_dashboard.py
+literal output:
+  tile=8
+  baseline_known_rows=14
+  current_known_rows=8
+  removed_stale_rows=6
+  live_known_issues=#42,#47,#48,#50,#59,#63,#103,#104
+  closed_removed_issues=#60,#74,#76,#77,#78
+  boundary=#67 OPEN, shown only as a declared rule boundary
+  PASS dashboard ledger matches live issue state
+exit: 0
+
+visible technical-term scan: 0 matches
+git diff --check exit: 0
+
+ROLLBACK AND REAPPLY
+command: powershell -File docs/qa/99-close/rollback.ps1
+literal output: ROLLBACK_OK D:\Self Project\Skills\dashboard.html
+rollback SHA-256 matches preserved original: True
+
+command: git apply --check --unidiff-zero docs/qa/99-close/dashboard.patch
+exit: 0
+
+command: git apply --unidiff-zero docs/qa/99-close/dashboard.patch
+exit: 0
+modified SHA-256 matches normalized modified baseline: True
+
+PATCH
+path: docs/qa/99-close/dashboard.patch
+SHA-256: 59DE1FD9235B6848A00F23FBE27E2D3FFA102AA165E4D5B9B3E2F3B4F64A30F6

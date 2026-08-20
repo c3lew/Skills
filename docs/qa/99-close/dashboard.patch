@@ -1,0 +1,21 @@
+diff --git a/dashboard.html b/dashboard.html
+index 34d5d7d..a6901a2 100644
+--- a/dashboard.html
++++ b/dashboard.html
+@@ -62 +62 @@
+-  <div class="where">現在在哪:<strong>舊帳已整理完</strong>。原本 22 張圍繞舊做法的單子,21 張已逐張說明並結案,只留下 1 張刻意保留的規則邊界。歷史檢查的說明也已校正:現有 12 支舊工具仍跑得起來,看到舊答案不合不代表現在的規則壞掉。#99 建立後新開的 #103、#104 是另外兩個已決定之後再修的小毛病,沒有藏進這批舊帳。這份儀表板也已完成對帳:<strong>現在是 8 個小毛病、8 列清單</strong>,已結案的單子不再混進來。</div>
++  <div class="where">現在在哪:<strong>舊帳已結案</strong>。原本 22 張圍繞舊做法的單子,21 張已逐張說明並結案,只留下 1 張刻意保留的規則邊界。歷史檢查的說明也已校正:現有 12 支舊工具仍跑得起來,看到舊答案不合不代表現在的規則壞掉。最後的獨立核對 7 項全數通過,沒有必須先修的問題。#99 建立後新開的 #103、#104 是另外兩個已決定之後再修的小毛病,沒有藏進這批舊帳。這份儀表板也已完成對帳:<strong>現在是 8 個小毛病、8 列清單</strong>,已結案的單子不再混進來。</div>
+@@ -66 +66 @@
+-    <div><strong>下一步:</strong>獨立核對 21 張結案紀錄、保留的規則邊界與歷史說明 — 走<code>/qa #99</code>(Codex:<code>$qa #99</code>)。</div>
++    <div><strong>下一步:</strong>這條線已收尾;要挑下一件工作時 — 走<code>/next</code>(Codex:<code>$next</code>)。</div>
+@@ -87 +87 @@
+-    <div class="slice-row"><span class="slice-name">清掉舊規則留下的過期單子</span><span class="badge">測試中</span><span class="bar"><i style="width:70%"></i></span></div>
++    <div class="slice-row"><span class="slice-name">清掉舊規則留下的過期單子</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
+@@ -95 +95 @@
+-      <div class="tile"><div class="num" style="color:var(--ok)">8</div><div class="lbl">既有功能全數正常</div></div>
++      <div class="tile"><div class="num" style="color:var(--ok)">10</div><div class="lbl">既有功能全數正常</div></div>
+@@ -187,2 +187,2 @@
+-      <li><span class="when">剛完成</span><span>「整理舊帳」已完成:21 張逐張結案、1 張保留成規則邊界,原本寫錯的歷史工具數字與使用說明也已校正。</span></li>
+-      <li><span class="when">接下來</span><span>這張沒有新的畫面要演;下一輪會獨立核對每張結案理由、保留邊界與說明是否能按字面重推。</span></li>
++      <li><span class="when">已結案</span><span>「整理舊帳」已完成:21 張逐張結案、1 張保留成規則邊界,原本寫錯的歷史工具數字與使用說明也已校正;最後 7 項獨立核對全數通過。</span></li>
++      <li><span class="when">接下來</span><span>這條線沒有待驗收項目;要挑下一件工作時,從上方的下一步開始。</span></li>
