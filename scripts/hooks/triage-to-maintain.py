@@ -47,6 +47,12 @@ def self_check():
 
 
 if __name__ == "__main__":
+    # #97: the pin is a convention now, not an inference — every file with a
+    # `__main__` block writes both lines at its first level, whether or not it
+    # ever prints. The `.buffer` write in `main()` stays exactly as it was:
+    # bytes carry no encoding, so these two lines are a harmless no-op for it.
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stdin.reconfigure(encoding="utf-8")
     if "--self-check" in sys.argv:
         self_check()
         sys.exit(0)
