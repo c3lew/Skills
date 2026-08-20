@@ -284,6 +284,10 @@ CONSUMED_BY = frozenset(  # names that drain the iterable handed to them
     "list tuple set frozenset dict sum min max any all sorted next join "
     "extend writelines".split())
 
+DRIVEN_BY = frozenset(  # names that hand a coroutine to the event loop (#87)
+    "run gather wait wait_for create_task ensure_future "
+    "run_until_complete".split())
+
 
 def names_in(expr):
     """Every identifier `expr` reads — `Name.id` and `Attribute.attr` alike.
@@ -416,7 +420,7 @@ def nodes_in(stmt, through=()):
 
 
 def consumes(node, through=(), shadowed=()):
-    """The expressions this one node really *iterates* (#86).
+    """The expressions this one node really *runs* (#86, #87).
 
     The other half of stopping at a `GeneratorExp`: a generator body does run
     once something consumes it, and the guard has to say where. Four positions
@@ -427,6 +431,15 @@ def consumes(node, through=(), shadowed=()):
     `for x in E` builds `E`, and only iterating the genexp iterates `E` in
     turn.
 
+    A coroutine is the third deferred body and drains the same way (#87).
+    `adump()` on an `async def` builds a coroutine with not one line of its
+    body run — the same claim `gens` makes about a generator def — and what
+    really runs it is being driven: `await c`, `async for` over an async
+    generator (already the `AsyncFor` branch), or being handed to the event
+    loop by one of the `DRIVEN_BY` names (`asyncio.run(c)`, `gather`,
+    `create_task`, …). Without those positions the `gens` half alone would
+    turn every awaited coroutine into a false red.
+
     A name the module binds itself is *not* the builtin it collides with, so
     `shadowed` takes it off the list: `def sorted(g): return g` consumes
     nothing, and reading it as the builtin would hand back the switch #86 was
@@ -434,10 +447,14 @@ def consumes(node, through=(), shadowed=()):
     That is why the collision is read off `binds`, the same collector #81 had
     to complete for the same reason.
 
-    ponytail: `CONSUMED_BY` is a name list, not a type check — the callee is
-    read by the same name-only reading `live_nodes` uses everywhere else. The
-    15 names on it drain an iterable; `map` / `filter` / `zip` / `enumerate`
-    are deliberately off it, because they are deferred themselves. Four
+    ponytail: `CONSUMED_BY` / `DRIVEN_BY` are name lists, not type checks —
+    the callee is read by the same name-only reading `live_nodes` uses
+    everywhere else, so a hand-rolled `run(coro)` of one's own is read as the
+    event loop's. That widens the live set (the quiet direction), but the
+    upgrade — telling `asyncio.run` from any other `run` — needs the import
+    graph this name-only call graph never has. The 15 names on `CONSUMED_BY`
+    drain an iterable; `map` / `filter` / `zip` / `enumerate` are
+    deliberately off it, because they are deferred themselves. Four
     consuming shapes are left out and each costs a false red, the noisy
     direction: unpacking (`a, b = gen()`, `*rest`), a consumer reached through
     a second name (`h = g; list(h)`), a generator handed back and consumed a
@@ -452,7 +469,7 @@ def consumes(node, through=(), shadowed=()):
     """
     if isinstance(node, (ast.For, ast.AsyncFor)):
         return [node.iter]
-    if isinstance(node, ast.YieldFrom):
+    if isinstance(node, (ast.YieldFrom, ast.Await)):
         return [node.value]
     if isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp)):
         return [c.iter for c in node.generators]
@@ -460,7 +477,7 @@ def consumes(node, through=(), shadowed=()):
         return [c.iter for c in node.generators] if node in through else []
     if isinstance(node, ast.Call):
         name = getattr(node.func, "id", getattr(node.func, "attr", None))
-        if name in CONSUMED_BY and name not in shadowed:
+        if name in CONSUMED_BY | DRIVEN_BY and name not in shadowed:
             return list(node.args) + [k.value for k in node.keywords]
     return []
 
@@ -655,6 +672,16 @@ def live_nodes(tree):
     spot or through the name it was bound to, a generator def called in a
     consumed position.
 
+    A coroutine is the third, and the same two halves carry it (#87). An
+    `async def` goes on `gens` whether or not its body yields — calling one
+    only builds a coroutine — and `consumes` names where one is really
+    driven: `await`, `async for`, and the event-loop entry points. An async
+    generator was already on `gens` for its `yield`; the plain `async def`
+    was not, which is why five shapes — a coroutine bound, bare, parked in a
+    container, handed to a def that does not await it, and the bypass written
+    straight into an un-awaited coroutine body — all rode on one `async`
+    keyword.
+
     ponytail: two approximations remain here — two defs sharing a name are
     one node, and a name handed to a call is assumed called by it (the three
     the generator half leaves are counted in `consumes`). Both widen the
@@ -675,7 +702,8 @@ def live_nodes(tree):
             if isinstance(n, ast.Return) and n.value is not None:
                 returned[RET + name] |= names_in(n.value) - local
     gens = {name for name, node in defs.items()  # calling one runs no line
-            if any(isinstance(n, (ast.Yield, ast.YieldFrom))
+            if isinstance(node, ast.AsyncFunctionDef)  # a coroutine — #87
+            or any(isinstance(n, (ast.Yield, ast.YieldFrom))
                    for n in own_scope(node))}
     shadowed = set().union(*map(binds, ast.walk(tree)) or [set()])
     live, body, eaten_gens = set(), runs(tree.body), set()
