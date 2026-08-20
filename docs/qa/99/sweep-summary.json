@@ -1,0 +1,74 @@
+[
+  {
+    "script": "57-guard-sweep.py",
+    "exit": 0,
+    "traceback": false,
+    "summary": "   繞過(Codex 半移到 span 外)   -> ['qa'] (非空 = 咬到) |    對照組 2 個方向咬到 2 個 -> 驗法本身有效:上面那 4 個格子的值是那幾支 guard 的性質,不是這支掃描壞掉。"
+  },
+  {
+    "script": "60-mention-sweep.py",
+    "exit": 1,
+    "traceback": false,
+    "summary": " | 母體 13,不合 1"
+  },
+  {
+    "script": "65-nesting-sweep.py",
+    "exit": 0,
+    "traceback": false,
+    "summary": " | 母體 22,不合 0"
+  },
+  {
+    "script": "73-reach-sweep.py",
+    "exit": 1,
+    "traceback": false,
+    "summary": " | 母體 6,不合 6"
+  },
+  {
+    "script": "75-binding-sweep.py",
+    "exit": 1,
+    "traceback": false,
+    "summary": " | 母體 12,不合 12"
+  },
+  {
+    "script": "79-return-sweep.py",
+    "exit": 1,
+    "traceback": false,
+    "summary": " | 母體 13,不合 1"
+  },
+  {
+    "script": "81-lambda-sweep.py",
+    "exit": 1,
+    "traceback": false,
+    "summary": " | 母體 9,不合 2"
+  },
+  {
+    "script": "83-deferred-sweep.py",
+    "exit": 1,
+    "traceback": false,
+    "summary": " | 母體 11,不合 3"
+  },
+  {
+    "script": "84-generator-sweep.py",
+    "exit": 1,
+    "traceback": false,
+    "summary": " | 母體 12,不合 5"
+  },
+  {
+    "script": "86-async-sweep.py",
+    "exit": 1,
+    "traceback": false,
+    "summary": " | 母體 11,不合 10"
+  },
+  {
+    "script": "87-drive-sweep.py",
+    "exit": 1,
+    "traceback": false,
+    "summary": " | 母體 12,不合 11"
+  },
+  {
+    "script": "91-graph-sweep.py",
+    "exit": 1,
+    "traceback": false,
+    "summary": " | 母體 10,不合 2"
+  }
+]

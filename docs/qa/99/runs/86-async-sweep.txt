@@ -1,0 +1,13 @@
+別的 def 裡的 local 叫 list `def u(): list = 1`                   期望 GREEN  實際 RED    MISMATCH
+別的 def 的 parameter 叫 list `def u(list)`                      期望 GREEN  實際 RED    MISMATCH
+comprehension target 叫 list `[list for list in []]`          期望 GREEN  實際 RED    MISMATCH
+`with … as list` 在別的 def 裡                                   期望 GREEN  實際 RED    MISMATCH
+`except … as list` 在別的 def 裡                                 期望 GREEN  實際 RED    MISMATCH
+class body 裡的 attribute 叫 list `class W: list = 1`           期望 GREEN  實際 RED    MISMATCH
+import alias 叫 list `from collections import deque as list`  期望 GREEN  實際 RED    MISMATCH
+巢狀 def 叫 list `def u(): def list(): …`                       期望 GREEN  實際 RED    MISMATCH
+連死碼分支裡的 for target 都算 `if False: for list in []`             期望 GREEN  實際 RED    MISMATCH
+對照:模組真的 `def sorted(g): return g`(#86 review 收的那條,不得放掉)      期望 RED    實際 RED    ok
+對照:沒有任何撞名,`list(g)` 照常消費(不得誤紅)                               期望 GREEN  實際 RED    MISMATCH
+
+母體 11,不合 10

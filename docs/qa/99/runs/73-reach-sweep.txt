@@ -1,0 +1,8 @@
+對照:alias `f = dump; f()`(#71 修好的形狀,不得誤紅)                  期望 GREEN  實際 RED    MISMATCH
+for 迴圈變數 `for f in [dump]: f()`                           期望 GREEN  實際 RED    MISMATCH
+tuple 解包 `a, b = dump, dump; a()`                         期望 GREEN  實際 RED    MISMATCH
+帶型別註記的綁定 `f: object = dump; f()`                          期望 GREEN  實際 RED    MISMATCH
+factory 回傳 callable `def get(): return dump` + `get()()`  期望 GREEN  實際 RED    MISMATCH
+class 屬性 `class W: run = dump` + `W.run()`                期望 GREEN  實際 RED    MISMATCH
+
+母體 6,不合 6

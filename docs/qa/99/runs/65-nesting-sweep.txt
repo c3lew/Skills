@@ -1,0 +1,24 @@
+top-level(對照組,沒包) — 裸 print                 期望 RED    實際 RED    ok
+top-level(對照組,沒包) — 有 pin(不得誤紅)             期望 GREEN  實際 GREEN  ok
+try / except — 裸 print                      期望 RED    實際 RED    ok
+try / except — 有 pin(不得誤紅)                  期望 GREEN  實際 GREEN  ok
+try / finally — 裸 print                     期望 RED    實際 RED    ok
+try / finally — 有 pin(不得誤紅)                 期望 GREEN  實際 GREEN  ok
+if True — 裸 print                           期望 RED    實際 RED    ok
+if True — 有 pin(不得誤紅)                       期望 GREEN  實際 GREEN  ok
+if / else 的 else 半邊 — 裸 print               期望 RED    實際 RED    ok
+if / else 的 else 半邊 — 有 pin(不得誤紅)           期望 GREEN  實際 GREEN  ok
+with — 裸 print                              期望 RED    實際 RED    ok
+with — 有 pin(不得誤紅)                          期望 GREEN  實際 GREEN  ok
+for — 裸 print                               期望 RED    實際 RED    ok
+for — 有 pin(不得誤紅)                           期望 GREEN  實際 GREEN  ok
+while — 裸 print                             期望 RED    實際 RED    ok
+while — 有 pin(不得誤紅)                         期望 GREEN  實際 GREEN  ok
+包兩層(try 裡再一個 if True) — 裸 print             期望 RED    實際 RED    ok
+包兩層(try 裡再一個 if True) — 有 pin(不得誤紅)         期望 GREEN  實際 GREEN  ok
+def 裡(import 時不會跑,但守門往嚴的方向偏) — 裸 print      期望 RED    實際 RED    ok
+def 裡(import 時不會跑,但守門往嚴的方向偏) — 有 pin(不得誤紅)  期望 GREEN  實際 GREEN  ok
+class body 裡 — 裸 print                      期望 RED    實際 RED    ok
+class body 裡 — 有 pin(不得誤紅)                  期望 GREEN  實際 GREEN  ok
+
+母體 22,不合 0

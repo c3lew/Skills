@@ -1,0 +1,33 @@
+validate.py 一共 12 個 errors.append 點,分成 4 類:
+  prose-assertion(受測形狀):2 個 -> ['L357', 'L362']
+      L357  if unpushed_commit_link_issue(text):
+      L362  if missing_blocking_audit_issue(text):
+  prose-span(對照組):1 個 -> ['L369']
+      L369  for name in find_slash_only_handoffs(text):
+  code-position:0 個 -> []
+  結構/存在性:9 個 -> ['L191', 'L308', 'L321', 'L346', 'L351', 'L355', 'L385', 'L390', 'L400']
+      L191  if name in PLACEHOLDER_SKILLS or name in present:
+      L308  if not is_source(rel):
+      L321  if all(any(ast.unparse(s) == pin for s in m.body) for m in mains):
+      L346  if not skill_md.is_file():
+      L351  if fm is None:
+      L355  if not fm.get(field):
+      L385  if repo_scoped:
+      L390  if repo_scoped:
+      L400  if (
+
+受測形狀 = prose-assertion(讀散文證明「某句指示存在」)。母體 2 個,下面每一個都驗兩個方向。
+
+1) missing_blocking_audit_issue(#57 新增)
+   改壞(整句刪掉)                   -> True (True = 咬到)
+   繞過(條件詞留著、動作反過來)            -> True (True = 咬到)
+2) unpushed_commit_link_issue(既有,同形狀)
+   改壞(有 commit link、沒 push)   -> True (True = 咬到)
+   繞過(push 在前面但被反過來寫)         -> True (True = 咬到)
+
+受測母體 2 支 × 2 個方向 = 4 個格子,咬到 4 個。
+
+3) find_slash_only_handoffs(對照組:span-scoped 共現,不是單一關鍵詞)
+   改壞(拿掉 Codex 半)         -> ['qa'] (非空 = 咬到)
+   繞過(Codex 半移到 span 外)   -> ['qa'] (非空 = 咬到)
+   對照組 2 個方向咬到 2 個 -> 驗法本身有效:上面那 4 個格子的值是那幾支 guard 的性質,不是這支掃描壞掉。

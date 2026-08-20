@@ -1,0 +1,4 @@
+{
+  "exit": 0,
+  "tail": "AWAIT_SHAPES / 對照:`c = adump()` 綁著沒人驅動(#87 母體第一格,不得放掉)                                    fixture 期望 RED   真跑 RED    ok |  | 母體 84,fixture 期望與實跑不合 0"
+}

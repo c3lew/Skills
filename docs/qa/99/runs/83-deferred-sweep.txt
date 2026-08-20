@@ -1,0 +1,13 @@
+綁著沒呼叫 `f = lambda: dump()`                                               期望 RED    實際 RED    ok
+list 裡的 lambda 沒呼叫 `xs = [lambda: dump()]`                               期望 RED    實際 RED    ok
+dict 裡的 lambda 沒呼叫 `d = {"k": lambda: dump()}`                           期望 RED    實際 RED    ok
+裸 lambda literal 在 live 位置沒呼叫 `(lambda: dump())`                         期望 RED    實際 RED    ok
+comprehension 裡的 lambda 沒呼叫 `[lambda: dump() for _ in []]`               期望 RED    實際 RED    ok
+三元裡的 lambda 沒呼叫 `None if xs else (lambda: dump())`                       期望 RED    實際 RED    ok
+天花板(#84 留,仍是誤放):def 內就地呼叫但結果丟掉 `return (lambda: dump)()` 配 `get()`       期望 RED    實際 RED    ok
+對照:`return (lambda: dump())()` 配 `get()` —— lambda 就地被呼叫、dump 真的跑(不得誤紅)  期望 GREEN  實際 RED    MISMATCH
+對照:`def g(cb=lambda: dump())` 預設引數,g 沒被呼叫(現在就是 RED,不得放掉)                 期望 RED    實際 RED    ok
+對照:`f = lambda: dump()` 且真的 `f()`(不得誤紅)                                  期望 GREEN  實際 RED    MISMATCH
+對照:`(lambda: dump())()` 就地呼叫(不得誤紅)                                       期望 GREEN  實際 RED    MISMATCH
+
+母體 11,不合 3

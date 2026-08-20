@@ -1,0 +1,14 @@
+模組自己 `def run(x)`,`asyncio.run(adump())` 真的在跑                             期望 GREEN  實際 RED    MISMATCH
+模組自己 `def gather(x)`,`await asyncio.gather(adump())` 真的在跑                 期望 GREEN  實際 RED    MISMATCH
+模組自己 `def wait_for(x)`,`await asyncio.wait_for(adump(), 5)` 真的在跑          期望 GREEN  實際 RED    MISMATCH
+模組自己 `def create_task(x)`,`asyncio.create_task(adump())` 真的在跑             期望 GREEN  實際 RED    MISMATCH
+模組自己 `def ensure_future(x)`,`await asyncio.ensure_future(adump())` 真的在跑   期望 GREEN  實際 RED    MISMATCH
+模組自己 `def run_until_complete(x)`,`loop.run_until_complete(adump())` 真的在跑  期望 GREEN  實際 RED    MISMATCH
+別的 def 的參數叫 run `def u(run)`                                              期望 GREEN  實際 RED    MISMATCH
+別的 def 裡的 local 叫 wait_for `def u(): wait_for = 1`                        期望 GREEN  實際 RED    MISMATCH
+comprehension target 叫 gather `[gather for gather in []]`                 期望 GREEN  實際 RED    MISMATCH
+`import json as run` 撞名                                                   期望 GREEN  實際 RED    MISMATCH
+對照:沒有任何撞名,`asyncio.run(adump())` 照常驅動(不得誤紅)                               期望 GREEN  實際 RED    MISMATCH
+對照:自己的 `def run(x): return x` 真的沒驅動(shadowed 這半的價值,不得放掉)                  期望 RED    實際 RED    ok
+
+母體 12,不合 11

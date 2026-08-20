@@ -1,0 +1,485 @@
+{
+  "obsolete_16": [
+    {
+      "number": 72,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 76,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 77,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 78,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 79,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 80,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 82,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 85,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 87,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 88,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 89,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 91,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 92,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 93,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 94,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    },
+    {
+      "number": 95,
+      "state": "CLOSED",
+      "last_comment": "#96 已改判準；這張量的判準在新規則下不存在了，因此結案。落地：#97。"
+    }
+  ],
+  "merged_4": [
+    {
+      "number": 66,
+      "state": "CLOSED",
+      "last_comment": "#96 已把本票併入新 spec；對應入口缺口已由 #98 落地並通過 QA，因此結案。"
+    },
+    {
+      "number": 68,
+      "state": "CLOSED",
+      "last_comment": "#96 已把本票併入新 spec；對應入口缺口已由 #98 落地並通過 QA，因此結案。"
+    },
+    {
+      "number": 69,
+      "state": "CLOSED",
+      "last_comment": "#96 已把本票併入新 spec；對應入口缺口已由 #98 落地並通過 QA，因此結案。"
+    },
+    {
+      "number": 74,
+      "state": "CLOSED",
+      "last_comment": "#96 已把本票併入新 spec；「沒有裸 print 就豁免」已由 #97 移除並通過 QA，因此結案。"
+    }
+  ],
+  "issue_60": {
+    "state": "CLOSED",
+    "body": "## 狀態\n\n**已由 #96 改寫判準，實作落在 #97 / #98。** 本票保留的是舊 AC1 的問題來源與改判準紀錄。\n\n## 新 AC1\n\n有 `if __name__ == \"__main__\":` 的 `.py`，必須在**每一個該 block 的第一層**寫\n`sys.stdout.reconfigure(encoding=\"utf-8\")`；AST 內真的有 `sys.stdin` attribute 的檔案，\n同一層也必須寫 `sys.stdin.reconfigure(encoding=\"utf-8\")`。\n\n判準不再看 `.buffer`、裸 `print(`、可達性或實際輸出內容；沒有 bypass 豁免。\n\n## 為什麼改\n\n舊 AC1 要求判斷 `sys.stdout.buffer.write` 是否位於「會被執行的位置」。#60–#95 這段紀錄\n累積了 31 張票、557 行可達性分析；repo 現有 12 支 `*-sweep.py`，其 fixture 數會隨旗標模式改變；#96 盤點後確認這個開放式\n判準無法靠有限 AST 列舉收斂，因此改成可直接做語法比對的固定約定。\n\n## 驗收與落地\n\n- #97：新判準上線、舊可達性分析移除。\n- #98：多個 `__main__`、parse 失敗與 `__main__.py` 三個入口缺口補齊。\n- #97 / #98 均已通過 QA 並結案。\n\n## 出處\n\n#96（spec：#60 AC1 改判準）。\r\n\r\n",
+    "comments": [
+      "## Demo 處置決定(#58 收尾)\n\nclient 在 `/client-demo #58` 整批確認:**之後修**(非 blocking,不擋 #58 過關)。理由見 [#58 demo checkpoint](https://github.com/c3lew/Skills/issues/58#issuecomment-5337502810)。票留著排期。",
+      "## `/maintain` 分流:第一批,現在做\n\nClient 在 `/maintain` 批次分流拍板 **現在做**。與 #64 同一批(同病:守門形同虛設;兩張都動 `scripts/validate.py`)。\n\n**分級閉環**:agent-自撿(來源 `/qa #58` 獨立 judge gap #5)→ regression 全綠 + 白話回報即結案。\n\n### 重現 scenario(`/qa` 要跑 regression + 這條)\n\n1. 開一支新 script,裡面用裸 `print(` 輸出,**沒有**做 `sys.stdout.reconfigure`\n2. 在檔案任一處(docstring 或註解都行)寫下字串 `sys.stdout.buffer`,例如 `# 這裡沒走 sys.stdout.buffer`\n3. 跑 `python scripts/validate.py`\n4. 現況:綠(豁免是全檔 substring 比對,註解就把守門關掉了)\n5. 期望:紅 —「註解提到就豁免」不成立\n\n### 完工定義\n\n- [ ] 豁免改成位置/語意判準(真的在會執行的位置用 `sys.stdout.buffer.write`,或檔案裡沒有裸 `print(`),不是全檔 substring\n- [ ] self-check 補一條咬上面那個 mutation\n- [ ] 現況唯一走這條路的 `scripts/hooks/triage-to-maintain.py` L35 仍被正確豁免(不得誤紅)\n- [ ] `python scripts/validate.py` 綠\n\n下一步:`/build #60`(Codex: `$build #60`)。與 #64 可整批走 `/build-batch`。\n",
+      "## `/build #60` 完成 — 豁免從 substring 改成 AST 判準\n\n**commit**: [`d3cc9ed`](https://github.com/c3lew/Skills/commit/d3cc9ed) ｜ merge [`b5987ba`](https://github.com/c3lew/Skills/commit/b5987ba)(已在 `main`)\n\n### 改了什麼\n\n`scripts/validate.py` 的 `stream_encoding_issues` 不再掃檔案文字,改讀 AST:\n\n- **豁免**:`sys.stdout.buffer` / `sys.stdin.buffer` 必須是真的 attribute access。comment 在 parse 前就被丟掉,docstring 是 `str` constant 不是 `Attribute`,所以「提到」不算「用到」。\n- **pin**:順手一起改。原本 `text.rfind(pin) > entry` 是同一個病(位置化的 substring),現在直接找 module top-level 那個 `If` node、要求 `sys.stdout.reconfigure(encoding=\"utf-8\")` 這個 call 真的落在 block 裡。\n- 新增兩支 helper:`code_exprs(node)`(walk 出所有 Attribute/Call 的 normalised source)、`norm(expr)`(把比對目標也過一次 `ast.unparse`,免得雙引號/單引號對不上)。\n- 檔案 parse 不過(`SyntaxError`)就跳過 — 那種檔案本來也沒人跑得起來。\n\n### 完工定義對帳\n\n- [x] 豁免改成位置/語意判準,不是全檔 substring\n- [x] self-check 補 4 條 mutation:comment 提到 bypass、docstring 提到 bypass、comment 提到 pin、字串常數裡的 bypass — 全部要紅\n- [x] `scripts/hooks/triage-to-maintain.py` L35 仍正確豁免(`sys.stdout.buffer.write` 在真的執行位置),`python scripts/validate.py` 綠\n- [x] `python scripts/validate.py --self-check` 綠;`batch.py` / `install.py` / `triage-to-maintain.py` 三支 self-check 一起跑過,沒有 regression\n\n### 票上的重現 scenario(實跑)\n\n丟一支 `scripts/_repro60.py`,裸 `print(\"要開的票\")` + 一行 `# 這裡沒走 sys.stdout.buffer`:\n\n```\nFAIL scripts/_repro60.py: runnable script does not pin stdout to UTF-8 inside its\n`if __name__ == \"__main__\"` block — its 中文 output is mojibake on a cp950 console (#58)\nexit=1\n```\n\n修之前這條是綠的。\n\n### review findings\n\ndiff 41 行,自審沒有需要處置的 finding。兩點記錄一下,不是問題但值得知道:\n\n- `from sys import stdin` 這種 import 形式仍偵測不到(改之前也一樣),不在這張票範圍。\n- 判準比之前嚴格:pin 必須真的在 `__main__` block 裡(以前只要文字上在它後面就算)。全 repo 跑過,沒有誤紅。\n\n下一步:`/qa #60`(Codex: `$qa #60`)\n",
+      "## `/qa #60` 完成 — 驗收原句全過,但抓到一條 blocking regression\n\n**HEAD**: `b5987ba` ｜ QA artifact commit [`1c681df`](https://github.com/c3lew/Skills/commit/1c681df)\n｜ 報告全文:[`docs/qa/60-walkthrough.md`](https://github.com/c3lew/Skills/blob/main/docs/qa/60-walkthrough.md)\n\n### 白話摘要\n\n票上要修的那件事修好了:註解、docstring、字串常數裡**提到** `sys.stdout.buffer`,現在都不再\n讓守門閉嘴 —— 我把「散文能出現的位置」全列出來掃,13 條全中,不是只重跑票上撞到的那一行。\n\n但這次改動順手把「哪些檔要受檢」也換成 AST,那半邊漏了:`if __name__ == \"__main__\"` 只要\n**縮排一層**(包在 `try:` 或 `if True:` 底下),守門就整支檔案跳過,連看都不看。一支裸 `print(`\n的 script 這樣寫就無聲過關 —— 跟 #60 要防的病同一類,前門鎖了側門開了。而且這是 regression:\n同樣的 case 在 `d3cc9ed^`(改之前)判紅。\n\n### Regression suite\n\n`validate.py` + 五支 self-check(`validate` / `scripts/batch` / `build-batch/batch` / `install` /\n`triage-to-maintain`)全綠,沒有一條紅。\n\n### 驗收原句逐條(獨立 judge 判定)\n\njudge 是乾淨 subagent,只拿驗收原句 + transcript,沒有實作脈絡。\n\n| 條目 | 判定 |\n| --- | --- |\n| 重現 scenario(裸 print + 註解提到 bypass → 期望紅) | **pass** — 原樣重跑判紅,error 指名該檔 |\n| AC1 豁免改成位置/語意判準 | **pass** — 母體 13 全中,加碼位置判準 4/4 |\n| AC2 self-check 補一條咬那個 mutation | 第一輪 **fail(舉證不足)** → 補反證後 **pass** |\n| AC3 `triage-to-maintain.py` L35 仍豁免 | **pass** — 該檔 error 數 = 0 |\n| AC4 `validate.py` 綠 | **pass** |\n\nAC2 那條值得記一下 judge 的原話:「self-check 綠這件事跟有沒有新增那條 case 是不相關的 ——\n沒加 case 也會綠。」所以補了 STEP 1b 反著驗:副本裡把豁免改回 substring 寫法,`--self-check`\n就轉紅,而且爆掉的 assert 印出來的就是那條 `# 這裡沒走 sys.stdout.buffer` mutation。\n\n### 同型全掃\n\n一條 fail 當尺,掃過同一份 artifact 的所有同型句子。三張母體表,`scripts/qa/60-mention-sweep.py`\n一次跑完:\n\n| 表 | 母體 | 不合 |\n| --- | --- | --- |\n| 提到 vs 用到(檔頭/行內 comment、docstring、字串常數、f-string、近似變數名 × bypass/pin + 3 條真的用到) | 13 | 0 |\n| 位置判準(pin 在 `main()` / `__main__` 之前 / 真的在 block 裡 / block 內的 try) | 4 | 0 |\n| **守門靜默跳過的路**(`try` 底下、`if True` 底下、`SyntaxError`) | 3 | **3** |\n\n第三張帶 `--old`,把 `d3cc9ed^` 那版守門拉出來跑同一組 case:3 條全判紅。證明是這次改動引入的,\n不是舊坑。\n\n### Blocking\n\n- **#65** — `__main__` 縮排一層就整檔跳過。修完重跑 `/qa #60`。\n\n### Known issues(非 blocking,由 client 在 demo 收尾整批確認)\n\n- **#66** — 檔案 `SyntaxError` → 整檔跳過。build 已在 code 裡註明是取捨,但一樣違反\n  written-evidence〈Guard 的完工定義〉第三條,留票排期。\n- `from sys import stdout` 偵測不到 — build 自己記過,改之前也一樣,不是這輪 regression。\n- `sys.stdout.reconfigure(\"utf-8\")`(位置引數)判紅 — 等價安全但寫法不同,改之前同樣判紅。\n- STEP 1b 那段 traceback 中文是 mojibake — traceback 走 stderr,`STREAM_PINS` 只管 stdout/stdin,\n  不在 #58 立的規矩範圍內。\n\n### 未涵蓋範圍\n\n沒有 UI、沒有 Tauri 原生殼,不適用。全部是 CLI guard,終端 transcript 即實錄\n(全程 bash xtrace,指令與輸出同一份,沒有事後 render)。\n\n### Demo 實錄\n\n| 驗收項 | 實錄 |\n| --- | --- |\n| 全部(STEP 1–7,含 1b/6b/6c) | [`docs/qa/60-walkthrough.md`](https://github.com/c3lew/Skills/blob/main/docs/qa/60-walkthrough.md)〈終端實錄〉 |\n\n### 一鍵重開\n\n```bash\nbash scripts/qa/60-walkthrough.sh \"$(mktemp -d)/qa60\"\n```\n\n下一步:`/build #65`(Codex: `$build #65`),修完重跑 `/qa #60`。\n",
+      "## `/qa #60` 第二輪完成 — #65 已修,但同型全掃再抓到一條 blocking(#70)\n\n**HEAD**: `411531d` ｜ QA artifact commit [`fdc486d`](https://github.com/c3lew/Skills/commit/fdc486d)\n｜ 報告全文:[`docs/qa/60-walkthrough-r2.md`](https://github.com/c3lew/Skills/blob/main/docs/qa/60-walkthrough-r2.md)\n\n### 白話摘要\n\n上一輪擋住的 #65(`__main__` 縮排一層就整檔跳過)修好了 —— 同一張表這輪 `try` / `if True`\n兩條都判紅,只剩 `SyntaxError`(#66,已開票)。\n\n但這輪換一把尺再掃:AC1 原句要的是「真的在**會執行的位置**」用 `sys.stdout.buffer.write`。\n現在的豁免是 `norm(bypass) in whole` —— **整棵 AST 任何地方**出現一次就整支檔案豁免。所以\n在死碼、跑不到的 `except`、或一個沒人呼叫的 function 裡塞一行,一支裸 `print(` 的 script\n照樣無聲過關。判準只是從「文字任何地方」換成「AST 任何地方」,位置那半從來沒做。\n\n這不是 regression:`--old` 對照組(`d3cc9ed^`)同樣 4 條不合,是天花板沒抬。但它落在 #60\n自己的 AC1 原句上,所以算 blocking,不是 known issue。\n\n### Regression suite\n\n`validate.py` + 五支 self-check(`validate` / `scripts/batch` / `build-batch/batch` / `install` /\n`triage-to-maintain`)全綠,沒有一條紅。\n\n### 驗收原句逐條(獨立 judge 判定)\n\njudge 是乾淨 subagent,只拿驗收原句 + transcript,沒有實作脈絡。\n\n| 條目 | 判定 |\n| --- | --- |\n| 重現 scenario(裸 print + 註解提到 bypass → 期望紅) | **pass** |\n| AC1 豁免改成位置/語意判準 | **fail(works-but-wrong)** — 語意那半成立,位置那半沒做 |\n| AC2 self-check 補一條咬那個 mutation | **pass**(STEP 1b 反證) |\n| AC3 `triage-to-maintain.py` L35 仍豁免 | **pass**(該檔 error 數 = 0) |\n| AC4 `python scripts/validate.py` 綠 | **pass** |\n\njudge 除了判 AC1 fail,還追問「AC1 括號的第二支路(**或**檔案裡沒有裸 `print(`)有沒有做?」\n—— 補跑 STEP 6f 三條 case(整檔沒 print、print 只在 comment 裡、只寫檔案不印 console),\n實際全判紅,證明守門根本不看 print。judge 複判逐字:\n\n> 它是 disjunction 沒錯,但 disjunction 要救人的前提是**至少有一支真的存在**……而且方向反了:\n> 第二支路是**放寬**豁免,不是收緊 —— 就算它有做,也不可能替 A 補上「會執行的位置」這個 A\n> 獨有的收緊語意。\n\n### 同型全掃\n\n一條 fail 當尺,掃過同一份 artifact 的所有同型 case。`scripts/qa/60-mention-sweep.py` 一次跑完:\n\n| 表 | 母體 | 不合 |\n| --- | --- | --- |\n| 提到 vs 用到(散文能出現的每個位置 × bypass/pin + 3 條真的用到) | 13 | 0 |\n| 位置判準 — pin(`main()` / `__main__` 之前 / 真的在 block 裡 / block 內的 try) | 4 | 0 |\n| 守門靜默跳過的路(`try` 底下、`if True` 底下、`SyntaxError`) | 3 | **1**(只剩 #66) |\n| **位置判準 — bypass**(沒人呼叫的 function、`if False:`、跑不到的 except、`raise` 之後 + 2 條合法對照) | 6 | **4** |\n\n第四張帶 `--old` 再跑一次:改之前同樣 4 條不合 → 天花板沒抬,不是這次改動引入的。\n\n### Blocking\n\n- **#70** — `sys.stdout.buffer` 豁免吃整棵 AST,死碼裡塞一行就整檔豁免。修完重跑 `/qa #60`。\n\n修法的難點票上有寫:真的走這條路的 `triage-to-maintain.py` 把 `sys.stdout.buffer.write` 放在\n`main()` 裡由 `__main__` 呼叫,「真的會執行」需要跨 function 的可達性,不是一個 node 的位置\n就能判 —— 所以票上給了兩個方向(module 內一層 call-graph / 只擋死碼那 4 條),沒綁死。\n\n### Known issues(非 blocking,由 client 在 demo 收尾整批確認)\n\n- **#66** — 檔案 `SyntaxError` → 整檔跳過。\n- **#67 / #68 / #69** — `/qa #65` 那輪挖出的三條守門天花板,不在 #60 的驗收原句上。\n- `from sys import stdout` 偵測不到 — 改之前也一樣。\n- `sys.stdout.reconfigure(\"utf-8\")`(位置引數)判紅 — 等價安全但寫法不同,改之前同樣判紅。\n- STEP 1b 那段 traceback 中文是 mojibake — traceback 走 stderr,不在 #58 立的規矩範圍內。\n\n### 未涵蓋範圍\n\n沒有 UI、沒有 Tauri 原生殼,不適用。全部是 CLI guard,終端 transcript 即實錄\n(全程 bash xtrace,指令與輸出同一份,沒有事後 render)。\n\n### Demo 實錄\n\n| 驗收項 | 實錄 |\n| --- | --- |\n| 全部(STEP 1–7,含 1b / 6b–6f) | [`docs/qa/60-walkthrough-r2.md`](https://github.com/c3lew/Skills/blob/main/docs/qa/60-walkthrough-r2.md)〈終端實錄〉 |\n\n### 一鍵重開\n\n```bash\nbash scripts/qa/60-walkthrough.sh \"$(mktemp -d)/qa60\"\n```\n\n下一步:`/build #70`(Codex: `$build #70`),修完重跑 `/qa #60`。\n",
+      "## `/qa #60` 第三輪完成 — #70 已修,但同型全掃抓到「判準拉過頭」的誤紅(#71)\n\n**HEAD**: `188c7d8` ｜ QA artifact commit [`0dbf663`](https://github.com/c3lew/Skills/commit/0dbf663)\n｜ 報告全文:[`docs/qa/60-walkthrough-r3.md`](https://github.com/c3lew/Skills/blob/main/docs/qa/60-walkthrough-r3.md)\n\n### 白話摘要\n\n上一輪擋住的 #70(死碼裡塞一行 `sys.stdout.buffer` 就整檔豁免)修好了 —— 同一張表這輪\n6 條全對,`--old` 對照組仍 4 條不合,天花板是真的抬了。\n\n但這輪換一把尺:#70 把判準從「太寬」拉回來,**拉過頭了**。AC1 原句要的是「真的在**會執行的\n位置**」用 `sys.stdout.buffer.write`,而新的 call graph 只認名字對得上的 call site —— 把 def\n當值傳遞(alias、handler dict、callback)走到的 bypass 被當成沒人呼叫,判紅。那三種形狀是\n真的會執行的。同一句 AC 括號裡的第二支路(「**或**檔案裡沒有裸 `print(`」)則從頭到尾沒實作,\n所以一支完全不印 console 的 script 也被誤紅。\n\n兩處都往誤紅倒,都落在 AC1 原句上 → judge 判 works-but-wrong。(a) 那半還是 regression:\n`--callgraph --old` 在 `d3cc9ed^` 4 條全綠。\n\n誤紅是 fail-safe 方向(壞 script 不會溜過去),但它就是 AC1 講的那件事沒做對,所以算 blocking\n不算 known issue。\n\n### Regression suite\n\n`validate.py` + 五支 self-check(`validate` / `scripts/batch` / `build-batch/batch` / `install` /\n`triage-to-maintain`)全綠,沒有一條紅。\n\n### 驗收原句逐條(獨立 judge 判定)\n\njudge 是乾淨 subagent,只拿驗收原句 + transcript,沒有實作脈絡,也沒讀 repo 原始碼。\n\n| 條目 | 判定 |\n| --- | --- |\n| 重現 scenario(裸 print + 註解提到 bypass → 期望紅) | **pass** |\n| AC1 豁免改成位置/語意判準 | **fail(works-but-wrong)** — 判準比原句窄,兩種誤紅 |\n| AC2 self-check 補一條咬那個 mutation | **pass**(STEP 1b 反證) |\n| AC3 `triage-to-maintain.py` L35 仍豁免 | **pass**(該檔 error 數 = 0) |\n| AC4 `python scripts/validate.py` 綠 | **pass** |\n\njudge 對那個「或」的推理逐字:\n\n> 「或」在這裡是 disjunction,任一成立就該豁免,不是二選一實作。所以第二支路缺席不是\n> 「換個做法達成同樣效果」,而是少了一整條豁免路徑:一支完全不印 console 的 script 現在\n> 會被誤紅。……反過來,如果只有 6f 這一條,還可以爭論「第二支路是 nice-to-have」;但 6i\n> 那三條誤紅是打在 AC1 **第一**支路的正中心,沒有解釋空間。\n\n第二輪的 judge 也判過同一段 STEP 6f,但那時問的是「第二支路能不能替第一支路的 fail 補分」\n(答案:不能)。這輪問的是另一件事:第二支路**缺席本身**造成誤紅。兩個判定不衝突。\n\n### 同型全掃\n\n一條 fail 當尺,掃過同一份 artifact 的所有同型 case。`scripts/qa/60-mention-sweep.py` 一次跑完\n六張母體表:\n\n| 表 | 旗標 | 母體 | 不合 |\n| --- | --- | --- | --- |\n| 提到 vs 用到(散文能出現的每個位置 × bypass/pin + 3 條真的用到) | (無) | 13 | 0 |\n| 位置判準 — pin(`main()` / `__main__` 之前 / 真的在 block 裡 / block 內的 try) | `--positional` | 4 | 0 |\n| 守門靜默跳過的路(`try` 底下、`if True` 底下、`SyntaxError`) | `--skips` | 3 | 1(#66) |\n| 位置判準 — bypass(死碼 4 條 + 2 條合法對照) | `--bypass-position` | 6 | **0**(上輪 4) |\n| **可達性判準 — pin 那半沒裝**(`if False:` / `raise` 之後 / 沒人呼叫的 nested def / 跑不到的 except + 2 條對照) | `--pin-position` | 6 | **4** |\n| **call graph 的解析度**(alias / handler dict / callback + 1 條對照) | `--callgraph` | 4 | **3** |\n\n`--old` 對照組(`d3cc9ed^`)跑同一組 case:\n\n| 表 | 現況不合 | `--old` 不合 | 結論 |\n| --- | --- | --- | --- |\n| `--bypass-position` | 0 | 4 | 這輪真的抬了天花板 |\n| `--pin-position` | 4 | 4 | 天花板沒抬也沒退,**不是** regression |\n| `--callgraph` | 3 | 0 | **是** #70 修法引入的 regression |\n\n### Blocking\n\n- **#71** — bypass 豁免的判準比 AC1 原句窄:alias / handler dict / callback 三種真的會執行的\n  形狀誤紅(regression);AC1 第二支路「或檔案裡沒有裸 `print(`」完全沒實作。修完重跑 `/qa #60`。\n\n修法的難點票上有寫:修誤紅時不能把 #70 的天花板放掉 —— `--bypass-position` 那 4 條死碼案例\n必須維持 RED。票上給了兩個方向,沒綁死。\n\n### Known issues(非 blocking,由 client 在 demo 收尾整批確認)\n\n- **#72** — 可達性判準只裝在 bypass 那半,`__main__` 死碼裡的 pin 照樣算數(母體 6 不合 4,\n  `--old` 同樣 4 不合,不是 regression)。\n- **#66** — 檔案 `SyntaxError` → 整檔跳過。\n- **#67 / #68 / #69** — `/qa #65` 那輪挖出的三條守門天花板,不在 #60 的驗收原句上。\n- `install.py --self-check` 印出的 `[fixture] FAIL skills/bad: missing SKILL.md` 是 fixture 的\n  預期輸出洩到 stdout,不是失敗 —— judge 主動指出這行很容易被誤讀成真的 FAIL。噪音,沒開票。\n- `from sys import stdout` 偵測不到 — 改之前也一樣。\n- `sys.stdout.reconfigure(\"utf-8\")`(位置引數)判紅 — 等價安全但寫法不同,改之前同樣判紅。\n- STEP 1b 那段 traceback 中文是 mojibake — traceback 走 stderr,不在 #58 立的規矩範圍內。\n\n### 未涵蓋範圍\n\n沒有 UI、沒有 Tauri 原生殼,不適用。全部是 CLI guard,終端 transcript 即實錄\n(全程 bash xtrace,指令與輸出同一份,沒有事後 render)。\n\n### Demo 實錄\n\n| 驗收項 | 實錄 |\n| --- | --- |\n| 全部(STEP 1–7,含 1b / 6b–6j) | [`docs/qa/60-walkthrough-r3.md`](https://github.com/c3lew/Skills/blob/main/docs/qa/60-walkthrough-r3.md)〈終端實錄〉 |\n\n### 一鍵重開\n\n```bash\nbash scripts/qa/60-walkthrough.sh \"$(mktemp -d)/qa60\"\n```\n\n下一步:`/build #71`(Codex: `$build #71`),修完重跑 `/qa #60`。\n",
+      "## `/qa #60` 第四輪完成 — #71 兩半都修好了,但可達性放過頭,#70 的天花板漏回去一半(#73)\n\n**HEAD**: `f85b4dc` ｜ QA artifact commit [`e56789c`](https://github.com/c3lew/Skills/commit/e56789c)\n｜ 報告全文:[`docs/qa/60-walkthrough-r4.md`](https://github.com/c3lew/Skills/blob/main/docs/qa/60-walkthrough-r4.md)\n\n### 白話摘要\n\n上一輪擋住的 #71 兩半都修好了:(a) alias / handler dict / callback 走到的 bypass 不再誤紅\n(`--callgraph` 4/0,上一輪 3 條紅);(b) AC1 那句「或檔案裡沒有裸 `print(`」也補上了,一支\n只寫檔案、不印 console 的 script 不再被要求釘 stdout(STEP 6f 3 條全綠,上一輪 3 條全紅)。\n\n但這輪換一把尺量:#71 為了修 (a) 的誤紅,把「走得到」從**名字被呼叫**放寬成**名字被提到**——\n放過頭了。死碼裡塞一個 `sys.stdout.buffer.write`,live 區隨便有個撞名的區域變數(`dump = 1`)\n或無關物件的 attribute(`c.dump`),整支檔案就豁免。**#70 才剛堵起來的天花板,一行就能還原。**\n\n這次倒的方向跟上一輪相反:上一輪是誤紅(合法 script 被喊住,fail-safe),這輪是**誤放**——\n守門對一支該喊的 script 閉嘴。這正是 #60 原病「誰都能翻的開關」的變體,開關從註解換成撞名。\n所以算 blocking。\n\n### Regression suite\n\n`validate.py` + 五支 self-check(`validate` / `scripts/batch` / `build-batch/batch` / `install` /\n`triage-to-maintain`)全綠,沒有一條紅。\n\n### 驗收原句逐條(獨立 judge 判定)\n\njudge 是乾淨 subagent,只拿驗收原句 + transcript,沒有實作脈絡,也沒讀 repo 原始碼。\n\n| 條目 | 判定 | 根據 |\n| --- | --- | --- |\n| 重現 scenario(裸 print + 註解提到 bypass → 期望紅) | **pass** | STEP 3 判紅指名該檔;STEP 4 母體 13/0 |\n| **AC1 前半**(真的在會執行的位置用 bypass) | **fail(works-but-wrong)** | STEP 6m 母體 5 不合 3,6n 對照組 0 |\n| AC1 後半(或檔案裡沒有裸 `print(`) | **pass**(照字面實作),附帶新洞見 #74 | STEP 6f 3/3 綠 |\n| AC2 self-check 咬那個 mutation | **pass** | STEP 1b 反證,`validate.py:911` AssertionError |\n| AC3 `triage-to-maintain.py` L35 仍豁免 | **pass** | STEP 5 error 數 = 0 |\n| AC4 `python scripts/validate.py` 綠 | **pass** | STEP 1 / 2 / 7 |\n\njudge 對 AC1 前半的逐字:\n\n> 三條的 `bypass` 全在死碼裡 —— 定義上就不是「會執行的位置」—— 卻被豁免了。判準退化成\n> 「這個名字在 live 區被**提到**過」,不是「被**呼叫**」。……#70 才剛把這條堵起來,這輪又漏回去\n> 一半。這條算 AC1 fail,不是天花板。\n\njudge 對「沒-print 判準」那張表為什麼**不**判 AC fail(有意識地放過):\n\n> 這五條字面上確實都「沒有裸 `print(`」,所以判 GREEN 是**照著原句實作出來的結果**,不是實作\n> 偏離原句。要怪就怪 AC 這句話本身寫窄了。\n\n### 同型全掃\n\n一條 fail 當尺,掃過同一份 artifact 的所有同型 case。`scripts/qa/60-mention-sweep.py` 一次跑完\n八張母體表(本輪新增最後兩張,並新增 `--prev` 對照點 = 上一輪 HEAD `188c7d8`):\n\n| 表 | 旗標 | 母體 | 不合 |\n| --- | --- | --- | --- |\n| 提到 vs 用到 | (無) | 13 | 0 |\n| 位置判準 — pin | `--positional` | 4 | 0 |\n| 守門靜默跳過的路 | `--skips` | 3 | 1(#66) |\n| 位置判準 — bypass(#70 的天花板) | `--bypass-position` | 6 | 0 |\n| 可達性判準 — pin 那半沒裝 | `--pin-position` | 6 | 4(#72) |\n| call graph 的解析度(#71 修的那件事) | `--callgraph` | 4 | **0**(上輪 3) |\n| **沒-print 豁免的判準解析度** | `--print-detect` | 7 | **5** |\n| **可達性 over-approximate 的代價** | `--live-overapprox` | 5 | **3** |\n\n對照組:\n\n| 表 | 現況不合 | `--prev`(188c7d8) | `--old`(d3cc9ed^) | 結論 |\n| --- | --- | --- | --- | --- |\n| `--callgraph` | 0 | 3 | 0 | #71 真的抬了天花板 |\n| `--live-overapprox` | 3 | **0** | 4 | **是 #71 引入的 regression** |\n| `--print-detect` | 5 | 1 | 1 | 對照組不成立(上輪沒實作這支路,是「什麼都判紅」撞到的) |\n| `--bypass-position` | 0 | — | 4 | #70 的天花板維持 |\n| `--pin-position` | 4 | — | 4 | 沒抬也沒退,不是 regression |\n\n### Blocking\n\n- **#73** — #71 的可達性放寬成「名字被提到」,死碼裡的 bypass 配一個撞名的 Name/Attribute 就整檔\n  豁免,#70 的天花板一行還原(`--live-overapprox` 5 不合 3,`--prev` 0 不合 = 本輪引入)。修完重跑 `/qa #60`。\n\n修法的難點票上有寫:收緊時不能把 #71 剛修好的 `--callgraph` 4 條放回誤紅,也不能鬆掉\n`--bypass-position` 那 6 條 —— 兩邊同時要綠。票上給了方向,沒綁死。\n\n### Known issues(非 blocking,由 client 在 demo 收尾整批確認)\n\n- **#74**(新開)— 「沒有裸 `print(` 就豁免」是 name-only,`p = print` / `builtins.print` /\n  `run(print)` / handler dict / `sys.stdout.write` 五種印中文的形狀誤放。judge 判這是照 AC 原句\n  實作的結果、不是 AC fail,但建議前兩條跟 #73 同批修(翻開關成本跟 #60 原病同級)。\n- **#72** — 可達性判準只裝在 bypass 那半,`__main__` 死碼裡的 pin 照樣算數(不是 regression)。\n- **#66** — 檔案 `SyntaxError` → 整檔跳過。judge 更正了這張票的歸因:`d3cc9ed^` 這條是判紅的,\n  所以是 AST 改寫**引入**的誤放,不是「本來就這樣」。severity 不動,已在 #66 補 comment。\n- **#67 / #68 / #69** — `/qa #65` 那輪挖出的三條守門天花板,不在 #60 的驗收原句上。\n- `from sys import stdout` 偵測不到 — 改之前也一樣。\n- `sys.stdout.reconfigure(\"utf-8\")`(位置引數)判紅 — 等價安全但寫法不同,改之前同樣判紅。\n- `install.py --self-check` 印出的 `[fixture] FAIL skills/bad: missing SKILL.md` 是 fixture 的預期\n  輸出洩到 stdout,不是失敗。噪音,沒開票。\n- STEP 1b 那段 traceback 中文是 mojibake — traceback 走 stderr,不在 #58 立的規矩範圍內。\n\n### 未涵蓋範圍\n\n沒有 UI、沒有 Tauri 原生殼,不適用。全部是 CLI guard,終端 transcript 即實錄\n(全程 bash xtrace,指令與輸出同一份,沒有事後 render)。\n\n### Demo 實錄\n\n| 驗收項 | 實錄 |\n| --- | --- |\n| 全部(STEP 1–7,含 1b / 6b–6n) | [`docs/qa/60-walkthrough-r4.md`](https://github.com/c3lew/Skills/blob/main/docs/qa/60-walkthrough-r4.md)〈終端實錄〉 |\n\n### 一鍵重開\n\n```bash\nbash scripts/qa/60-walkthrough.sh \"$(mktemp -d)/qa60\"\n```\n\n下一步:`/build #73`(Codex: `$build #73`),修完重跑 `/qa #60`。#74 可同批一起修。\n",
+      "## `/qa #60` 第五輪完成 — #73 已修,但同型全掃再挖出兩格放寬,其中一格是 #75 引入的 regression(#79 / #80)\n\n**HEAD**: `50abac8` ｜ QA artifact commit [`8beebc5`](https://github.com/c3lew/Skills/commit/8beebc5)\n｜ 報告全文:[`docs/qa/60-walkthrough-r5.md`](https://github.com/c3lew/Skills/blob/main/docs/qa/60-walkthrough-r5.md)\n\n### 白話摘要\n\n上一輪擋住的 #73(死碼裡的 bypass 配一個撞名的變數 / attribute 就整檔豁免)修好了 ——\n`--live-overapprox` 這輪 5 條全對,上一輪是 3 條誤放。#70 立的天花板也還在\n(`--bypass-position` 6/0)。\n\n但這輪換一把尺量:**「live 集合有哪些放寬不是真的呼叫」**。這把尺 #76 已經量過一格\n(名字交給任何 call 當引數就算 live)。`live_nodes` 的 docstring 自己列了三個\napproximation,另外兩格從來沒被量過 —— 量下去兩格都在漏:\n\n- **回傳值那格(#79,blocking)**:`def get(): return dump` 加一行 `get()`(結果直接丟掉)\n  就整檔豁免。連 `get()` 回傳的是它自己的區域變數、只是剛好撞名都算。**對照組決定性:\n  同三條在 `39003a3`(#75 修之前)是判紅的 → 這是 #75 修誤紅時倒過頭引入的 regression。**\n- **同名 def 那格(#80,blocking)**:`defs` 是一張 `{name: node}` 平表,同名的兩個 def\n  塌成同一個節點。誰在 `ast.walk` 順序上比較後面誰佔 slot,於是兩個方向都倒 —— 誤放 2\n  (加一個撞名的 function 就把死碼拉成 live)、誤紅 1(被呼叫的就是帶 bypass 的那個,\n  卻被另一個同名 def 蓋掉)。不是 regression,改前改後同樣 3 條不合。\n\n方向跟 #73 一樣是**誤放** —— 守門對一支該喊的 script 閉嘴,而且開關又換了一種翻法\n(這次是「寫一個回傳它的 function」跟「加一個撞名的 def」)。這正是 #60 原病的變體,\n所以算 blocking。\n\n### Regression suite\n\n`validate.py` + 五支 self-check(`validate` / `scripts/batch` / `build-batch/batch` / `install` /\n`triage-to-maintain`)全綠,沒有一條紅(STEP 1 / 2 / 7)。\n\n### 驗收原句逐條(獨立 judge 判定)\n\njudge 是乾淨 subagent,只拿驗收原句 + transcript,沒有實作脈絡,也沒讀 repo 原始碼。\n\n| 條目 | 判定 | 根據 |\n| --- | --- | --- |\n| 重現 scenario(裸 print + 註解提到 bypass → 期望紅) | **pass** | STEP 3 判紅指名該檔;STEP 4 母體 13/0 |\n| **AC1 前半**(真的在會執行的位置用 bypass) | **fail(works-but-wrong)** | STEP 6r 母體 5 不合 3(6s 對照組證明是 #75 引入);STEP 6p 母體 4 不合 3 |\n| AC1 後半(或檔案裡沒有裸 `print(`) | **pass** | STEP 6f 3/3 綠 |\n| AC2 self-check 咬那個 mutation | **pass** | STEP 1b 反證,`validate.py` AssertionError |\n| AC3 `triage-to-maintain.py` L35 仍豁免 | **pass** | STEP 5 error 數 = 0;STEP 6d 最後一格 GREEN |\n| AC4 `python scripts/validate.py` 綠 | **pass** | STEP 1 / 2 / 7 |\n\njudge 對 AC1 前半的逐字:\n\n> 表面證據是綠的:STEP 6d 六格全綠……但兩把新尺量下去,「會被執行的位置」這個判準沒守住。\n> ……兩個方向裡,**誤放**才是打在原句正中心的那個 —— 原句整張票就是在罵「不該豁免的被豁免」。\n\njudge 對 STEP 6k(`--print-detect`,#74)為什麼**不**判 AC fail:\n\n> 這些檔案裡確實**沒有裸 `print(`**,實作照原句字面做,結果就是放行。……這是實作原句的\n> 必然代價,不是這輪做壞了。建議另開票收窄判準,**不列 blocking**。\n\njudge 另外主動指出一件之前沒被記下來的事:#60 票上那句「對 pin 本身抓位置……**這條很嚴謹**」\n其實是錯的 —— pin 那半沒有可達性判準(`--pin-position` 4 條誤放,已是 #72)。原句沒要求動\npin 那半,所以不 blocking,但這句認知有誤,值得回寫給 client 知道。\n\n### 同型全掃\n\n一條 fail 當尺,掃過同一份 artifact 的所有同型 case。`scripts/qa/60-mention-sweep.py` 一次跑完\n十張母體表(本輪新增最後兩張,並新增 `--prev75` 對照點 = #75 修之前 `39003a3`):\n\n| 表 | 旗標 | 母體 | 不合 |\n| --- | --- | --- | --- |\n| 提到 vs 用到 | (無) | 13 | 0 |\n| 位置判準 — pin | `--positional` | 4 | 0 |\n| 守門靜默跳過的路 | `--skips` | 3 | 1(#66) |\n| 位置判準 — bypass(#70 的天花板) | `--bypass-position` | 6 | 0 |\n| 可達性判準 — pin 那半沒裝 | `--pin-position` | 6 | 4(#72) |\n| call graph 的解析度 | `--callgraph` | 4 | 0 |\n| 沒-print 豁免的判準解析度 | `--print-detect` | 7 | 5(#74) |\n| 可達性 over-approximate 的代價(#73 修的那件事) | `--live-overapprox` | 5 | **0**(上輪 3) |\n| **同名的兩個 def 塌成一個節點** | `--name-collision` | 4 | **3** |\n| **live def 回傳的名字一律算 live** | `--return-carry` | 5 | **3** |\n\n對照組:\n\n| 表 | 現況不合 | `--prev75`(39003a3) | `--old`(d3cc9ed^) | 結論 |\n| --- | --- | --- | --- | --- |\n| `--live-overapprox` | 0 | — | 4 | #73 真的收掉了 |\n| `--return-carry` | 3 | **0 條同型**(那 3 條當時判 RED) | 4 | **是 #75 引入的 regression** |\n| `--name-collision` | 3 | 3 | 3 | 既有天花板,**不是** regression |\n| `--bypass-position` | 0 | — | 4 | #70 的天花板維持 |\n\n### Blocking\n\n- **#79** — live def 回傳的名字一律算 live:`def get(): return dump` + 一行 `get()`(結果丟掉)\n  就整檔豁免,`--return-carry` 5 不合 3,`--prev75` 同三條判 RED = **#75 引入的 regression**。\n- **#80** — 同名的兩個 def 塌成一個節點:撞名的 def 就是一個誰都能翻的開關,誤放 2 誤紅 1\n  (`--name-collision` 4 不合 3,非 regression)。\n\n**建議 #79 / #80 / #76 三張同批修** —— 它們是同一個家族(「live 集合的放寬不是真的呼叫」),\n分開修下一輪 judge 會用同一把尺再擋一次。修法的難點票上都有寫:收緊時 `--callgraph` 4/0、\n`--live-overapprox` 5/0、`--bypass-position` 6/0 三張表要同時維持,`--return-carry` 的\n`get()()` 對照條也不能放回誤紅。\n\n### Known issues(非 blocking,由 client 在 demo 收尾整批確認)\n\n- **#76** — 名字交給任何 call 當引數就算 live(`print(dump)` 一行就豁免)。同家族,建議跟\n  #79 / #80 同批修。\n- **#74** — 「沒有裸 `print(` 就豁免」是 name-only,五種印中文的形狀誤放。judge 這輪再次確認\n  是 AC 原句本身寫窄,不是實作偏離。\n- **#77 / #78** — `/qa #75` 挖出的兩條可達性天花板(header 位置、綁定寫法),方向都是誤紅。\n- **#72** — 可達性判準只裝在 bypass 那半,`__main__` 死碼裡的 pin 照樣算數。judge 這輪主動\n  指出票上那句「pin 這條很嚴謹」是錯的。\n- **#66** — 檔案 `SyntaxError` → 整檔跳過。\n- **#67 / #68 / #69** — `/qa #65` 那輪挖出的三條守門天花板,不在 #60 的驗收原句上。\n- `install.py --self-check` 印出的 `[fixture] FAIL skills/bad: missing SKILL.md` 是 fixture 的預期\n  輸出洩到 stdout,不是失敗。噪音,沒開票。\n- `from sys import stdout` 偵測不到 / `sys.stdout.reconfigure(\"utf-8\")`(位置引數)判紅 —\n  兩條改之前也一樣。\n- STEP 1b 那段 traceback 中文是 mojibake — traceback 走 stderr,不在 #58 立的規矩範圍內。\n\n### 未涵蓋範圍\n\n沒有 UI、沒有 Tauri 原生殼,不適用。全部是 CLI guard,終端 transcript 即實錄\n(全程 bash xtrace,指令與輸出同一份,沒有事後 render)。\n\n### Demo 實錄\n\n| 驗收項 | 實錄 |\n| --- | --- |\n| 全部(STEP 1–7,含 1b / 6b–6s) | [`docs/qa/60-walkthrough-r5.md`](https://github.com/c3lew/Skills/blob/main/docs/qa/60-walkthrough-r5.md)〈終端實錄〉 |\n\n### 一鍵重開\n\n```bash\nbash scripts/qa/60-walkthrough.sh \"$(mktemp -d)/qa60\"\n```\n\n下一步:`/build #79`(Codex: `$build #79`),修完重跑 `/qa #60`。#80 / #76 建議同批一起修。\n",
+      "這張票的 AC1 是 #96 要翻的那句原句。**#96 拍板之前,這條線上的票先不要動** —— 再修一輪只是再開兩張。",
+      "## 當初為什麼拍錯\n\n當初把「執行時是否到達某一行」當成有限 AST 分析可以可靠回答的驗收條件，卻沒有先檢查\n這個判準能否列舉完。後續每輪修法都在合法寫法誤紅與死碼誤放之間移動；#96 盤點到 31 張票\n與 557 行分析。repo 現有 12 支 `*-sweep.py`，不同旗標會展開不同 fixture 母體，因此不再寫一個\n無法按字面重推的固定格數。根因是 AC 本身不收斂，不是再補一種語法形狀就能結束。新 AC\n改成檢查 `__main__` 第一層的固定 pin，讓狀態空間有限且可測。",
+      "AC1 已依 #96 改寫；新規則由 #97 / #98 落地且兩張 QA 均為 PASS，因此結案。"
+    ]
+  },
+  "issue_67": {
+    "state": "OPEN",
+    "title": "validate:[宣告過的天花板] 只認正規 `__main__` 寫法",
+    "body": "> **狀態：宣告過的天花板（不是待辦）。** #96 已拍板保留這個邊界；本票維持開啟，讓 dashboard 與後續維護看得到規則的刻意範圍。\n\n## #96 拍板結果\n\n`stream_encoding_issues` 只認正規寫法：\n\n```python\nif __name__ == \"__main__\":\n```\n\n`\"__main__\" == __name__`、`__name__ in (\"__main__\",)`、先存成變數再判斷，以及 `if/else`\n反寫不列入目前規則。這是有限語法約定的邊界，不代表尚有排定實作。\n\n## 為什麼保留\n\n#96 把判準從「推論程式會不會跑到某行」換成「pin 是否位於正規 `__main__` block 第一層」，\n藉此移除 557 行不收斂的可達性分析。窮舉等價入口寫法會重新打開開放式判準，因此 client\n選擇保留正規寫法這一條明確天花板。\n\n## 已有對照\n\n#97 的 self-check 固化三格：正規寫法缺 pin 判紅；反著寫與 `in (...)` 不被辨識。這三格是\n刻意邊界的回歸紀錄。\n\n## 後續\n\n除非 client 重新拍板擴大正規入口語法，否則本票只作邊界紀錄，不進 build 排程。\r\n",
+    "comments": "#96 已拍板保留這個邊界；本票現在是「宣告過的天花板」紀錄，不是待辦，維持 open 讓 tracker 持續顯示。"
+  },
+  "blockers": {
+    "issue_97_state": "CLOSED",
+    "issue_97_comments": [
+      "上游:#96(spec 已拍板)。無 blocker,可以直接開。下一步:`/build #97`(Codex: `$build #97`)",
+      "## 做完了\n\n判準從**推論**換成**約定**。`stream_encoding_issues` 現在只問一件事:有 `__main__` block 的檔案,那個 block 的**直屬語句**裡有沒有 stdout pin;AST 裡真的有 `sys.stdin` 這個 attribute 的,同一層也要有 stdin pin。沒有 `.buffer` 豁免、沒有「沒印東西就免 pin」豁免、沒有可達性分析。\n\n**兩個 commit(刻意拆開,規則跟被規則管的檔案不同時動)**\n\n- [`39109fe`](https://github.com/c3lew/Skills/commit/39109fe) — 遷移唯一一個 `.buffer` 檔:`triage-to-maintain.py` 的 `__main__` 第一層補上兩行 pin,`.buffer` 寫法原樣保留。舊新兩套規則都綠。\n- [`5675b1a`](https://github.com/c3lew/Skills/commit/5675b1a) — 換判準 + 刪掉 557 行可達性分析 + 新的 self-check fixture + mutation 台 + AGENTS.md 同步。\n\n`validate.py` **1867 → 895 行**(-972:557 行分析 + 430 行釘那些分析的 fixture)。\n\n## client 看得到的\n\n| 動作 | 守門 |\n| --- | --- |\n| pin 在 `__main__` 第一層 | 綠 |\n| 把 pin 搬進 `main()` | 吵 |\n| pin 巢狀進 `__main__` 裡的 `if` / `try` | 吵(死碼裡的 pin 不算數) |\n| 只寫 bytes、沒有 pin | 吵(`.buffer` 不再是免死金牌) |\n| 有 `__main__`、一行 print 都沒有 | 吵 |\n| 碰了 stdin 但只 pin stdout | 吵 |\n| 兩個 `__main__` 只釘一個 | 吵 |\n\n## AC 逐條\n\n- [x] `triage-to-maintain.py` 先單獨落地 — `--self-check` 綠;餵 `/triage` 進去中文正常出來;餵 `/maintain` 不觸發 exit 0;新舊規則之間 repo 都沒紅。\n- [x] `stream_encoding_issues` 改寫成語法比對,兩邊都過 `norm()`(`ast.unparse` 吐單引號,不正規化會靜靜全部不 match)。\n- [x] 12 個 function 全刪 — 外加跟著死掉的 `bound_pairs` / `binding_pairs` / `code_exprs` 與 `DEAD_END` / `RET` / `CONSUMED_BY` / `DRIVEN_BY` / `LOOP_FROM`、沒人用的 `defaultdict` import。\n- [x] `self_check` 釘可達性那段刪掉,換成新規則 fixture(上表七格 + prose 不算數 + `__main__` 巢狀在 try/if 下仍找得到 + 只「提到」`sys.stdin` 的檔不欠 stdin pin)。\n- [x] **mutation 台進 repo**:`scripts/qa/97-mutate.py`,11 個 knob,`python scripts/qa/97-mutate.py --run` 一鍵跑完。現況 **11/11 被 `--self-check` 咬住**。knob:`pin_anywhere_in_main`、`pin_anywhere_in_file`、`first_main_only`、`main_body_only`、`stdin_by_text`、`stdin_never`、`stdin_always`、`no_norm`、`buffer_exempt`、`print_exempt`、`guard_off`。\n- [x] `python scripts/validate.py` + 五支 self-check 全綠。\n- [x] `python scripts/qa/96-newrule-probe.py .` → 不合 0(原型與正式實作對同一份 repo 同意)。\n- [x] 沒動其他守門(路徑引用、交棒 baton、否定詞、push 順序)。\n\n## 超出票面、但我做了的兩件事(請確認)\n\n1. **`AGENTS.md` 那一節改寫。** 舊文寫著「另一條合法路是 `.buffer`」「完全沒有裸 `print(` 的 script 不用釘 stdout」—— 兩條在新規則下都不成立。這是 agent 每次讀的規則文件,留著會直接教出被守門吵的 code,所以同步改掉。\n2. **新增 `scripts/qa/README.md`。** #56–#95 那 15 支 sweep import 的是已經刪掉的 function,直接跑會炸。README 說清楚它們留著當紀錄、不再跑,還在用的是 `96-newrule-probe.py` / `97-mutate.py` / `87-oracle.py`(spec #96 交代要留的第二把尺)。\n\n## 一個跟原型的差異\n\n原型是「任一個 `__main__` block 有 pin 就算過」。正式實作用的是「**每個** `__main__` block 都要有」—— #96 驗收項 4「一個檔有幾個 `__main__` 就要檢查幾個」的字面意思,也是嚴格的那一邊。這兩者只有在一個檔有兩個 `__main__` 時才會不同意,repo 裡沒有這種檔,所以「原型與正式實作對同一份 repo 同意」仍然成立。\n\n## 宣告過的天花板(#67)\n\n`__main__` 只認 `if __name__ == \"__main__\":` 這一種正規寫法。`\"__main__\" == __name__` 反著寫、`__name__ in (\"__main__\",)` 這類等價寫法**不認** —— 那種檔案不會被視為 runnable,不欠 pin 也不會被吵。寫在 `main_blocks` 的 docstring、`AGENTS.md`、以及這張票上。self-check 有一格正面釘住這個行為(反著寫 → 綠),所以哪天要收掉它,那格會提醒你這是刻意的。\n\n## 沒做(留給後續票)\n\n- #66(parse 不動要判 fail):目前仍是 `continue` 靜靜跳過。原型會報,實作沒報 —— 本票的覆蓋驗收項沒列這條。\n- #68(`__main__.py` 被 `__` 開頭的過濾誤傷):同上,`__` 前綴過濾原樣保留。\n\n---\n\n下一步:`/qa #97`(Codex: `$qa #97`)\n",
+      "QA 開跑前先開回來 —— 這張在 QA 之前就被關掉了,產線的收尾出口是 `/close`,不是 build。",
+      "## QA 報告 —— 判 **pass**,blocking 0,known issues 2\n\n白話講:票面那張「client 看得到的」表,我一格一格真的跑過了,**12 格全部照它寫的那樣**。\n另外拿一把跟守門完全無關的尺重量一次、再把修之前的判準抓回來對同一份母體跑一次,\n兩邊都沒有撈到「這輪被誤紅」的東西。兩條 known issue 都在票面之外(散文與註解宣稱\n跟實跑對不上),不擋 demo。\n\nQA 交付物三支已進 repo 並 push:[`e2fe6fc`](https://github.com/c3lew/Skills/commit/e2fe6fc)。\n\n---\n\n## 一鍵重開(client-demo 直接抄)\n\nGit Bash / WSL:\n\n```bash\nbash scripts/qa/97-walkthrough.sh \"$(mktemp -d)/qa97\"\n```\n\nPowerShell:\n\n```powershell\nbash scripts/qa/97-walkthrough.sh \"$([System.IO.Path]::GetTempPath())qa97\"\n```\n\n這支不碰 repo 本體 —— 每一格都是把 repo 複製一份、只動那一個地方、跑\n`python <副本>/scripts/validate.py`。`exit 0` = 守門放行,`exit 1` = 守門吵。\n\n---\n\n## 覆蓋驗收項逐條 —— 獨立 judge 判定\n\njudge 是乾淨的 subagent,只餵驗收原句 + walkthrough 實錄,不餵實作脈絡。\n第一輪它把天花板那條判成「證據不足」(單邊綠分不出成因)、把驗收項 2 的「寫在模組層」\n挑出來說只有 mutation knob 間接罩住 —— 兩個缺口都補了情境重跑,第二輪六條全 pass。\n\n| # | 驗收原句 | judge | 實錄哪一格 |\n| --- | --- | --- | --- |\n| 1 | 有 `__main__` 的檔案都要 pin,不管印不印 | pass | 2e(一行 print 都沒有 → 紅) |\n| 2 | pin 要在 `__main__` 第一層(`main()` 裡 / 模組層 / 巢狀都不算) | pass | 2b `main()`、2b2 模組層、2c 巢狀 `if`,基準 2a 綠 |\n| 3 | 真的碰 stdin 才要 pin stdin,看 AST 不看字串 | pass | 2f(真的 `sys.stdin.read()` → 紅)vs 2g(只在字串裡提到 → 綠) |\n| 7 | `.buffer` 不再是豁免 | pass | 2d(只寫 bytes、沒 pin → 紅) |\n| 8 | 「沒有裸 `print(` 就免 pin」豁免拿掉 | pass | 2e |\n| — | 天花板 #67:只認正規寫法 | pass | 2i 反著寫 → 綠,**2i2 同一份 fixture 只換成正規寫法 → 紅**,2i3 `in (...)` → 綠 |\n\n外加 2h:一個檔兩個 `__main__` 只釘一個 → 紅(#96 驗收項 4 的字面意思)。\n\n---\n\n## demo 實錄清單\n\nCLI 切片,沒有瀏覽器可錄。實錄 = 每一格的指令與輸出同一份(`set -x` 全程 xtrace),\nfixture 內容逐字入證(judge 第一輪點名要求的)。**重跑指令就是實錄本身** —— 產物不進\nrepo,`bash scripts/qa/97-walkthrough.sh <目錄>` 隨時重生。\n\n| 驗收項 | 實錄段落 |\n| --- | --- |\n| 全部(regression 前置) | STEP 1 —— `validate` + 五支 `--self-check` |\n| 1 / 2 / 3 / 7 / 8 / 天花板 | STEP 2 —— 2a〜2i3 共 12 格 |\n| 改判準的票必跑的修前對照 | STEP 3(repo 三個 commit)+ STEP 3b(母體 18 格) |\n| oracle 獨立性 | STEP 4 —— 第二把尺 |\n| 「mutation 台要進 repo」那條 AC | STEP 5 —— 11/11 |\n| 其餘 AC(原型 probe、12 個 function 刪乾淨、行數) | STEP 6 |\n\n---\n\n## 三把尺的結果\n\n**尺一:修前對照(`scripts/qa/97-prevdiff.py`,母體 18,不合 0)**\n\n期望值是 QA 讀 #96 驗收原句自己寫的,不是從實作反推的。舊判準抓的是\n`git show 5e3646c:scripts/validate.py`,真的 import 進來跑,不是模擬。\n\n差額 5 筆,**全部是「舊綠 → 新紅」**,每一筆都對得上票面說要收的形狀:\n\n| fixture | 差額 | 對應 |\n| --- | --- | --- |\n| `r3_pin_nested_in_if` | 舊綠 → 新紅 | #72 死碼裡的 pin |\n| `r4_buffer_only_no_pin` | 舊綠 → 新紅 | `.buffer` 豁免下架 |\n| `r5_main_no_print` | 舊綠 → 新紅 | print 豁免下架 |\n| `r7_two_mains_first_only` | 舊綠 → 新紅 | #69 第二個 `__main__` |\n| `r8_pin_nested_in_try` | 舊綠 → 新紅 | #72 的 `try` 那一半 |\n\n**沒有任何一筆是「舊紅 → 新綠」,也沒有任何一格是本輪引入的誤紅。**\n\nrepo 本體那面(STEP 3):`5e3646c` 舊判準 0 紅 / 新判準 2 紅(都在\n`triage-to-maintain.py`)→ `39109fe` 之後兩套判準都 0 紅。遷移只欠這一個檔,而且切換\n當下沒有任何一支變紅 —— 票面 AC「repo 在新舊規則之間都不能紅」複驗過關。\n\n**尺二:第二把尺(`scripts/qa/97-wide.py`,25 個檔,差額 2 筆)**\n\n受測物自己就是判準,只跑它綠只證明它同意自己。所以另寫一支純文字 + 縮排、刻意寫寬、\n不 import 受測物任何 helper 的掃描:`__main__` 認任何 `if ... __main__ ...:` 的行,\n「碰 stdin」看原始碼字串。\n\n差額 2 筆,逐筆判讀後**都是寬尺自己的誤報**:\n\n- `scripts/validate.py` —— 寬尺判紅。`sys.stdin` 只出現在 docstring 與\n  `STREAM_PINS` 的 str 常數裡,AST 上沒有這個 attribute。#96 AC3 要的正是「看 AST\n  不看字串」,受測物判綠是對的。\n- `scripts/qa/96-newrule-probe.py` —— 同上,同一個形狀。\n\n順帶,寬尺看到 `60-mention-sweep.py` 有 11 行 `if __name__ == \"__main__\":`、\n83/84/86 各 2 行 —— 逐筆比對過,多出來的全在三引號字串的 fixture 原始碼裡,AST 上\n只有 1 個。也是寬尺的設計性誤報。\n\n**尺三:mutation 台(`scripts/qa/97-mutate.py --run`)**\n\n11 個 knob,`11/11 被 --self-check 咬住`。台在 repo、一鍵跑完 —— #95 那條教訓\n(宣稱跑過不算數)這輪沒有重演。\n\n---\n\n## Regression\n\n| 指令 | 結果 |\n| --- | --- |\n| `python scripts/validate.py` | OK validate green |\n| `python scripts/validate.py --self-check` | green |\n| `python scripts/batch.py --self-check` | green(含 §8a/§8c) |\n| `python skills/build-batch/batch.py --self-check` | green |\n| `python scripts/install.py --self-check` | green |\n| `python scripts/hooks/triage-to-maintain.py --self-check` | green |\n| `python scripts/qa/96-newrule-probe.py .` | 不合 0 |\n\n另外複驗票面 AC「不動其他守門」:`5e3646c → 5675b1a` 的 diff 只落在 module docstring、\n可達性那一段、`stream_encoding_issues`、`self_check` 四處;`self_check` 裡呼叫到的守門\n清單前後一模一樣(`handoff_target_issues` / `parse_frontmatter` / `stream_encoding_issues`\n/ `validate`),沒有哪個守門的 fixture 跟著 557 行一起被掃掉。\n\n`validate.py` 895 行,12 個可達性 function `grep` 不到任何一個 —— 兩條都複驗過。\n\n---\n\n## Known issues(非 blocking,處置請在 demo 收尾一起決定)\n\n兩條都是同一個形狀:**這輪新增的散文/註解,拿字面重推推不出同一個結果**。都在票面\n六條覆蓋驗收項之外,守門本身沒問題。\n\n- **#100** —— `scripts/qa/README.md` 三條宣稱全部推不出來:「15 支」實際 12 支、\n  「222 格」沒有一種數法得到、「直接跑會炸」12 支 × 45 種模式跑下來 0 支炸(那些被刪掉\n  的 function 名字只出現在散文裡,沒有任何一支真的 import)。同一組數字也寫在 **#99 的\n  AC**,修的時候要一起改,不然 #99 做完會把錯的數字再抄回去。\n- **#101** —— `97-mutate.py` 的 `cwd=ROOT` 註解說「self-check 最後一條打的是 REPO\n  本體」,實際上 `REPO` 從 `__file__` 解,打的是只有一個檔的暫存副本。結論不受影響\n  (11/11 靠 inline fixture 咬住),壞的是註解讓人以為這張台比實際上寬。\n\n---\n\n## 未涵蓋範圍(明講,不假裝)\n\n- **#96 spec 的驗收項 5、6 這輪沒過,也不該過** —— 「parse 不動要判 fail」與\n  「`__main__.py` 不得被 `__` 開頭的過濾誤傷」不在 #97 的覆蓋驗收項裡,票面也明講留給\n  後續。母體裡的 `c1_syntax_error.py` / `__main__.py` 兩格複驗:兩套判準都是綠,\n  行為原樣保留。**#96 整份 spec 還沒驗完,別把 #97 過 QA 當成 #96 收工。** 這兩條在 #98。\n- **#98 的第一條已經被 #97 順手做掉了** —— 「多個 `__main__` 只看第一個」現在會吵\n  (實錄 2h、母體 `r7`)。#98 開工時要先重寫 body,不然會去修一個已經不存在的洞。\n- 沒有原生殼 / GUI 面向 —— 這張票是 CLI 守門,沒有 Tauri 或瀏覽器行為要 client 親手摸。\n- 天花板 #67 是**宣告過的**已知邊界,不是漏抓:反著寫與 `in (...)` 的檔案不會被視為\n  runnable。實錄 2i / 2i2 / 2i3 正面釘住這個行為,哪天要收掉它,那三格會提醒你這是刻意的。\n\n---\n\n下一步:`/client-demo #97`(Codex: `$client-demo #97`)\n",
+      "## Demo checkpoint —— 等 client 驗收\n\n驗收頁(白話一頁,隨時可回頭點):https://claude.ai/code/artifact/516a7fe0-6a26-4756-a629-996fe2389165\n\n頁面上有三樣:先講的兩件 known issues(#100 / #101)、逐條「什麼情況 → 你會看到什麼」的 demo script(七條 + 一個講清楚的天花板)、品管數字摘要。\n\n**一鍵重開(demo 前已重跑一次,全數照票面)**\n\n```bash\nbash scripts/qa/97-walkthrough.sh \"$(mktemp -d)/qa97\"\n```\n\n本輪重跑結果:STEP 1 regression 7 項全綠;STEP 2 十二格逐格照票面(2a 綠、2b/2b2/2c/2d/2e/2f/2h 吵、2g 綠、2i/2i3 綠、2i2 吵);STEP 3b 母體 18 格不合 0,差額 5 筆全是「舊綠→新紅」;STEP 4 寬尺差額 2 筆(設計性誤報);STEP 5 mutation 11/11;STEP 6 probe 不合 0、12 個 function grep 不到、`validate.py` 895 行。\n\nCLI 切片,沒有原生殼 / GUI 要 client 親手摸;想自己玩就跑上面那行。\n\n**known issues 處置建議(等 client 整批確認)**\n\n- #100 說明檔三個數字對不上 → **之後修**:同一組數字也寫在 #99 的 AC,兩邊一起改才乾淨,單獨修會被 #99 抄回來。\n- #101 `cwd=ROOT` 註解說錯測試範圍 → **現在修**:一行註解,不動邏輯;留著會讓人以為這張台比實際上寬。\n\n過關五條目前:client 親口 OK(待)、blocking 清零(✅ 0)、known issues 處置(待)、regression 全綠(待固化後複跑)、高價值 scenarios 固化(待 `/qa`)。\n",
+      "## Demo 過關 —— client 親口 OK\n\n七條逐條走完(實錄現場重跑一次,12 格照票面),client 確認「全部都對,過關」。沒有任何「不對」,零回流 ticket。\n\n**Known issues 處置(client 整批確認)**\n\n| # | 決定 | 落地 |\n| --- | --- | --- |\n| #100 說明檔三個數字對不上 | 之後修 | 併進 #99 一起改,已在 #100 留言標註給做 #99 的人 |\n| #101 `cwd=ROOT` 註解說錯測試範圍 | 現在修 | [`9590fd7`](https://github.com/c3lew/Skills/commit/9590fd7) 已 push、#101 已關 |\n\n修完複跑:mutation 11/11、`python scripts/validate.py` 綠、`--self-check` 綠。\n\n**過關五條現況**\n\n- [x] client 親口 OK\n- [x] blocking 清零(0)\n- [x] 每條 known issue 都有處置決定\n- [ ] regression suite 全綠 —— 等固化後複跑\n- [ ] 高價值 scenarios 已固化\n\n**本切片建議固化的 scenarios**(demo 逐條走過、值得永久留在 suite 裡的):pin 在第一層綠、pin 搬進 `main()` 紅、pin 只在模組層紅、pin 巢狀在 `if` / `try` 紅、只寫 bytes 沒 pin 紅、有 `__main__` 但不印東西紅、真的碰 stdin 只 pin 一半紅、只在字串提到 stdin 綠、兩個 `__main__` 只釘一個紅、天花板三格(反著寫綠 / 換成正規寫法紅 / `in (...)` 綠)。多數已在 `validate.py` 的 `self_check` 裡,請 qa 逐格核對有沒有缺、缺的補進去。\n\n驗收頁(同一個 URL,re-demo 會原地更新):https://claude.ai/code/artifact/516a7fe0-6a26-4756-a629-996fe2389165\n\n下一步:`/qa #97`(Codex: `$qa #97`)—— 固化 scenarios\n",
+      "## 固化完成 —— scenarios 進 regression suite\n\ndemo 收尾那份「建議固化」清單逐格核對 `validate.py` 的 `self_check`,**12 條裡 10 條本來就在,補了 2 格**([`92ab087`](https://github.com/c3lew/Skills/commit/92ab087))。\n\n| # | scenario | 狀態 |\n| --- | --- | --- |\n| 1 | pin 在 `__main__` 第一層 → 綠 | 本來就有 |\n| 2 | pin 搬進 `main()` → 紅 | 本來就有 |\n| 3 | pin 只在模組層 → 紅 | 本來就有 |\n| 4 | pin 巢狀在 `if` → 紅 | 本來就有 |\n| 5 | pin 巢狀在 `try` → 紅 | 本來就有 |\n| 6 | 只寫 bytes 沒 pin → 紅 | 本來就有 |\n| 7 | 有 `__main__` 但不印東西 → 紅 | 本來就有 |\n| 8 | 真的碰 stdin 只 pin stdout → 紅 | 本來就有 |\n| 9 | 只在字串提到 `sys.stdin` → 綠 | 本來就有 |\n| 10 | 兩個 `__main__` 只釘一個 → 紅 | 本來就有 |\n| 11 | 天花板:反著寫 `\"__main__\" == __name__` → 綠 | 本來就有 |\n| 12a | **天花板對照組:同一份 body 換成正規寫法 → 紅** | **本輪補上** |\n| 12b | **天花板另一半:`__name__ in (\"__main__\",)` → 綠** | **本輪補上** |\n\n補這兩格的理由:11 那格單獨看,綠分不出是「不認這種寫法」還是「認了、但這個檔剛好沒問題」。要一綠一紅成對才釘得住。`in (...)` 那半原本只活在 walkthrough 的 2i3,沒進 suite —— 走了就沒了。\n\n**驗過會咬**(不是宣稱跑過):把 `main_blocks` 放寬到也吃 `__name__ in ('__main__',)`,新那格立刻 AssertionError;還原後綠。\n\n---\n\n## 固化後 regression 複跑 —— 全綠\n\n| 指令 | 結果 |\n| --- | --- |\n| `python scripts/validate.py` | OK validate green |\n| `python scripts/validate.py --self-check` | green |\n| `python scripts/batch.py --self-check` | green(含 §8a/§8c) |\n| `python skills/build-batch/batch.py --self-check` | green |\n| `python scripts/install.py --self-check` | green |\n| `python scripts/hooks/triage-to-maintain.py --self-check` | green |\n| `python scripts/qa/96-newrule-probe.py .` | 不合 0 |\n| `python scripts/qa/97-mutate.py --run` | 11/11 被咬住 |\n\n## 過關五條\n\n- [x] client 親口 OK\n- [x] blocking 清零(0)\n- [x] 每條 known issue 都有處置決定(#100 之後修併進 #99、#101 已修已關)\n- [x] regression suite 全綠\n- [x] 高價值 scenarios 已固化(10 條在庫 + 2 條本輪補)\n\n下一步:`/close #97`(Codex: `$close #97`)\n",
+      "## 結案 —— #97 收工\n\n判準從**推論**(「那行 bypass 到底跑不跑得到」)換成**約定**(「pin 有沒有寫在 `__main__` 第一層」)。`validate.py` 少 557 行、12 個可達性 function 全刪。\n\n### 做了什麼\n\n| commit | 內容 |\n| --- | --- |\n| [`39109fe`](https://github.com/c3lew/Skills/commit/39109fe) | 遷移唯一一個 `.buffer` 檔 —— pin 補在 `__main__` 第一層,舊新兩套規則都綠 |\n| [`5675b1a`](https://github.com/c3lew/Skills/commit/5675b1a) | 判準改寫成語法比對,557 行可達性分析刪掉 |\n| [`e2fe6fc`](https://github.com/c3lew/Skills/commit/e2fe6fc) | QA:六條覆蓋驗收項逐格實跑全綠,兩面母體 18/0,第二把尺差額 2 筆都是設計 |\n| [`9590fd7`](https://github.com/c3lew/Skills/commit/9590fd7) | known issue #101:`cwd=ROOT` 註解說錯測試範圍 |\n| [`92ab087`](https://github.com/c3lew/Skills/commit/92ab087) | 固化:天花板兩格對照補進 `self_check` |\n\n### 完工定義(slice 票,過關五條)\n\n- [x] **client 親口 OK** —— 七條逐條走完,零回流 ticket\n- [x] **blocking 清零** —— 0\n- [x] **known issues 有處置** —— #101 現在修(已關)、#100 之後修(併進 #99)\n- [x] **regression 全綠** —— 六支 self-check + probe 不合 0 + mutation 11/11\n- [x] **scenarios 已固化** —— 12 條進 suite(10 條在庫 + 2 條本輪補)\n\n### 票面 acceptance criteria\n\n- [x] `triage-to-maintain.py` 先單獨補 pin,新舊規則都不紅\n- [x] `stream_encoding_issues` 改寫成語法比對,兩邊過 `ast.unparse` 正規化\n- [x] 12 個可達性 function 全刪(`grep` 不到任何一個,`validate.py` 895 行)\n- [x] `self_check` 換成新規則 fixture(六種形狀全在)\n- [x] mutation 台進 repo —— `scripts/qa/97-mutate.py`,11/11 被咬住\n- [x] `validate.py` + 五支 self-check 全綠\n- [x] `96-newrule-probe.py .` 不合 0(原型與正式實作同意)\n- [x] 其他守門沒動(diff 只落在四處,`self_check` 呼叫的守門清單前後一模一樣)\n\n### 完工動作\n\n票 body 沒有 deploy / migration 段。**不用換裝** —— 改的是 repo 自己的檢查程式,不是會裝到 client 電腦上的那一份;dashboard release note 已載明。未 push 數 `0`。\n\n### 留給後面的帳(不影響本票結案)\n\n- **#98** —— #96 spec 的驗收項 5、6(SyntaxError 判 fail、`__main__.py` 不被檔名過濾誤傷)。開工前要先重寫 body:第一條「多個 `__main__` 只看第一個」已被 #97 順手做掉,現在會吵。\n- **#100** —— `scripts/qa/README.md` 三個數字對不上,併進 #99 一起改。\n- **天花板 #67** —— 反著寫與 `in (...)` 的等價寫法不認,是 #96 宣告過的已知邊界,不是漏抓;`self_check` 三格正面釘住這個行為。\n",
+      "dashboard 已更新([`91b6b98`](https://github.com/c3lew/Skills/commit/91b6b98),已 push):hero 換成「換做法」這一輪、小毛病 27(其中 16 張是判準消失後的過期票,#99 會一次關掉)、檢查 8 道全綠、驗收點補上本票的 demo。順手修掉一格壞掉的 HTML —— #65 那條 li 缺開頭,整段字裸露在清單裡,client 看到的是一坨沒有時間標籤的字。\n\n關票。"
+    ],
+    "issue_98_state": "CLOSED",
+    "issue_98_comments": [
+      "上游:#96(spec 已拍板)。卡在 #97,#97 過 QA 之後才開。下一步:`/build #98`(Codex: `$build #98`)",
+      "## 做了什麼\n\n`4d82c78` — [fix: #98 新判準的入口缺口](https://github.com/c3lew/Skills/commit/4d82c78)\n\n三個缺口都是「守門根本沒看到那個檔」:\n\n- **#68 檔名過濾** — 從「`__` 開頭一律跳過」收成只擋 `__pycache__` 與 `.` 開頭,抽成\n  `is_source()`。`__main__.py` 是 package 唯一保證會被跑的 entry point,卻是唯一保證會被\n  舊過濾吃掉的檔名。repo 現在**沒有**這種檔,所以照 AC 補了一格 fixture 釘住。\n- **#66 parse 不動** — `SyntaxError` 從 `continue` 改成判 fail,錯誤訊息帶檔名 + 原因。\n  順手把 `UnicodeDecodeError` 一起接進來:沒接的話一支 cp950 存的 `.py` 是讓整支守門\n  traceback 掛掉,crash 不是判決。\n- **#69 多個 `__main__`** — 判準在 #97 就已經是 `all(...)`,這輪要動的是第二把尺:\n  `96-newrule-probe.py` 寫的是 `any`,跟 `validate.py` 對 AC1 給**相反**的答案。repo 裡\n  剛好沒有雙 block 的檔,所以兩邊都綠、誰都不會發現。已改成 `all` 並對齊受檢範圍。\n\n證據住在預設會跑的地方:五格 inline fixture(`__main__.py` 紅 / 補 pin 綠、`.venv` 與\n`.hidden.py` 仍不受檢、typo 判紅、cp950 存的 `.py` 判紅),mutation 台從 11 個 knob 加到 15。\n\n## 驗收\n\n| 項目 | 結果 |\n|---|---|\n| `python scripts/validate.py` | 綠 |\n| 五支 `--self-check`(validate / batch / install / triage-to-maintain / build-batch) | 全綠 |\n| `python scripts/qa/96-newrule-probe.py .` | 不合 0 |\n| `python scripts/qa/97-mutate.py --run` | 15/15 咬住 |\n\n## Review findings 處置\n\n- **spec:第二把尺跟 validate 在 AC1 上答案相反** → 修了(probe `any` → `all`)。\n- **spec:`UnicodeDecodeError` 沒接,會 crash 不是判 fail** → 修了,同一個 except、同一句\n  理由,加一格 cp950 fixture + `decode_error_uncaught` knob。\n- **spec:`.` 開頭的過濾也會擋掉檔名不只目錄** → 這是要的,補一格 `.hidden.py` fixture 釘住。\n- **spec:`filter_off` 是第四個 knob,AC 只要三條** → 保留。它是反面對照組,跟既有的\n  `guard_off` / `stdin_always` 同一種用法,拿掉會少一條「過濾整條關掉會不會被咬住」的證據。\n- **standards:knob 總數硬寫在 AGENTS.md / qa README / 註解三個地方** → 修了,三處都改成\n  「整張表全部咬住」,總數看 `--run` 自己印的那行。這輪一開始就漏改了一處,正是這個 smell。\n- **standards:AGENTS.md 沒跟上判準變更** → 補了「受檢範圍」一段(`__main__.py` 受檢、\n  讀不進來判 fail)。\n- **standards:`is_source(rel)` 的 relative 前置條件靠命名不靠型別** → 沒改。單一 caller,\n  參數名就叫 `rel`,加防呆是為不存在的誤用寫程式。\n- **standards:probe 抄了 validate 的過濾,不再是完全獨立的尺** → 只對齊「受檢範圍」,判準\n  兩邊各寫各的;範圍不對齊的話,答案有差分不出是判準不同還是根本沒看同一批檔。註解寫明了。\n\n`#66` / `#68` / `#69` 過 QA 後可關 —— 關票動作在 #99。\n\n下一步:`/qa #98`(Codex: `$qa #98`)\n",
+      "## QA 判 fail —— 三條驗收原句逐格全綠,但票面 AC 的驗收證據自己壞了\n\n(順手 reopen:`fix: #98` 這個 commit message 被 GitHub 當成 close keyword,票在 build 完\n就自動關掉了。QA 還沒跑,先開回來。)\n\n**證據**:[`4c01110`](https://github.com/c3lew/Skills/commit/4c01110) —— `docs/qa/98-walkthrough.md`\n(含完整 xtrace + 獨立 judge 的逐條判讀)。\n\n**一鍵重開**(client-demo 直接抄):\n\n```bash\nbash scripts/qa/98-walkthrough.sh \"$(mktemp -d)/qa98\"\n```\n\n## 白話摘要\n\n票上要收的三個缺口,**逐格真的跑過,三條都成立**,而且每條都有反面對照組 ——\n紅不是常態紅,綠也不是因為沒在看:\n\n| 驗收原句 | 實測 | 判定 |\n| --- | --- | --- |\n| 一個檔有幾個 `__main__` 就檢查幾個 | 只釘第一個 → 吵;**只釘第二個 → 一樣吵**;兩個都釘 → 綠。第二把尺同一格 `不合 1`,修前那把 `不合 0`(它原本寫的是 `any`) | pass |\n| 檔案 parse 不動要判 fail | `def f(` → `FAIL … cannot be read as Python source — '(' was never closed …(#66)`;字打對 → 綠;cp950 存的 `.py` → 判紅,不是 traceback | pass |\n| `__main__.py` 不得被 `__` 開頭的過濾誤傷 | `scripts/pkg/__main__.py` 沒 pin → 吵;補 pin → 綠;`__pycache__` / `.venv` / `.hidden.py` 沒 pin → 仍綠 | pass |\n\n**修前對照沒有本輪引入的誤紅。** QA 照驗收原句自己寫的兩面母體 22 格(該綠 11、該紅 11),\n修後 22/0;差額**只有 3 筆,全部是「修前綠 → 修後紅」**,逐筆對得上票面三條;\n「修前紅 → 修後綠」**0 筆**。\n\n**順手收掉票面沒列的第四個入口缺口。** 修前的過濾吃的是**絕對路徑**的 parts,repo 只要被\nclone 到 `~/.local/…` 這種路徑底下,整條守門就靜靜全綠 —— 同一份母體放進 `.hidden_root/`,\n修前 **0 紅**、修後 11 紅。\n\n## blocking(1)\n\n- **#102 —— mutation 台是壞掉的儀器。** `97-mutate.py --run` 印「15/15 咬住」,但它做的\n  副本裡只有 `scripts/validate.py`,而 `self_check()` 在**第 466 行**就會因為讀不到\n  `skills/` 而 `AssertionError` —— 早在跑到**第 913 行**那些 stream fixture 之前。\n  **控制組(knob 一個都不套)就已經 exit 1**,所以整張表不管把判準改成什麼都印「咬住」,\n  一格都沒在量。`#101` 那輪改的註解「整張表全靠 inline fixture 咬住」講的是一件沒發生的事。\n\n  這條是 blocking 因為它就是票面 AC「knob 改壞要轉紅」自己的驗收證據。\n\n  **判準本身沒問題** —— QA 換成完整 repo 副本重跑同一張表,控制組 exit 0,15 個 knob\n  **真的 15/15 全被咬住**,失敗訊息各不相同。要修的是 harness,不是判準;\n  `scripts/qa/98-mutate-control.py` 可以直接併進去。\n\n## known issues(2,帶著 demo,處置在收尾整批確認)\n\n- **#103 —— 過濾吃相對路徑這件事沒被釘住。** 本輪把 `is_source(py)` 改成 `is_source(rel)`\n  是真的修好了上面那個第四個缺口,但改回去 self-check 照樣 **exit 0,沒咬住**\n  (tmpdir 路徑裡剛好沒有 `.` / `__` 開頭的那一段)。行為對,缺的是釘住它的測試。\n- **#104 —— 第二把尺會被 cp950 檔掀掉,而且沒有東西守著它的判準。**\n  `96-newrule-probe.py` 只接 `SyntaxError`,遇到 cp950 存的 `.py` 是整支 traceback;\n  而且它沒有 self-check,`all` 被改回 `any` 沒人會知道 —— 這輪抓到純粹是有人手動去讀了它。\n\n## 未涵蓋範圍\n\n- **沒有 UI** —— 這是 CLI 守門規則,demo 實錄就是那份 xtrace 本身,沒有 Playwright /\n  a11y snapshot 那一段。\n- **repo 本體現在一個 `__main__.py` 都沒有**(28 個 `.py` 掃過),#68 那條軸在 repo 本體上\n  量不到,全靠 fixture 與另一份母體釘住。\n- judge 點名的證據缺口:完整副本那塊 `main_body_only` 的失敗訊息字面只有 `pass`,\n  咬到什麼沒有可讀的歸因,跟其他 14 格不同級。\n\n## 第二把尺的差額(逐筆判讀,判成誤報也寫進來)\n\n`98-wide.py` 從頭寫一遍「哪些 `.py` 該受檢、哪些讀不進來」,刻意寫寬:一格都不過濾、\n純文字 regex 認任何 `__main__` 寫法、不 import 受測物任何 helper。\n\n- 對 repo 本體:差額 **7 筆**。6 筆是寬尺拿原始碼字串判「碰 stdin」的誤紅(那六個檔 AST 上的\n  `sys.stdin` attribute 實測 **0 個**,全是散文或規則表裡的字面值 —— 正是 #96 AC3 要的行為);\n  1 筆是寬尺把 `97-wide.py` 第 43 行的 `if \"__main__\" not in src:` 也認成 main block。\n- repo 本體剛好一格都沒被過濾掉,量不到 #68 那條軸,所以另外對一份真的有被過濾檔的母體\n  再跑一次:差額多出 3 筆,正是 `.venv` / `.hidden.py` / `__pycache__` 三格 —— 受測物按設計\n  過濾掉沒看。`pkg/__main__.py` 兩把尺都判紅,同意。\n\n## demo 實錄清單\n\n| 驗收原句 | 段落 |\n| --- | --- |\n| 一個檔有幾個 `__main__` 就檢查幾個 | `docs/qa/98-walkthrough.md` STEP 2(2a / 2b / 2c / 2d / 2d2) |\n| 檔案 parse 不動要判 fail | 同上 STEP 3(3a / 3b / 3c) |\n| `__main__.py` 不得被過濾誤傷 | 同上 STEP 4(4a / 4b / 4c) |\n| (票面 AC)mutation 台 | 同上 STEP 7(7a / 7b) |\n\n---\n\n下一步:`/build #102`(Codex: `$build #102`)—— 修完重跑 `/qa #98`。",
+      "## QA PASS —— blocking 0、known issue 2\n\n#102 修好 mutation 控制組後，整張 #98 驗收已在 `eadd3c5` 上重跑；乾淨 judge 只讀驗收原句與逐字實錄，三條及其餘 AC 全判 **PASS**，沒有 works-but-wrong。\n\n| 驗收原句 | 實測 |\n| --- | --- |\n| 每一個 `__main__` 都要檢查 | 只釘第一個紅、只釘第二個紅、兩個都釘綠；新版 probe `不合 1`、修前 probe `不合 0` |\n| parse 不動要判 fail | typo / cp950 都帶檔名與原因判紅；修正 typo 後綠 |\n| `__main__.py` 要受檢 | 未 pin 紅、補 pin 綠；`__pycache__` / `.venv` / `.hidden.py` 對照仍綠 |\n\n其餘證據：\n- regression：`python scripts/validate.py` + 五支 self-check 全部 exit 0\n- 修前同母體：22 格修後不合 0；差額只有票面三個方向，修前紅→修後綠為 0\n- mutation：控制組先綠；15/15 knob 轉紅；刻意紅控制組會在第一格前中止\n- probe：`OK 新規則下全綠`、`不合 0`\n\n**known issues（沿用上輪，非本輪新發現）**：#103、#104；都不影響本票現行守門行為。\n\n**證據**：[`af3be9d`](https://github.com/c3lew/Skills/commit/af3be9d)；[`docs/qa/98-rerun.md`](https://github.com/c3lew/Skills/blob/af3be9d/docs/qa/98-rerun.md)；[`docs/qa/98-rerun.txt`](https://github.com/c3lew/Skills/blob/af3be9d/docs/qa/98-rerun.txt)\n\n**demo 實錄**：逐字實錄 STEP 2 / 3 / 4 分別對應三條驗收；STEP 5–8 是修前對照、寬尺、mutation、probe。這是 CLI 守門規則，沒有 UI / Playwright。\n\n**一鍵重開**：`\"C:\\Program Files\\Git\\bin\\bash.exe\" scripts/qa/98-walkthrough.sh \"$(mktemp -d)/qa98\"`\n\n#66 / #68 / #69 的批次關票仍留給已排定的 #99，不在 QA 階段提前關。\n\n下一步:`/client-demo #98`(Codex: `$client-demo #98`)",
+      "## Client demo checkpoint\n\n### 先知道的 known issues\n\n- [#103](https://github.com/c3lew/Skills/issues/103)：現行相對路徑行為正確，但 inline self-check 還沒把這條約束釘住。**建議：之後修**；已有獨立票，不擋這次三個入口缺口。\n- [#104](https://github.com/c3lew/Skills/issues/104)：第二把獨立尺本身缺 self-check，遇到 cp950 source 會 traceback。**建議：之後修**；產品守門判準本身已通過，不混進本切片。\n\n請帶著這兩點看 demo；收尾時會請你整批確認處置。\n\n### 可點的實錄與 QA 摘要\n\n- [QA 白話摘要與獨立 judge](https://github.com/c3lew/Skills/blob/af3be9d/docs/qa/98-rerun.md)\n- [完整逐字 xtrace](https://github.com/c3lew/Skills/blob/af3be9d/docs/qa/98-rerun.txt)\n- blocking：**0**；三條驗收與其餘票面 AC：**PASS**；沒有 works-but-wrong。\n- 一鍵重開：`\"C:\\Program Files\\Git\\bin\\bash.exe\" scripts/qa/98-walkthrough.sh \"$(mktemp -d)/qa98\"`\n\n### 白話 demo script\n\n1. **一支檔案有兩個 `__main__` 時** → 只釘第一個會紅、只釘第二個也會紅；兩個都釘才綠。新版第二把尺同樣抓到，修前那把會漏掉。  \n   [看 QA 實跑 STEP 2](https://github.com/c3lew/Skills/blob/af3be9d/docs/qa/98-rerun.txt#L22-L109)\n2. **一支 `.py` 打錯、parse 不動時** → 守門會帶檔名與原因判紅，不再靜靜跳過；字修正後恢復綠，cp950 source 也判紅而不是整支 traceback。  \n   [看 QA 實跑 STEP 3](https://github.com/c3lew/Skills/blob/af3be9d/docs/qa/98-rerun.txt#L110-L152)\n3. **package 的 `__main__.py` 忘記 pin 時** → 守門會抓到；補 pin 後綠，而 `__pycache__`、`.venv`、`.hidden.py` 仍維持排除。  \n   [看 QA 實跑 STEP 4](https://github.com/c3lew/Skills/blob/af3be9d/docs/qa/98-rerun.txt#L153-L204)\n\n這是 CLI 守門規則，xtrace 就是 QA 實跑畫面；沒有 UI / Playwright。\n\n接下來逐條請 client 親口確認；agent 不代答是否過關。\r\n",
+      "Client demo：驗收 1/3 已由 client 親口確認「這是我要的」。下一步展示驗收 2/3：parse 不動要判 fail。",
+      "Client demo：驗收 2/3 已由 client 親口確認「這是我要的」。下一步展示驗收 3/3：__main__.py 不得被檔名過濾誤傷。",
+      "Client demo：驗收 3/3 已由 client 親口確認「這是我要的」。三條驗收均已確認；接著處理 known issues 的處置決定。",
+      "## Client demo checkpoint 完成\n\n- client 已逐條確認 3/3 驗收：「這是我要的」。\n- blocking：0。\n- known issues 處置已由 client 整批確認：#103 **之後修**、#104 **之後修**；兩張獨立票保持開啟，不混進 #98。\n\n目前已成立：client 親口 OK、blocking 清零、known issues 全有處置。\n\n下一步:`/qa #98`(Codex: `$qa #98`)— 固化高價值 scenarios 並重跑 regression suite。\r\n",
+      "## QA 固化完成 —— PASS\n\nclient-demo 已成立的三條高價值 scenario，已固化進預設 regression suite：\n\n- **多個 `__main__`**：只釘第一個 → 紅；只釘第二個 → 紅；兩個都釘 → 綠。\n- **parse / decode 失敗**：既有 typo、修正後綠、cp950 判紅 fixtures 沿用。\n- **`__main__.py` 範圍**：既有未 pin 紅、補 pin 綠，以及 `__pycache__` / dot-path 對照沿用。\n\n乾淨 judge 逐條判 **PASS**，沒有 works-but-wrong。\n\n### Regression\n- `python scripts/validate.py` → `OK validate green`，exit 0\n- 五支 `--self-check` → 全部 exit 0\n- `python scripts/qa/97-mutate.py --run` → 15/15 knob 被咬住，exit 0\n- `python scripts/qa/96-newrule-probe.py .` → `不合 0`，exit 0\n\n### 技術決策投影\n1. **選擇**：直接補強既有 `validate.py --self-check`，不另建第二套 test runner。\n2. **影響**：日常守門會固定重跑這三格，walkthrough 不再是唯一證據。\n3. **反悔成本**：小；移除新增三個 assert 即可。\n\n### 證據與回滾\n- commit：[`e487fc9`](https://github.com/c3lew/Skills/commit/e487fc99c05c92440f4db571d372bd188724e44a)\n- [逐字驗證紀錄](https://github.com/c3lew/Skills/blob/e487fc99c05c92440f4db571d372bd188724e44a/docs/qa/98-solidification/verification.txt)\n- [patch](https://github.com/c3lew/Skills/blob/e487fc99c05c92440f4db571d372bd188724e44a/docs/qa/98-solidification/solidification.patch)\n- [原始備份與雜湊](https://github.com/c3lew/Skills/tree/e487fc99c05c92440f4db571d372bd188724e44a/docs/qa/98-solidification)\n- runnable rollback：`powershell -ExecutionPolicy Bypass -File docs/qa/98-solidification/rollback.ps1`（本輪已實跑，還原後 self-check exit 0，再重套 patch 的 blob 雜湊一致）\n\nknown issues 處置沿用 client 已確認：#103 **之後修**、#104 **之後修**。\n\n下一步:`/close #98`(Codex: `$close #98`)\n",
+      "## 結案\n\n三個入口缺口已完成並通過完整流程：\n\n- [x] client 已逐條確認 3/3：「這是我要的」。\n- [x] 必須先修：0。\n- [x] 帶著走的小毛病已有處置：#103、#104 都是「之後修」。\n- [x] 既有檢查全綠：完整守門、五支自我檢查、15/15 刻意改壞、獨立第二把尺皆通過。\n- [x] 高價值情況已固化：只釘第一段紅、只釘第二段紅、兩段都釘綠；壞檔與常見主檔也有正反對照。\n\n### 交付\n\n- 實作：[`4d82c78`](https://github.com/c3lew/Skills/commit/4d82c7814b2bf29cfa4247f21a991f6ae70caa25)\n- 驗收證據：[`af3be9d`](https://github.com/c3lew/Skills/commit/af3be9d1927dcf32c71074473e5ebcb32559941d)\n- 情境固化：[`e487fc9`](https://github.com/c3lew/Skills/commit/e487fc99c05c92440f4db571d372bd188724e44a)\n- dashboard 收尾：[`e779332`](https://github.com/c3lew/Skills/commit/e77933244a2c968109add2aa1ad3271e15d37eb7)\n- [結案驗證與回滾](https://github.com/c3lew/Skills/tree/e77933244a2c968109add2aa1ad3271e15d37eb7/docs/qa/98-close)\n\n本票沒有換裝或 migration；改的是專案內部守門。#66、#68、#69 的批次關帳由 #99 統一執行，避免和 #99 的完整舊帳清單拆成兩套。\n\n下一步:`/build #99`(Codex: `$build #99`)\n"
+    ]
+  },
+  "readme": "# QA sweeps\r\n\r\n`scripts/qa/*-sweep.py` 現有 12 支。它們與同一時期的 walkthrough / mutation 腳本量的是\r\n舊判準「那行 bypass 到底跑不跑得到」。#96 把判準換成固定約定(pin 要在 `__main__`\r\n第一層,沒有豁免),所以這批**留著當 #60–#95 這條線的歷史紀錄,不列入目前的 regression**。\r\n\r\n這 12 支仍跑得起來；部分會印出整片 `MISMATCH`，因為 fixture 的期望值釘的是舊判準，\r\n不是目前 repo 壞掉。要驗現行規則，跑下面列出的工具。\r\n\r\n還在用的三支:\r\n\r\n- `96-newrule-probe.py` —— 新規則的原型,`python scripts/qa/96-newrule-probe.py .`\r\n  應該跟 `validate.py` 對同一份 repo 給一樣的答案。\r\n- `97-mutate.py` —— 新判準的 mutation 台,`python scripts/qa/97-mutate.py --run`\r\n  要整張表全部咬住(exit 0)。\r\n- `87-oracle.py` —— 不讀守門規則、真的把檔案跑起來的獨立尺。新規則不需要它當判準,\r\n  但下次再有「這東西自己就是尺」的票,它是現成的第二把尺。\r\n",
+  "sweep_files": [
+    "57-guard-sweep.py",
+    "60-mention-sweep.py",
+    "65-nesting-sweep.py",
+    "73-reach-sweep.py",
+    "75-binding-sweep.py",
+    "79-return-sweep.py",
+    "81-lambda-sweep.py",
+    "83-deferred-sweep.py",
+    "84-generator-sweep.py",
+    "86-async-sweep.py",
+    "87-drive-sweep.py",
+    "91-graph-sweep.py"
+  ],
+  "sweep_runs": [
+    {
+      "script": "57-guard-sweep.py",
+      "exit": 0,
+      "traceback": false,
+      "summary": "   繞過(Codex 半移到 span 外)   -> ['qa'] (非空 = 咬到) |    對照組 2 個方向咬到 2 個 -> 驗法本身有效:上面那 4 個格子的值是那幾支 guard 的性質,不是這支掃描壞掉。"
+    },
+    {
+      "script": "60-mention-sweep.py",
+      "exit": 1,
+      "traceback": false,
+      "summary": " | 母體 13,不合 1"
+    },
+    {
+      "script": "65-nesting-sweep.py",
+      "exit": 0,
+      "traceback": false,
+      "summary": " | 母體 22,不合 0"
+    },
+    {
+      "script": "73-reach-sweep.py",
+      "exit": 1,
+      "traceback": false,
+      "summary": " | 母體 6,不合 6"
+    },
+    {
+      "script": "75-binding-sweep.py",
+      "exit": 1,
+      "traceback": false,
+      "summary": " | 母體 12,不合 12"
+    },
+    {
+      "script": "79-return-sweep.py",
+      "exit": 1,
+      "traceback": false,
+      "summary": " | 母體 13,不合 1"
+    },
+    {
+      "script": "81-lambda-sweep.py",
+      "exit": 1,
+      "traceback": false,
+      "summary": " | 母體 9,不合 2"
+    },
+    {
+      "script": "83-deferred-sweep.py",
+      "exit": 1,
+      "traceback": false,
+      "summary": " | 母體 11,不合 3"
+    },
+    {
+      "script": "84-generator-sweep.py",
+      "exit": 1,
+      "traceback": false,
+      "summary": " | 母體 12,不合 5"
+    },
+    {
+      "script": "86-async-sweep.py",
+      "exit": 1,
+      "traceback": false,
+      "summary": " | 母體 11,不合 10"
+    },
+    {
+      "script": "87-drive-sweep.py",
+      "exit": 1,
+      "traceback": false,
+      "summary": " | 母體 12,不合 11"
+    },
+    {
+      "script": "91-graph-sweep.py",
+      "exit": 1,
+      "traceback": false,
+      "summary": " | 母體 10,不合 2"
+    }
+  ],
+  "regression": [
+    {
+      "check": "validate",
+      "exit": 0,
+      "tail": "OK validate green"
+    },
+    {
+      "check": "validate-self-check",
+      "exit": 0,
+      "tail": "OK validate self-check green"
+    },
+    {
+      "check": "batch-self-check",
+      "exit": 0,
+      "tail": "OK batch self-check green | OK §8a/§8c conflict scenarios green"
+    },
+    {
+      "check": "build-batch-self-check",
+      "exit": 0,
+      "tail": "OK batch self-check green"
+    },
+    {
+      "check": "install-self-check",
+      "exit": 0,
+      "tail": "[fixture] FAIL skills/bad: missing SKILL.md | OK install self-check green"
+    },
+    {
+      "check": "triage-hook-self-check",
+      "exit": 0,
+      "tail": "OK triage-to-maintain self-check green"
+    },
+    {
+      "check": "mutation",
+      "exit": 0,
+      "tail": "咬住  unreadable_skip        self-check exit=1 |  | 15/15 個 knob 被 self-check 咬住"
+    },
+    {
+      "check": "newrule-probe",
+      "exit": 0,
+      "tail": "OK 新規則下全綠 |  | 不合 0"
+    }
+  ],
+  "dashboard": {
+    "tile_small_issues": "7",
+    "carry_rows": [
+      "同一道檢查判斷「會不會跑到」的時候,漏看了寫在條件那一行上的東西 —— 例如「如果這件事成立就…」的那個條件本身就會執行,它卻整行跳過。這是很常見的寫法,漏看的後果是把寫對的程式判成錯的。這次順手把同一族的五種寫法一次列完了。不是這輪弄壞的,是本來就在的。已開單子。",
+      "「換個名字再叫」這件事,還有六種寫法它認不得,一樣會把寫對的程式判成錯的。最莫名其妙的一種:同一件事寫成一行是好的、拆成兩行就被判錯 —— 換行不該改變對錯。已開單子。",
+      "同一道檢查的另一個豁免條件,只要把某個名字當成資料傳給任何一個指令(就算那個指令根本不會去執行它),它就當作「有在跑」而放行 —— 一行字就能讓守門閉嘴。已開單子。",
+      "同一道檢查判斷「這支程式會不會印東西給你看」時只認一種寫法,換五種等價寫法(先換個名字再印、走另一條輸出管道…)它就當成「這支不印東西」而整支放行 —— 一支印滿中文、完全沒設定編碼的程式會就這樣過關。已開單子。",
+      "同一道檢查,在找「開始執行」那段時只認一種寫法 —— 同樣意思換個寫法(把左右對調、拆成兩行寫)它就找不到,一樣整支放行。這不是這次弄壞的,是從一開始就在的。已開單子,等你決定什麼時候修。",
+      "目前判定範圍是正確的,但還缺一格專門防止日後把範圍改回舊寫法的檢查。你決定之後修,已有獨立單子。",
+      "驗收用的第二把尺遇到一種舊式中文檔案時會中斷,它自己也還缺自我檢查。正式守門不受影響;你決定之後修,已有獨立單子。",
+      "貼總結的那行指令裡,單子編號要在兩個地方各寫一次 — 改一個忘另一個,總結會安靜地貼到別張單子上,不會報錯。你決定之後再修(要動程式的輸出格式,不適合順手做)。",
+      "上面那份名單的說明書,只寫了一種終端機的貼法;你如果用 Windows 內建的那兩種終端機,照抄會貼不動。你決定之後再修。",
+      "守著「文字編碼有沒有設好」的那道檢查,有一個合法的例外寫法認得太寬鬆 — 只要在註解裡提到那個字,檢查就會放行。現在沒有人這樣繞過,但以後有可能無聲繞過。你決定之後再修。",
+      "你問「接下來做什麼」時,如果那件工作上沒有留下現成的交接說明,助理會改照一張對照表回答 — 那張表還沒有電腦自動把關,少寫一種寫法不會被擋下來。你先前決定這條之後再修。",
+      "「檢查有沒有做錯 → 自動開一張修正單」這條路,在另一種助理上還沒真的被觸發過一次(那一輪剛好全部通過,沒東西可開)。你決定之後再補跑一次驗證。",
+      "上面那道「有沒有先上傳」的檢查,遇到一種還沒設定過上傳目標的工作分支時,會直接報一句看不太懂的錯誤訊息,而不是好好地說「還有東西沒上傳」。它不會放行、只是話講得醜,你決定之後再修。",
+      "「檢查」這道環節的說明書寫死了一種只有第一種助理才有的看網頁工具;第二種助理用的是另一套。這輪跑的工作單不碰網頁所以沒撞到,等到有畫面的功能才會遇到。你決定之後再修。"
+    ],
+    "carry_row_count": 14,
+    "required_markers": [
+      {
+        "text": "舊帳已整理完",
+        "present": true
+      },
+      {
+        "text": "21 張已逐張說明並結案",
+        "present": true
+      },
+      {
+        "text": "現有 12 支舊工具仍跑得起來",
+        "present": true
+      },
+      {
+        "text": "#103、#104",
+        "present": true
+      },
+      {
+        "text": "/qa #99",
+        "present": true
+      }
+    ]
+  },
+  "open_issues": [
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 104,
+      "state": "OPEN",
+      "title": "qa:第二把尺自己會被 cp950 檔掀掉,而且沒有任何東西守著它的判準",
+      "url": "https://github.com/c3lew/Skills/issues/104"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 103,
+      "state": "OPEN",
+      "title": "validate:過濾吃相對路徑這件事沒被釘住 — is_source(rel) 改回 is_source(py),self-check 照樣綠",
+      "url": "https://github.com/c3lew/Skills/issues/103"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwXDieg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an autonomous agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 99,
+      "state": "OPEN",
+      "title": "chore:#96 的帳 — 關掉 16 張判準消失的票、改寫 #60 AC1、QA 歷史腳本標注",
+      "url": "https://github.com/c3lew/Skills/issues/99"
+    },
+    {
+      "labels": [],
+      "number": 96,
+      "state": "OPEN",
+      "title": "spec: #60 AC1 改判準 — 「bypass 在會執行的位置」換成「pin 在 __main__ 第一層」,557 行可達性分析下架、16 張票當天關掉",
+      "url": "https://github.com/c3lew/Skills/issues/96"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwXDieg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an autonomous agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 67,
+      "state": "OPEN",
+      "title": "validate:[宣告過的天花板] 只認正規 `__main__` 寫法",
+      "url": "https://github.com/c3lew/Skills/issues/67"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 63,
+      "state": "OPEN",
+      "title": "build-batch:貼票指令的票號要手動同步兩處(gh 參數 + JSON 的 spec/numbers)",
+      "url": "https://github.com/c3lew/Skills/issues/63"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 59,
+      "state": "OPEN",
+      "title": "build-batch:SKILL.md §3 的指令只有 bash heredoc,Windows 原生 shell 照抄不了",
+      "url": "https://github.com/c3lew/Skills/issues/59"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 50,
+      "state": "OPEN",
+      "title": "build 守門指令在沒 upstream 的分支上是 fatal,不是「未 push 數不是 0」",
+      "url": "https://github.com/c3lew/Skills/issues/50"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwXDieg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an autonomous agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 48,
+      "state": "OPEN",
+      "title": "Codex 端:`$qa` 判 fail → 自動開票這條分支沒被實測過",
+      "url": "https://github.com/c3lew/Skills/issues/48"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwXDieg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an autonomous agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 47,
+      "state": "OPEN",
+      "title": "qa skill 綁死 Playwright MCP,Codex 端沒有這個 MCP",
+      "url": "https://github.com/c3lew/Skills/issues/47"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwXDieg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an autonomous agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 42,
+      "state": "OPEN",
+      "title": "`/next` 路由表那條路的雙寫沒有機器守門",
+      "url": "https://github.com/c3lew/Skills/issues/42"
+    }
+  ]
+}

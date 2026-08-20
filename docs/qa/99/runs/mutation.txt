@@ -1,0 +1,17 @@
+咬住  buffer_exempt          self-check exit=1
+咬住  decode_error_uncaught  self-check exit=1
+咬住  filter_off             self-check exit=1
+咬住  first_main_only        self-check exit=1
+咬住  guard_off              self-check exit=1
+咬住  main_body_only         self-check exit=1
+咬住  no_norm                self-check exit=1
+咬住  pin_anywhere_in_file   self-check exit=1
+咬住  pin_anywhere_in_main   self-check exit=1
+咬住  print_exempt           self-check exit=1
+咬住  stdin_always           self-check exit=1
+咬住  stdin_by_text          self-check exit=1
+咬住  stdin_never            self-check exit=1
+咬住  underscore_filter      self-check exit=1
+咬住  unreadable_skip        self-check exit=1
+
+15/15 個 knob 被 self-check 咬住

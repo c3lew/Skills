@@ -1,0 +1,42 @@
+[
+  {
+    "check": "validate",
+    "exit": 0,
+    "tail": "OK validate green"
+  },
+  {
+    "check": "validate-self-check",
+    "exit": 0,
+    "tail": "OK validate self-check green"
+  },
+  {
+    "check": "batch-self-check",
+    "exit": 0,
+    "tail": "OK batch self-check green | OK §8a/§8c conflict scenarios green"
+  },
+  {
+    "check": "build-batch-self-check",
+    "exit": 0,
+    "tail": "OK batch self-check green"
+  },
+  {
+    "check": "install-self-check",
+    "exit": 0,
+    "tail": "[fixture] FAIL skills/bad: missing SKILL.md | OK install self-check green"
+  },
+  {
+    "check": "triage-hook-self-check",
+    "exit": 0,
+    "tail": "OK triage-to-maintain self-check green"
+  },
+  {
+    "check": "mutation",
+    "exit": 0,
+    "tail": "咬住  unreadable_skip        self-check exit=1 |  | 15/15 個 knob 被 self-check 咬住"
+  },
+  {
+    "check": "newrule-probe",
+    "exit": 0,
+    "tail": "OK 新規則下全綠 |  | 不合 0"
+  }
+]

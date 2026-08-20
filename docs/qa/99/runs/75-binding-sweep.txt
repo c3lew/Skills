@@ -1,0 +1,14 @@
+對照:alias `f = dump; f()`(#71/#75 蓋到的形狀,不得誤紅)                            期望 GREEN  實際 RED    MISMATCH
+對照:`for f in [dump]: f()`(#75 蓋到的形狀,不得誤紅)                               期望 GREEN  實際 RED    MISMATCH
+starred 解包 `a, *rest = dump, dump; a()`                                 期望 GREEN  實際 RED    MISMATCH
+巢狀解包 `(a, b), c = (dump, dump), dump; a()`                              期望 GREEN  實際 RED    MISMATCH
+list target `[a, b] = [dump, dump]; a()`                                期望 GREEN  實際 RED    MISMATCH
+多重 target `a = b = dump; a()`                                           期望 GREEN  實際 RED    MISMATCH
+walrus `if (f := dump): f()`                                            期望 GREEN  實際 RED    MISMATCH
+`with nullcontext(dump) as f: f()`(票上已宣告的天花板)                           期望 GREEN  實際 RED    MISMATCH
+attribute target `W.run = dump` + `W.run()`                             期望 GREEN  實際 RED    MISMATCH
+subscript target `H["a"] = dump` + `H["a"]()`(#71 的 handler dict 換個寫法)  期望 GREEN  實際 RED    MISMATCH
+comprehension target `[f() for f in [dump]]`                            期望 GREEN  實際 RED    MISMATCH
+預設引數 `def go(cb=dump): cb()` + `go()`                                   期望 GREEN  實際 RED    MISMATCH
+
+母體 12,不合 12
