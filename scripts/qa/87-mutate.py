@@ -15,6 +15,10 @@
 import pathlib
 import sys
 
+# #91 之後 `consumes` 的 Call 分支長這樣 —— 四個 knob 共用這個錨
+NEWLINE = """        if ((name in CONSUMED_BY and name not in shadowed)
+                or drives(node, driven)):"""
+
 # #87 自己的三個
 NEW = {
     # async def 不再進 gens —— 呼叫一個 coroutine 又算成 body 跑了(#87 原病)
@@ -24,16 +28,12 @@ NEW = {
     # await 的 operand 不算被驅動 —— 誤紅那面
     "consumes_no_await": ("""    if isinstance(node, (ast.YieldFrom, ast.Await)):""",
                           """    if isinstance(node, ast.YieldFrom):"""),
-    # 交給 event loop 的那七個名字不算驅動 —— 誤紅那面
-    "consumes_no_driven": ("""        if name in CONSUMED_BY | DRIVEN_BY and name not in shadowed:""",
+    # 交給 event loop 那半不算驅動 —— 誤紅那面。#91 之後那半是 `drives`,錨跟著移
+    "consumes_no_driven": (NEWLINE,
                            """        if name in CONSUMED_BY and name not in shadowed:"""),
-    # 不是 mutation,是 finding 的證據:DRIVEN_BY 只認 `Name.id`,不吃 attribute
-    "driven_attr_id_only": ("""        name = getattr(node.func, "id", getattr(node.func, "attr", None))
-        if name in CONSUMED_BY | DRIVEN_BY and name not in shadowed:""",
-                            """        name = getattr(node.func, "id", getattr(node.func, "attr", None))
-        if getattr(node.func, "id", None) is None and name in DRIVEN_BY:
-            return []
-        if name in CONSUMED_BY | DRIVEN_BY and name not in shadowed:"""),
+    # `driven_attr_id_only` 在 #91 收掉了 —— 它探的是「DRIVEN_BY 只認名字」那條
+    # 判準,而那條判準已經不存在(`drives` 走 `asyncio_graph` 解 callee)。留著只會
+    # 拿一個對不到的錨 abort,所以刪掉;它當初證的東西寫在 #91 的票上。
 }
 
 # de68088 的十四個 —— `c51ba98` 動過 `consumes` 兩行,兩個 knob 的錨要跟著更新
@@ -45,12 +45,13 @@ _spec.loader.exec_module(_m86)
 KNOBS = dict(_m86.KNOBS)
 KNOBS["consumes_no_builtins"] = ("""    if isinstance(node, ast.Call):
         name = getattr(node.func, "id", getattr(node.func, "attr", None))
-        if name in CONSUMED_BY | DRIVEN_BY and name not in shadowed:
+""" + NEWLINE + """
             return list(node.args) + [k.value for k in node.keywords]
 """, "")
 KNOBS["consumes_no_shadow"] = (
-    """        if name in CONSUMED_BY | DRIVEN_BY and name not in shadowed:""",
-    """        if name in CONSUMED_BY | DRIVEN_BY:""")
+    NEWLINE,
+    """        if (name in CONSUMED_BY
+                or drives(node, driven)):""")
 KNOBS.update(NEW)
 
 

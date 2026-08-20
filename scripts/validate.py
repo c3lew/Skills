@@ -288,6 +288,106 @@ DRIVEN_BY = frozenset(  # names that hand a coroutine to the event loop (#87)
     "run gather wait wait_for create_task ensure_future "
     "run_until_complete".split())
 
+LOOP_FROM = frozenset(  # asyncio calls that hand back something drivable (#91)
+    "new_event_loop get_event_loop get_running_loop Runner".split())
+
+
+def asyncio_graph(tree):
+    """What in this file really came out of `asyncio` (#91).
+
+    The upgrade the `consumes` ponytail note kept promising: a name-only
+    reading cannot tell `asyncio.run(c)` from `subprocess.run(c)`, and the
+    `DRIVEN_BY` names are the ones an ordinary script collides with —
+    `run`, `wait`, `gather`. Read as a name alone the list is a switch in
+    both directions at once: any object's `.run(...)` drives a coroutine
+    (a bypass parked in a body nobody runs exempts the file — the quiet
+    direction), and any `def run` / parameter / `import json as run`
+    strikes the name off, so the `asyncio.run(adump())` that really is
+    running stops counting (the noisy one). Both faces are one cause —
+    the callee is never resolved — so both close here.
+
+    Returns `(roots, funcs)`. `roots` are the names bound to the module
+    itself or to anything it handed back: `import asyncio [as aio]`, and
+    then, to a fixed point, every `x = <asyncio thing>` —
+    `loop = asyncio.new_event_loop()`, `r = asyncio.Runner()`, and the
+    same through a `with ... as`. `funcs` maps a local name to the
+    `asyncio` name it was imported under (`from asyncio import run as r`
+    → `{"r": "run"}`), which is what makes a bare `run(c)` count only
+    when it is that `run`.
+
+    ponytail: `import`s are collected wherever they sit, module level or
+    inside a def, and a rebinding that takes the name *away* from asyncio
+    is not tracked. Both widen the driven set, the quiet direction, but
+    only for a file that imports asyncio and then shadows its own module
+    name — and against that, reading every `b.run(...)` as the event loop
+    is the far wider hole (#91's ten false greens). Three shapes cost a
+    false red instead, the noisy direction: a non-asyncio driver (`trio`,
+    `anyio`, a test harness' own runner) is not on the list at all; a loop
+    reached through a def of one's own (`loop = get_loop()`) is a hop this
+    graph does not follow, the same second-name gap `consumes` leaves on
+    the generator half; and a loop handed in as a parameter has no binding
+    here to read.
+    """
+    roots, funcs, pairs = set(), {}, []
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            for a in n.names:  # `import asyncio`, `import asyncio as aio`
+                if a.name == "asyncio" or a.name.startswith("asyncio."):
+                    roots.add(a.asname or a.name.split(".")[0])
+        elif isinstance(n, ast.ImportFrom):
+            if (n.module or "").split(".")[0] == "asyncio":
+                for a in n.names:  # `from asyncio import run as r`
+                    funcs[a.asname or a.name] = a.name
+        elif isinstance(n, ast.Assign):
+            pairs += [(t, n.value) for t in n.targets]
+        elif isinstance(n, ast.withitem) and n.optional_vars is not None:
+            pairs.append((n.optional_vars, n.context_expr))
+    while True:  # `loop = asyncio.new_event_loop()` is asyncio's too
+        fresh = {t.id for t, src in pairs if isinstance(t, ast.Name)
+                 and t.id not in roots and from_asyncio(src, roots, funcs)}
+        if not fresh:
+            return roots, funcs
+        roots |= fresh
+
+
+def from_asyncio(expr, roots, funcs):
+    """Whether this expression is `asyncio`, or a loop it handed back.
+
+    Not *anything* asyncio handed back: `ok = asyncio.iscoroutinefunction(f)`
+    would put `ok.run(c)` back on the driven list, which is the same false
+    green `subprocess.run(c)` was. Only the calls that really do hand back
+    something you can drive a coroutine with are on `LOOP_FROM`, and a name
+    imported from asyncio counts through its *call*, never on its own —
+    `x = sleep` is a function lying around, not a loop.
+    """
+    if isinstance(expr, ast.Name):
+        return expr.id in roots
+    if isinstance(expr, ast.Await):
+        return from_asyncio(expr.value, roots, funcs)
+    if isinstance(expr, ast.Call):
+        f = expr.func
+        if isinstance(f, ast.Name):
+            return funcs.get(f.id) in LOOP_FROM
+        return (isinstance(f, ast.Attribute) and f.attr in LOOP_FROM
+                and from_asyncio(f.value, roots, funcs))
+    return False
+
+
+def drives(node, driven):
+    """Whether this `Call` really hands a coroutine to the event loop (#91).
+
+    `asyncio.run(c)` and `loop.run_until_complete(c)` are attribute calls
+    on something that came from `asyncio`, so the receiver is what decides
+    — not the attribute's name, which is why `shadowed` has no business
+    here: a module's own `def run` cannot reach `asyncio.run`. A bare
+    `run(c)` counts only when `from asyncio import run` put it there.
+    """
+    roots, funcs = driven
+    f = node.func
+    if isinstance(f, ast.Attribute):
+        return f.attr in DRIVEN_BY and from_asyncio(f.value, roots, funcs)
+    return isinstance(f, ast.Name) and funcs.get(f.id) in DRIVEN_BY
+
 
 def names_in(expr):
     """Every identifier `expr` reads — `Name.id` and `Attribute.attr` alike.
@@ -419,7 +519,7 @@ def nodes_in(stmt, through=()):
     return out
 
 
-def consumes(node, through=(), shadowed=()):
+def consumes(node, through=(), shadowed=(), driven=((), {})):
     """The expressions this one node really *runs* (#86, #87).
 
     The other half of stopping at a `GeneratorExp`: a generator body does run
@@ -437,8 +537,9 @@ def consumes(node, through=(), shadowed=()):
     really runs it is being driven: `await c`, `async for` over an async
     generator (already the `AsyncFor` branch), or being handed to the event
     loop by one of the `DRIVEN_BY` names (`asyncio.run(c)`, `gather`,
-    `create_task`, …). Without those positions the `gens` half alone would
-    turn every awaited coroutine into a false red.
+    `create_task`, …) — resolved through `asyncio_graph`, not read off the
+    name (#91). Without those positions the `gens` half alone would turn
+    every awaited coroutine into a false red.
 
     A name the module binds itself is *not* the builtin it collides with, so
     `shadowed` takes it off the list: `def sorted(g): return g` consumes
@@ -447,13 +548,14 @@ def consumes(node, through=(), shadowed=()):
     That is why the collision is read off `binds`, the same collector #81 had
     to complete for the same reason.
 
-    ponytail: `CONSUMED_BY` / `DRIVEN_BY` are name lists, not type checks —
-    the callee is read by the same name-only reading `live_nodes` uses
-    everywhere else, so a hand-rolled `run(coro)` of one's own is read as the
-    event loop's. That widens the live set (the quiet direction), but the
-    upgrade — telling `asyncio.run` from any other `run` — needs the import
-    graph this name-only call graph never has. The 15 names on `CONSUMED_BY`
-    drain an iterable; `map` / `filter` / `zip` / `enumerate` are
+    ponytail: `CONSUMED_BY` is a name list, not a type check — the callee is
+    read by the same name-only reading `live_nodes` uses everywhere else.
+    `DRIVEN_BY` no longer is: its names are the ones an ordinary script
+    collides with, so a hand-rolled `run(coro)` was read as the event
+    loop's (quiet) and any `def run` struck `asyncio.run` off the list
+    (noisy). `asyncio_graph` is the import graph that upgrade needed, and
+    `drives` resolves the callee through it (#91). The 15 names on
+    `CONSUMED_BY` drain an iterable; `map` / `filter` / `zip` / `enumerate` are
     deliberately off it, because they are deferred themselves. Four
     consuming shapes are left out and each costs a false red, the noisy
     direction: unpacking (`a, b = gen()`, `*rest`), a consumer reached through
@@ -477,7 +579,8 @@ def consumes(node, through=(), shadowed=()):
         return [c.iter for c in node.generators] if node in through else []
     if isinstance(node, ast.Call):
         name = getattr(node.func, "id", getattr(node.func, "attr", None))
-        if name in CONSUMED_BY | DRIVEN_BY and name not in shadowed:
+        if ((name in CONSUMED_BY and name not in shadowed)
+                or drives(node, driven)):
             return list(node.args) + [k.value for k in node.keywords]
     return []
 
@@ -706,6 +809,7 @@ def live_nodes(tree):
             or any(isinstance(n, (ast.Yield, ast.YieldFrom))
                    for n in own_scope(node))}
     shadowed = set().union(*map(binds, ast.walk(tree)) or [set()])
+    driven = asyncio_graph(tree)
     live, body, eaten_gens = set(), runs(tree.body), set()
     while True:
         invoked, called, lam_of = set(), set(), defaultdict(set)
@@ -714,7 +818,7 @@ def live_nodes(tree):
         bound = defaultdict(set, {k: set(v) for k, v in returned.items()})
         for stmt in body:
             for n in nodes_in(stmt, eaten_gens):
-                for e in consumes(n, eaten_gens, shadowed):  # really iterated
+                for e in consumes(n, eaten_gens, shadowed, driven):  # really run
                     if isinstance(e, ast.GeneratorExp):
                         eaten_gens.add(e)
                     elif isinstance(e, ast.Call):
@@ -1662,6 +1766,63 @@ def self_check():
             dead_def + runnable + "[dump() for _ in [1]]\n    print('要開')\n",
             runnable + f"list({out_bypass}.write(b'x') for _ in [1])\n"
             "    print('要開')\n",
+        ):
+            bad.write_text(alive, encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], alive
+
+        # #91: whether a call really hands a coroutine to the event loop is
+        # read off the *receiver*, not the name. Both faces are one cause, so
+        # both are pinned here. The quiet direction first — an object that is
+        # not asyncio drives nothing, and a bypass parked in a body nobody
+        # runs must not exempt the file, or one `subprocess.run(...)` is the
+        # switch again.
+        adump_bypass = f"async def adump():\n    {out_bypass}.write(b'x')\n\n\n"
+        adump = "async def adump():\n    dump()\n\n\n"
+        own_run = "def run(x):\n    return x\n\n\n"
+        for never in (
+            adump_bypass + "import queue\nb = queue.Queue()\n" + runnable
+            + "b.run(adump())\n    print('要開')\n",
+            adump_bypass + "import subprocess\n" + runnable
+            + "subprocess.run(adump())\n    print('要開')\n",
+            # ...and a `run` the module wrote itself still drives nothing
+            dead_def + adump + own_run + runnable
+            + "run(adump())\n    print('要開')\n",
+            # ...and neither does *anything* asyncio ever handed back: only a
+            # loop or a Runner is drivable, so a predicate's result is not a
+            # way back onto the driven list
+            adump_bypass + "import asyncio\n"
+            + "ok = asyncio.iscoroutinefunction(adump)\n" + runnable
+            + "ok.run(adump())\n    print('要開')\n",
+        ):
+            bad.write_text(never, encoding="utf-8")
+            assert len(stream_encoding_issues(repo)) == 1, never
+
+        # the noisy direction: a name the module happens to bind cannot reach
+        # `asyncio.run`, so the coroutine really is driven and the bypass
+        # inside it really runs. Each line below is a hop the import graph
+        # has to carry — how the module name is spelt, and how a loop gets
+        # from asyncio to the receiver.
+        for alive in (
+            dead_def + "import asyncio\n" + adump + own_run + runnable
+            + "asyncio.run(adump())\n    print('要開')\n",
+            dead_def + "import asyncio as aio\n" + adump + runnable
+            + "aio.run(adump())\n    print('要開')\n",
+            dead_def + "from asyncio import run\n" + adump + runnable
+            + "run(adump())\n    print('要開')\n",
+            # the receiver is the loop asyncio handed back — bound to a name,
+            # taken straight off the call, or held by a `with`
+            dead_def + "import asyncio\n" + adump + runnable
+            + "loop = asyncio.new_event_loop()\n"
+            + "    loop.run_until_complete(adump())\n    print('要開')\n",
+            dead_def + "from asyncio import new_event_loop\n" + adump
+            + runnable + "loop = new_event_loop()\n"
+            + "    loop.run_until_complete(adump())\n    print('要開')\n",
+            dead_def + "import asyncio\n" + adump + runnable
+            + "asyncio.get_event_loop().run_until_complete(adump())\n"
+            + "    print('要開')\n",
+            dead_def + "import asyncio\n" + adump + runnable
+            + "with asyncio.Runner() as r:\n        r.run(adump())\n"
+            + "    print('要開')\n",
         ):
             bad.write_text(alive, encoding="utf-8")
             assert stream_encoding_issues(repo) == [], alive
