@@ -114,7 +114,9 @@ def run_table():
             (copy / "scripts").mkdir(parents=True)
             shutil.copy2(ROOT / "scripts" / "validate.py", copy / "scripts")
             apply(copy, knob)
-            # cwd=ROOT: self_check 的最後一條打的是 REPO 本體,副本只換判準
+            # cwd=ROOT 只影響相對路徑的輸出；self_check 最後一條的 REPO 是從
+            # __file__ 解的，副本跑起來打的是這份只有 validate.py 的暫存副本，
+            # 不是 repo 本體 —— 11/11 全靠 inline fixture 咬住（#101）。
             r = subprocess.run([sys.executable, str(copy / "scripts" / "validate.py"),
                                 "--self-check"], cwd=ROOT, capture_output=True)
             out.append((knob, r.returncode))
