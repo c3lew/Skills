@@ -280,6 +280,11 @@ def runs(body):
     return out
 
 
+CONSUMED_BY = frozenset(  # names that drain the iterable handed to them
+    "list tuple set frozenset dict sum min max any all sorted next join "
+    "extend writelines".split())
+
+
 def names_in(expr):
     """Every identifier `expr` reads — `Name.id` and `Attribute.attr` alike.
 
@@ -291,11 +296,24 @@ def names_in(expr):
     either way `return lambda: dump` came back as "what `get()` gives you", and
     `get()()` exempted a file where not one line of `dump` runs (#83). What a
     lambda reaches once it really is called is `free_in`.
+
+    A `GeneratorExp` stops it for the same reason (#86): its body runs when
+    something *iterates* the generator, not where the literal sits, so
+    `keep(dump() for _ in [1])` hands `keep` a generator — it does not run
+    `dump`, and reading the body here counted it as run, because an argument
+    is assumed called. The first `for`'s iterable is the one part evaluated
+    where the literal sits, the same way a lambda's parameter default is, so
+    it is pushed back; the `ifs` and any later `for` are deferred with the
+    body. A `ListComp` / `SetComp` / `DictComp` is not stopped: it runs to
+    completion right there.
     """
     out, stack = set(), [expr]
     while stack:
         n = stack.pop()
         if isinstance(n, ast.Lambda):
+            continue
+        if isinstance(n, ast.GeneratorExp):
+            stack.append(n.generators[0].iter)
             continue
         out.add(getattr(n, "id", getattr(n, "attr", None)))
         stack += list(ast.iter_child_nodes(n))
@@ -345,7 +363,7 @@ def free_in(lam):
 
 
 def nodes_in(stmt, through=()):
-    """Every node executing `stmt` reaches — a `Lambda` stops it (#84).
+    """Every node executing `stmt` reaches — deferred code stops it (#84, #86).
 
     The third face of the boundary #83 drew through `names_in` and `own_scope`:
     a lambda literal parked in a live statement is *built* there, not run
@@ -358,6 +376,18 @@ def nodes_in(stmt, through=()):
     A parameter *default* is not deferred: it is evaluated where the literal
     sits, so `f = lambda x=dump(): 1` really does run `dump` — those keep
     going.
+
+    A `GeneratorExp` is the other deferred body Python writes inline, and it
+    stops the walk on the same rule (#86): `g = (dump() for _ in [1])` builds
+    a generator nobody consumes, so not one line of `dump` runs, and walking
+    in read its `dump()` as a call this statement makes. Of the 6 shapes #86
+    caught, 5 ride on this one walk — bound to a name, bare in a live
+    statement, parked in a container, handed to a def that does not consume
+    it, and the bypass written straight into an unconsumed generator body;
+    the 6th, a generator function called but never iterated, is `live_nodes`'
+    half. What the first `for`'s iterable is to a genexp, a parameter default
+    is to a lambda: evaluated where the literal sits, so it is pushed back.
+    `ListComp` / `SetComp` / `DictComp` are not stopped.
 
     `through` is the set of lambdas something really does call, and their
     bodies are walked like any other live code. The name half of that answer
@@ -378,8 +408,61 @@ def nodes_in(stmt, through=()):
         if isinstance(n, ast.Lambda) and n not in through:
             stack += [d for d in n.args.defaults + n.args.kw_defaults if d]
             continue
+        if isinstance(n, ast.GeneratorExp) and n not in through:
+            stack.append(n.generators[0].iter)
+            continue
         stack += list(ast.iter_child_nodes(n))
     return out
+
+
+def consumes(node, through=(), shadowed=()):
+    """The expressions this one node really *iterates* (#86).
+
+    The other half of stopping at a `GeneratorExp`: a generator body does run
+    once something consumes it, and the guard has to say where. Four positions
+    consume — a `for`'s iterable, `yield from`, the iterables of a
+    comprehension that runs where it stands, and an argument handed to one of
+    the builtins that drains what it is given. A genexp's own iterables are on
+    this list only when the genexp itself is being consumed: evaluating
+    `for x in E` builds `E`, and only iterating the genexp iterates `E` in
+    turn.
+
+    A name the module binds itself is *not* the builtin it collides with, so
+    `shadowed` takes it off the list: `def sorted(g): return g` consumes
+    nothing, and reading it as the builtin would hand back the switch #86 was
+    opened on — one def, and a bypass parked in a generator exempts the file.
+    That is why the collision is read off `binds`, the same collector #81 had
+    to complete for the same reason.
+
+    ponytail: `CONSUMED_BY` is a name list, not a type check — the callee is
+    read by the same name-only reading `live_nodes` uses everywhere else. The
+    15 names on it drain an iterable; `map` / `filter` / `zip` / `enumerate`
+    are deliberately off it, because they are deferred themselves. Four
+    consuming shapes are left out and each costs a false red, the noisy
+    direction: unpacking (`a, b = gen()`, `*rest`), a consumer reached through
+    a second name (`h = g; list(h)`), a generator handed back and consumed a
+    level up (`return gen()`), and a user-defined def that iterates its
+    parameter — telling one of those from `keep(g)`, which merely hands the
+    generator back, is what the fourth case of #86 pins. One shape is left
+    open in the *quiet* direction and `shadowed` does not reach it: a method
+    call (`b.extend(g)`) is matched on the attribute alone, so an object with
+    a method of that name is read as draining what it is handed. Narrowing
+    that needs the receiver's type, which this name-only call graph never
+    has; `"".join(...)` is the shape that keeps the attribute reading here.
+    """
+    if isinstance(node, (ast.For, ast.AsyncFor)):
+        return [node.iter]
+    if isinstance(node, ast.YieldFrom):
+        return [node.value]
+    if isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp)):
+        return [c.iter for c in node.generators]
+    if isinstance(node, ast.GeneratorExp):
+        return [c.iter for c in node.generators] if node in through else []
+    if isinstance(node, ast.Call):
+        name = getattr(node.func, "id", getattr(node.func, "attr", None))
+        if name in CONSUMED_BY and name not in shadowed:
+            return list(node.args) + [k.value for k in node.keywords]
+    return []
 
 
 def own_scope(node):
@@ -563,8 +646,18 @@ def live_nodes(tree):
     really do call one still carry — on the spot via `free_in`, through a name
     via `bindings_in`.
 
-    ponytail: two approximations remain — two defs sharing a name are one
-    node, and a name handed to a call is assumed called by it. Both widen the
+    A generator is the same claim on the other deferred body (#86). Building
+    one runs nothing: `g = (dump() for _ in [1])`, and `gen()` on a def whose
+    body yields, both hand back a generator with not one line of that body
+    run — so a genexp stops the walk (`nodes_in`), and a call on a generator
+    def is dropped from `invoked`. What makes either live is being
+    *consumed*, and `consumes` names the positions: a genexp consumed on the
+    spot or through the name it was bound to, a generator def called in a
+    consumed position.
+
+    ponytail: two approximations remain here — two defs sharing a name are
+    one node, and a name handed to a call is assumed called by it (the three
+    the generator half leaves are counted in `consumes`). Both widen the
     live set, which is the direction that makes this guard go *silent* on a
     script printing unpinned 中文, so each is kept to a shape where a call is
     the ordinary reading of the code; the four dead-`dump` shapes `self_check`
@@ -581,12 +674,25 @@ def live_nodes(tree):
         for n in own:
             if isinstance(n, ast.Return) and n.value is not None:
                 returned[RET + name] |= names_in(n.value) - local
-    live, body = set(), runs(tree.body)
+    gens = {name for name, node in defs.items()  # calling one runs no line
+            if any(isinstance(n, (ast.Yield, ast.YieldFrom))
+                   for n in own_scope(node))}
+    shadowed = set().union(*map(binds, ast.walk(tree)) or [set()])
+    live, body, eaten_gens = set(), runs(tree.body), set()
     while True:
         invoked, called, lam_of = set(), set(), defaultdict(set)
+        eaten_names, eaten_calls, gen_of = set(), set(), defaultdict(set)
+        before = len(eaten_gens)
         bound = defaultdict(set, {k: set(v) for k, v in returned.items()})
         for stmt in body:
-            for n in nodes_in(stmt):
+            for n in nodes_in(stmt, eaten_gens):
+                for e in consumes(n, eaten_gens, shadowed):  # really iterated
+                    if isinstance(e, ast.GeneratorExp):
+                        eaten_gens.add(e)
+                    elif isinstance(e, ast.Call):
+                        eaten_calls |= names_in(e.func)
+                    else:
+                        eaten_names |= names_in(e)
                 if isinstance(n, ast.Call):
                     invoked |= names_in(n.func)
                     if isinstance(n.func, ast.Lambda):  # `(lambda: x)()` — #83
@@ -605,16 +711,21 @@ def live_nodes(tree):
                     for name, src in binding_pairs(n):
                         if isinstance(src, ast.Lambda):
                             lam_of[name].add(src)
-        todo = list(invoked)
-        while todo:  # an invoked binding invokes whatever it was bound to
-            for name in bound.get(todo.pop(), ()):
-                if name not in invoked:
-                    invoked.add(name)
-                    todo.append(name)
-        fresh = (invoked & set(defs)) - live
-        if not fresh:
+                        if isinstance(src, ast.GeneratorExp):
+                            gen_of[name].add(src)
+        for seed in (invoked, eaten_calls):
+            todo = list(seed)
+            while todo:  # an invoked binding invokes whatever it was bound to
+                for name in bound.get(todo.pop(), ()):
+                    if name not in seed:
+                        seed.add(name)
+                        todo.append(name)
+        for name in eaten_names & set(gen_of):  # `g = (…); list(g)` — #86
+            eaten_gens |= gen_of[name]
+        fresh = (((invoked - gens) | eaten_calls) & set(defs)) - live
+        if not fresh and before == len(eaten_gens):
             through = called.union(*[lam_of[n] for n in invoked & set(lam_of)]
-                                   or [set()])
+                                   or [set()]) | eaten_gens
             return [n for stmt in body for n in nodes_in(stmt, through)]
         live |= fresh
         body = runs(tree.body) + [s for name in live for s in runs(defs[name].body)]
@@ -1403,6 +1514,42 @@ def self_check():
                 ("bypass written inside an uncalled lambda body",
                  f"f = lambda: {out_bypass}.write(b'x')\n"
                  + runnable + "print('要開')\n"),
+                # #86: a generator is the other deferred body, and the same
+                # walk read it as run. Building one runs nothing — a genexp
+                # nobody consumes, and a generator def called but never
+                # iterated — so 7 of the 8 shapes below exempted the file
+                # without running a line of `dump`, and two of those did not
+                # even need the dead def to hide behind: one extra pair of
+                # parentheses around the write, or one def colliding with a
+                # consumer's name, was the switch on its own. The 8th, a
+                # generator def bound and never called, was already dead
+                # before #86 and is here so the fix cannot hand it back.
+                *[(f"unconsumed generator: {label}", tail) for label, tail in (
+                    ("g = (dump() for _ in [1])",
+                     "g = (dump() for _ in [1])\n" + runnable + "print('要開')\n"),
+                    ("bare (dump() for _ in [1])",
+                     runnable + "(dump() for _ in [1])\n    print('要開')\n"),
+                    ("xs = [(dump() for _ in [1])]",
+                     "xs = [(dump() for _ in [1])]\n"
+                     + runnable + "print('要開')\n"),
+                    ("handed to a def that does not consume it",
+                     "def keep(g):\n    return g\n\n\n"
+                     + runnable + "keep(dump() for _ in [1])\n"
+                     "    print('要開')\n"),
+                    ("generator def called, never iterated",
+                     "def gen():\n    yield dump()\n\n\n"
+                     + runnable + "gen()\n    print('要開')\n"),
+                    ("generator def bound, never called",
+                     "def gen():\n    yield dump()\n\n\n"
+                     + runnable + "print('要開')\n"),
+                    ("a def shadowing a consumer does not consume",
+                     "def sorted(g):\n    return g\n\n\n" + runnable
+                     + f"sorted({out_bypass}.write(b'x') for _ in [1])\n"
+                     "    print('要開')\n"),
+                    ("bypass written inside an unconsumed generator body",
+                     f"g = ({out_bypass}.write(b'x') for _ in [1])\n"
+                     + runnable + "print('要開')\n"),
+                )],
         ):
             still_dead = f"def dump():\n    {out_bypass}.write(b'x')\n\n\n" + tail
             bad.write_text(still_dead, encoding="utf-8")
@@ -1449,6 +1596,44 @@ def self_check():
             + "sorted([1], key=lambda v: dump())\n    print('要開')\n",
             f"def dump():\n    {out_bypass}.write(b'x')\n" + runnable
             + "list(map(lambda v: dump(), [1]))\n    print('要開')\n",
+        ):
+            bad.write_text(alive, encoding="utf-8")
+            assert stream_encoding_issues(repo) == [], alive
+
+        # #86 (the cost side): consuming a generator really does run its body,
+        # so stopping at a `GeneratorExp` must not redden these. Four
+        # consuming positions carry — a builtin that drains it, on the spot or
+        # through the name it was bound to; a `for` over what a generator def
+        # hands back; and a comprehension, which is not deferred at all — plus
+        # the bypass written into a generator body something really consumes,
+        # which only the node half (`through`) can keep reachable.
+        dead_def = f"def dump():\n    {out_bypass}.write(b'x')\n\n\n"
+        gen_def = "def gen():\n    yield dump()\n\n\n"
+        for alive in (
+            dead_def + runnable + "sum(1 for _ in (dump() for _ in [1]))\n"
+            "    print('要開')\n",
+            dead_def + "g = (dump() for _ in [1])\n" + runnable
+            + "list(g)\n    print('要開')\n",
+            dead_def + gen_def + runnable
+            + "for _ in gen():\n        pass\n    print('要開')\n",
+            dead_def + gen_def + runnable
+            + "list(gen())\n    print('要開')\n",
+            # a comprehension consumes what it loops over, so a generator
+            # handed to one really does run
+            dead_def + runnable + "[y for y in (dump() for _ in [1])]\n"
+            "    print('要開')\n",
+            # `names_in` carries the same eager iterable where `nodes_in`
+            # cannot reach — into the body of a lambda something calls
+            dead_def + "f = lambda: sum(x for x in dump())\n" + runnable
+            + "f()\n    print('要開')\n",
+            # the first `for`'s iterable is evaluated where the literal sits,
+            # the way a lambda's parameter default is — this one runs `dump`
+            # even though nothing ever consumes the generator
+            dead_def + "g = (x for x in dump())\n" + runnable
+            + "print('要開')\n",
+            dead_def + runnable + "[dump() for _ in [1]]\n    print('要開')\n",
+            runnable + f"list({out_bypass}.write(b'x') for _ in [1])\n"
+            "    print('要開')\n",
         ):
             bad.write_text(alive, encoding="utf-8")
             assert stream_encoding_issues(repo) == [], alive
