@@ -1,0 +1,380 @@
+# QA #98 rerun
+# HEAD eadd3c574702e0582acef2ffabf8f9af7e49924a
+# command: "C:\Program Files\Git\bin\bash.exe" scripts/qa/98-walkthrough.sh "$(mktemp -d)/qa98"
+
+==== STEP 1  regression suite(validate + 五支 self-check)====
++ echo '==== STEP 1  regression suite(validate + 五支 self-check)===='
++ python '/d/Self Project/Skills/scripts/validate.py'
+OK validate green
++ python '/d/Self Project/Skills/scripts/validate.py' --self-check
+OK validate self-check green
++ python '/d/Self Project/Skills/scripts/batch.py' --self-check
+OK batch self-check green
+OK §8a/§8c conflict scenarios green
++ python '/d/Self Project/Skills/skills/build-batch/batch.py' --self-check
+OK batch self-check green
++ python '/d/Self Project/Skills/scripts/install.py' --self-check
+[fixture] FAIL skills/bad: missing SKILL.md
+OK install self-check green
++ python '/d/Self Project/Skills/scripts/hooks/triage-to-maintain.py' --self-check
+OK triage-to-maintain self-check green
+==== STEP 2  覆蓋驗收項 1:一個檔有幾個 __main__ 就檢查幾個(#69)====
++ echo '==== STEP 2  覆蓋驗收項 1:一個檔有幾個 __main__ 就檢查幾個(#69)===='
+---- 2a  兩個 __main__,只釘第一個 → 吵
++ echo '---- 2a  兩個 __main__,只釘第一個 → 吵'
++ fresh
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ cat
++ cat /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/qa/zz-case-two-mains.py
+import sys
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    print("一")
+if __name__ == "__main__":
+    print("二")
++ gate
++ set +e
++ python /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/validate.py
+FAIL scripts/qa/zz-case-two-mains.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block — its 中文 output is mojibake on a cp950 console (#58)
+exit 1
++ echo 'exit 1'
+---- 2b  對照組:同一份 fixture 改成只釘**第二個** → 一樣吵
+         沒有這格,2a 的紅分不出是「每個都檢查」還是「只看最後一個」
++ set -e
++ echo '---- 2b  對照組:同一份 fixture 改成只釘**第二個** → 一樣吵'
++ echo '         沒有這格,2a 的紅分不出是「每個都檢查」還是「只看最後一個」'
++ fresh
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ cat
++ cat /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/qa/zz-case-two-mains-second.py
+import sys
+if __name__ == "__main__":
+    print("一")
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    print("二")
++ gate
++ set +e
++ python /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/validate.py
+FAIL scripts/qa/zz-case-two-mains-second.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block — its 中文 output is mojibake on a cp950 console (#58)
+exit 1
++ echo 'exit 1'
++ set -e
++ echo '---- 2c  兩個都釘 → 綠(2a/2b 的反面)'
++ fresh
+---- 2c  兩個都釘 → 綠(2a/2b 的反面)
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ cat
++ cat /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/qa/zz-case-two-mains-ok.py
+import sys
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    print("一")
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    print("二")
++ gate
++ set +e
++ python /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/validate.py
+OK validate green
++ echo 'exit 0'
+exit 0
++ set -e
++ echo '---- 2d  第二把尺(96-newrule-probe)對同一格要給**一樣**的答案'
++ echo '         #69 這條的實體就是兩把尺原本相反:validate 是 all、probe 是 any'
++ fresh
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
+---- 2d  第二把尺(96-newrule-probe)對同一格要給**一樣**的答案
+         #69 這條的實體就是兩把尺原本相反:validate 是 all、probe 是 any
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ cat
++ probe
++ set +e
++ python '/d/Self Project/Skills/scripts/qa/96-newrule-probe.py' /tmp/tmp.pcAYcNH0uS/qa98/case
+scripts/qa/zz-case-two-mains.py: 缺 stdout pin
+
+不合 1
++ set -e
++ echo '---- 2d2  同一格拿修前的 probe(91b6b98,寫的是 any)跑 —— 應該放行'
+---- 2d2  同一格拿修前的 probe(91b6b98,寫的是 any)跑 —— 應該放行
++ git -C '/d/Self Project/Skills' show 91b6b98:scripts/qa/96-newrule-probe.py
++ set +e
++ python /tmp/tmp.pcAYcNH0uS/qa98/probe_old.py /tmp/tmp.pcAYcNH0uS/qa98/case
+OK 新規則下全綠
+
+不合 0
++ set -e
++ echo '==== STEP 3  覆蓋驗收項 2:檔案 parse 不動要判 fail(#66)===='
+==== STEP 3  覆蓋驗收項 2:檔案 parse 不動要判 fail(#66)====
++ echo '---- 3a  一支打錯字的 .py → 吵,訊息要帶檔名 + 原因'
+---- 3a  一支打錯字的 .py → 吵,訊息要帶檔名 + 原因
++ fresh
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ printf 'def f(\n'
++ cat /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/qa/zz-case-typo.py
+def f(
++ gate
++ set +e
++ python /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/validate.py
+FAIL scripts/qa/zz-case-typo.py: cannot be read as Python source — '(' was never closed (<unknown>, line 1); a file this guard cannot read counts as a fail, not a skip (#66)
++ echo 'exit 1'
+exit 1
++ set -e
+---- 3b  同一格把字打對 → 綠(3a 的反面)
++ echo '---- 3b  同一格把字打對 → 綠(3a 的反面)'
++ fresh
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ printf 'def f():\n    return 1\n'
++ gate
++ set +e
++ python /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/validate.py
+OK validate green
++ echo 'exit 0'
++ set -e
+exit 0
++ echo '---- 3c  一支 cp950 存的 .py → 判紅,不是整支 traceback 掀掉'
+---- 3c  一支 cp950 存的 .py → 判紅,不是整支 traceback 掀掉
++ fresh
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ python - /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/qa/zz-case-cp950.py
++ gate
++ set +e
++ python /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/validate.py
+FAIL scripts/qa/zz-case-cp950.py: cannot be read as Python source — 'utf-8' codec can't decode byte 0xad in position 5: invalid start byte; a file this guard cannot read counts as a fail, not a skip (#66)
++ echo 'exit 1'
+exit 1
++ set -e
++ echo '==== STEP 4  覆蓋驗收項 3:__main__.py 不被 __ 開頭的過濾誤傷(#68)===='
+==== STEP 4  覆蓋驗收項 3:__main__.py 不被 __ 開頭的過濾誤傷(#68)====
+---- 4a  package entry point 沒 pin → 吵
++ echo '---- 4a  package entry point 沒 pin → 吵'
++ fresh
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ mkdir -p /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/pkg
++ cat
++ cat /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/pkg/__main__.py
+import sys
+if __name__ == "__main__":
+    print("要開")
++ gate
++ set +e
++ python /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/validate.py
+FAIL scripts/pkg/__main__.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block — its 中文 output is mojibake on a cp950 console (#58)
++ echo 'exit 1'
++ set -e
+exit 1
++ echo '---- 4b  補上 pin → 綠(4a 的反面)'
+---- 4b  補上 pin → 綠(4a 的反面)
++ fresh
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ mkdir -p /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/pkg
++ cat
++ gate
++ set +e
++ python /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/validate.py
+OK validate green
++ echo 'exit 0'
+exit 0
++ set -e
+---- 4c  過濾還是擋得住它本來要擋的:__pycache__ / .venv / .hidden.py 三格都沒 pin → 仍綠
++ echo '---- 4c  過濾還是擋得住它本來要擋的:__pycache__ / .venv / .hidden.py 三格都沒 pin → 仍綠'
++ fresh
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ mkdir -p /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/__pycache__ /tmp/tmp.pcAYcNH0uS/qa98/case/.venv
++ for f in "$QA/case/scripts/__pycache__/zz.py" "$QA/case/.venv/zz.py" "$QA/case/scripts/.hidden.py"
++ printf 'import sys\nif __name__ == "__main__":\n    print("x")\n'
++ for f in "$QA/case/scripts/__pycache__/zz.py" "$QA/case/.venv/zz.py" "$QA/case/scripts/.hidden.py"
++ printf 'import sys\nif __name__ == "__main__":\n    print("x")\n'
++ for f in "$QA/case/scripts/__pycache__/zz.py" "$QA/case/.venv/zz.py" "$QA/case/scripts/.hidden.py"
++ printf 'import sys\nif __name__ == "__main__":\n    print("x")\n'
++ gate
++ set +e
++ python /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/validate.py
+OK validate green
++ echo 'exit 0'
++ set -e
++ echo '==== STEP 5  修前對照:同一份母體 22 格,修前(91b6b98)vs 修後 ===='
+exit 0
+==== STEP 5  修前對照:同一份母體 22 格,修前(91b6b98)vs 修後 ====
++ python '/d/Self Project/Skills/scripts/qa/98-prevdiff.py'
+母體 22 格,修前 = 91b6b98
+
+修前:整支掛掉 —— UnicodeDecodeError: 'utf-8' codec can't decode byte 0xad in position 5: invalid start byte
+      (這本身就是 #66 的一半:沒接 UnicodeDecodeError 的話,一支 cp950 存的
+       .py 不是判紅,是把整條守門 traceback 掀掉。crash 不是判決。)
+      拿掉 cp950 那格重跑修前 —— 其餘 21 格才有逐格答案
+
+fixture                           QA 期望    修後    修前     判定
+.g11_hidden.py                    綠        綠     綠      OK
+.venv/g10_vendored.py             綠        綠     綠      OK
+__pycache__/g09_cached.py         綠        綠     綠      OK
+g01_pin_first_level.py            綠        綠     綠      OK
+g02_stdin_both_pinned.py          綠        綠     綠      OK
+g03_no_main.py                    綠        綠     綠      OK
+g04_stdin_only_prose.py           綠        綠     綠      OK
+g05_reversed_spelling.py          綠        綠     綠      OK
+g06_main_nested_under_try.py      綠        綠     綠      OK
+g07_two_mains_both_pinned.py      綠        綠     綠      OK
+g08_in_tuple_spelling.py          綠        綠     綠      OK
+pkg/__main__.py                   紅        紅     綠      OK  差額 修前綠→修後紅
+r01_pin_inside_main_func.py       紅        紅     紅      OK
+r02_pin_module_level.py           紅        紅     紅      OK
+r03_pin_nested_in_if.py           紅        紅     紅      OK
+r04_buffer_only_no_pin.py         紅        紅     紅      OK
+r05_main_no_print.py              紅        紅     紅      OK
+r06_stdin_only_stdout_pinned.py   紅        紅     紅      OK
+r07_two_mains_first_only.py       紅        紅     紅      OK
+r08_pin_nested_in_try.py          紅        紅     紅      OK
+r10_syntax_error.py               紅        紅     綠      OK  差額 修前綠→修後紅
+r11_cp950_source.py               紅        紅     掛掉     OK  差額 修前掛掉→修後紅
+
+差額 3 筆:
+  pkg/__main__.py: 修前綠 → 修後紅
+  r10_syntax_error.py: 修前綠 → 修後紅
+  r11_cp950_source.py: 修前掛掉 → 修後紅
+  (每一筆都要對得上票面三條;出現「修前紅 → 修後綠」就是本輪放掉了東西)
+
+---- 母體整包放在 `.hidden_root/` 底下(repo 被 clone 到 ~/.local/… 的形狀)----
+  修後:11 紅(過濾吃相對路徑,不受影響)
+  修前:0 紅(過濾吃絕對路徑 —— 整條守門靜靜全綠)
+  修後兩處答案一致:True
+
+母體 22,不合 0
+==== STEP 6  第二把尺:刻意寫寬、不套受測規則的入口掃描 ====
++ echo '==== STEP 6  第二把尺:刻意寫寬、不套受測規則的入口掃描 ===='
+---- 6a  對 repo 本體
++ echo '---- 6a  對 repo 本體'
++ python '/d/Self Project/Skills/scripts/qa/98-wide.py' '/d/Self Project/Skills'
+==== 寬尺看到的全部 .py ====
+   scripts/batch.py:main 行 [205];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/hooks/triage-to-maintain.py:main 行 [49];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/install.py:main 行 [249];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/102-walkthrough.py:main 行 [77];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/qa/57-guard-sweep.py:main 行 [118];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/60-mention-sweep.py:main 行 [188, 195, 204, 213, 229, 238, 248, 257, 266, 276, 322];第一層 pin [[], [], [], [], [], [], [], [], [], [], ['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/65-nesting-sweep.py:main 行 [162];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/73-reach-sweep.py:main 行 [74];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/75-binding-sweep.py:main 行 [120];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/79-return-sweep.py:main 行 [107];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/81-lambda-sweep.py:main 行 [65];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/83-deferred-sweep.py:main 行 [12, 72];第一層 pin [[], ['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/84-generator-sweep.py:main 行 [13, 78];第一層 pin [[], ['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/86-async-sweep.py:main 行 [10, 159];第一層 pin [[], ['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/86-mutate.py:main 行 [80];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/87-drive-sweep.py:main 行 [162];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/87-mutate.py:main 行 [58];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/87-oracle.py:main 行 [79];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/87-prevdiff.py:main 行 [56];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/91-graph-sweep.py:main 行 [164];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/91-mutate.py:main 行 [67];第一層 pin [['stdout']](原始碼提到 sys.stdin:False)
+   scripts/qa/96-newrule-probe.py:main 行 [74];第一層 pin [['stdout']](原始碼提到 sys.stdin:True)
+   scripts/qa/97-mutate.py:main 行 [154];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/qa/97-prevdiff.py:main 行 [83];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/qa/97-wide.py:main 行 [43, 75];第一層 pin [[], ['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/qa/98-mutate-control.py:main 行 [49];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/qa/98-prevdiff.py:main 行 [148];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/qa/98-wide.py:main 行 [81];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/validate.py:main 行 [965];第一層 pin [['stdout']](原始碼提到 sys.stdin:True)
+   skills/build-batch/batch.py:main 行 [1334];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+
+寬尺母體 30 個 .py;受測物的受檢範圍 30 個(差 0 個被過濾掉);受測物判紅 0 個
+
+==== 差額(寬尺 vs 受測物)—— 每一筆要人判讀 ====
+  scripts/qa/60-mention-sweep.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/qa/83-deferred-sweep.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/qa/84-generator-sweep.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/qa/86-async-sweep.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/qa/96-newrule-probe.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/qa/97-wide.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/validate.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  差額 7 筆
+---- 6b  對一份真的有被過濾檔的母體(repo 本體剛好一格都沒過濾掉,量不到 #68 那條軸)
++ echo '---- 6b  對一份真的有被過濾檔的母體(repo 本體剛好一格都沒過濾掉,量不到 #68 那條軸)'
++ fresh
++ rm -rf /tmp/tmp.pcAYcNH0uS/qa98/case
++ cp -r /tmp/tmp.pcAYcNH0uS/qa98/pristine /tmp/tmp.pcAYcNH0uS/qa98/case
++ mkdir -p /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/__pycache__ /tmp/tmp.pcAYcNH0uS/qa98/case/.venv /tmp/tmp.pcAYcNH0uS/qa98/case/scripts/pkg
++ for f in "$QA/case/scripts/__pycache__/zz.py" "$QA/case/.venv/zz.py" "$QA/case/scripts/.hidden.py"
++ printf 'import sys\nif __name__ == "__main__":\n    print("x")\n'
++ for f in "$QA/case/scripts/__pycache__/zz.py" "$QA/case/.venv/zz.py" "$QA/case/scripts/.hidden.py"
++ printf 'import sys\nif __name__ == "__main__":\n    print("x")\n'
++ for f in "$QA/case/scripts/__pycache__/zz.py" "$QA/case/.venv/zz.py" "$QA/case/scripts/.hidden.py"
++ printf 'import sys\nif __name__ == "__main__":\n    print("x")\n'
++ printf 'import sys\nif __name__ == "__main__":\n    print("x")\n'
++ python '/d/Self Project/Skills/scripts/qa/98-wide.py' /tmp/tmp.pcAYcNH0uS/qa98/case
++ tail -20
+   scripts/qa/98-mutate-control.py:main 行 [49];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/qa/98-prevdiff.py:main 行 [148];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/qa/98-wide.py:main 行 [81];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+   scripts/validate.py:main 行 [965];第一層 pin [['stdout']](原始碼提到 sys.stdin:True)
+   skills/build-batch/batch.py:main 行 [1334];第一層 pin [['stdin', 'stdout']](原始碼提到 sys.stdin:True)
+
+寬尺母體 34 個 .py;受測物的受檢範圍 31 個(差 3 個被過濾掉);受測物判紅 1 個
+
+==== 差額(寬尺 vs 受測物)—— 每一筆要人判讀 ====
+  .venv/zz.py:寬尺判紅,受測物判綠 —— 受測物過濾掉沒看
+  scripts/.hidden.py:寬尺判紅,受測物判綠 —— 受測物過濾掉沒看
+  scripts/__pycache__/zz.py:寬尺判紅,受測物判綠 —— 受測物過濾掉沒看
+  scripts/qa/60-mention-sweep.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/qa/83-deferred-sweep.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/qa/84-generator-sweep.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/qa/86-async-sweep.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/qa/96-newrule-probe.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/qa/97-wide.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  scripts/validate.py:寬尺判紅,受測物判綠 —— 同一批檔、判準有差
+  差額 10 筆
+==== STEP 7  mutation 台:15 個 knob + 基準線控制組 ====
+---- 7a  repo 進 repo 的那份
++ echo '==== STEP 7  mutation 台:15 個 knob + 基準線控制組 ===='
++ echo '---- 7a  repo 進 repo 的那份'
++ set +e
++ python '/d/Self Project/Skills/scripts/qa/97-mutate.py' --run
+咬住  buffer_exempt          self-check exit=1
+咬住  decode_error_uncaught  self-check exit=1
+咬住  filter_off             self-check exit=1
+咬住  first_main_only        self-check exit=1
+咬住  guard_off              self-check exit=1
+咬住  main_body_only         self-check exit=1
+咬住  no_norm                self-check exit=1
+咬住  pin_anywhere_in_file   self-check exit=1
+咬住  pin_anywhere_in_main   self-check exit=1
+咬住  print_exempt           self-check exit=1
+咬住  stdin_always           self-check exit=1
+咬住  stdin_by_text          self-check exit=1
+咬住  stdin_never            self-check exit=1
+咬住  underscore_filter      self-check exit=1
+咬住  unreadable_skip        self-check exit=1
+
+15/15 個 knob 被 self-check 咬住
++ echo 'exit 0'
+exit 0
++ set -e
++ echo '---- 7b  控制組:同一個 harness,knob 一個都不套 —— 應該 exit 0'
+---- 7b  控制組:同一個 harness,knob 一個都不套 —— 應該 exit 0
++ set +e
++ python '/d/Self Project/Skills/scripts/qa/98-mutate-control.py'
+控制組綠；完整副本 15/15 個 knob 被咬住
+控制組刻意改紅：表在第一格前中止
++ echo 'exit 0'
+exit 0
++ set -e
++ echo '==== STEP 8  票上其餘 AC:原型 probe 對 repo 本體全綠 ===='
+==== STEP 8  票上其餘 AC:原型 probe 對 repo 本體全綠 ====
++ python '/d/Self Project/Skills/scripts/qa/96-newrule-probe.py' '/d/Self Project/Skills'
+OK 新規則下全綠
+
+不合 0
++ set +x
+
+==== walkthrough 走完 ====
+
+# exit=0
