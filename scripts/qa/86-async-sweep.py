@@ -34,6 +34,7 @@ function 有個叫 `list` 的參數,整個模組的 `list(g)` 就不算消費了
     python scripts/qa/86-async-sweep.py <repo> --shadow-scope  # 尺二:shadowed 走遍每個 scope
     python scripts/qa/86-async-sweep.py <repo> --attr-consumer # 尺三:method call 只認 attribute 名字
     ... --prev86                                # 對照組:#86 修之前(cb7e030)
+    ... --prev87                                # 對照組:#87 修之前(55fc8eb)
 """
 import importlib.util
 import sys
@@ -106,8 +107,13 @@ SHADOW_SCOPE = [
      '    except Exception as list:\n        pass\n' + MAIN + CONS + TAIL, "GREEN"),
     ("class body 裡的 attribute 叫 list `class W: list = 1`",
      DUMP + G + 'class W:\n    list = 1\n' + MAIN + CONS + TAIL, "GREEN"),
-    ("import alias 叫 list `import json as list`",
-     DUMP + G + 'import json as list\n' + MAIN + CONS + TAIL, "GREEN"),
+    # `import json as list` 是 #86 原本這一格的寫法,但 `list(g)` 會炸 —— generator 沒
+    # 被抽乾、bypass 那行根本沒跑到,ground truth 是 RED 不是 GREEN(`/qa #87` STEP 10
+    # 的實跑 oracle 抓到的)。換成一樣是 import alias、但真的會抽乾 iterable 的 `deque`,
+    # 這格想量的「alias 撞名也算 shadow」原樣保留,期望值才站得住。
+    ("import alias 叫 list `from collections import deque as list`",
+     DUMP + G + 'from collections import deque as list\n' + MAIN + CONS
+     + TAIL, "GREEN"),
     ("巢狀 def 叫 list `def u(): def list(): …`",
      DUMP + G + 'def u():\n    def list():\n        pass\n    return list\n'
      + MAIN + CONS + TAIL, "GREEN"),
@@ -147,7 +153,7 @@ ATTR_CONSUMER = [
      + TAIL, "GREEN"),
 ]
 
-BASELINES = {"--prev86": "cb7e030"}
+BASELINES = {"--prev86": "cb7e030", "--prev87": "55fc8eb"}
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
