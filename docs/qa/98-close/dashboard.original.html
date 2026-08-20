@@ -59,11 +59,11 @@
 <div class="sub">專案儀表板 · 更新於 8/20 · 資料來自工作紀錄 · 目前用的版本:6 個功能全部上線,加「同時開好幾張單子」的前五塊,<strong>連第六塊在內全部已換裝你的電腦</strong></div>
 
 <div class="hero">
-  <div class="where">現在在哪:「程式會不會在中文終端機印出亂碼」這道檢查,已經從<strong>猜程式會不會跑</strong>換成<strong>照固定位置檢查</strong>。你也逐條確認了三個最後缺口:同一支程式有兩段入口時每段都要檢查、程式寫壞讀不懂時要判不合格、常見的主檔名不能被誤跳過。這些情況都已交給日常自動檢查守住。<strong>接下來只剩整理舊帳</strong>:把舊做法留下、現在已經失效的單子一次關掉,並把說明數字對齊現況。</div>
+  <div class="where">現在在哪:兩包功能都做完、也都收尾了,現在在<strong>清掉累積的小毛病</strong>。這一輪不是再修一條,而是<strong>把出毛病的那個做法整個換掉</strong>。有一道檢查專門守「程式會不會在你的中文終端機上印出亂碼」,它原本要先<strong>猜</strong>「這段程式到底會不會真的跑到」才能判 —— 這件事在電腦上根本沒有標準答案,所以連續 30 幾張單子都在同一個地方繞:放寬一點就冤枉好程式,收緊一點就有壞程式溜過去。現在改成<strong>訂一條規矩</strong>:每支能直接執行的程式,都要把「設定中文編碼」那句話寫在固定位置。寫在那裡就過,寫在別處就吵,<strong>不再猜</strong>。換掉之後檢查程式<strong>少了 557 行</strong>,而且你已經逐條驗收過了。這一輪清掉的是<strong>守門檢查會誤會好程式</strong>的一個毛病:有一道檢查專門守「程式會不會在你的中文終端機上印出亂碼」,它得先判斷「這段程式到底會不會真的跑到」。<strong>還剩 27 張小毛病,其中 16 張是「猜」那個做法留下來的、現在已經不存在了</strong>,下一張單子就是去把它們一次關掉。</div>
   <div class="release"><strong>這次不用換裝:</strong>改的是<strong>專案自己的檢查程式</strong>,不是會裝到你電腦上的那一份 — 你這邊不用做任何事,現在裝著的版本還是最新的。<span class="rb">反悔的話</span>:這次只動了檢查程式,退掉就是一個指令的事。</div>
   <div class="next">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <div><strong>下一步:</strong>把過期的單子一次清掉 — 走<code>/build #99</code>(Codex:<code>$build #99</code>)。那批單子量的是已經下架的舊做法,留下只會讓數字失真;同一輪也會把歷史說明整理清楚。</div>
+    <div><strong>下一步:</strong>先<strong>把過期的單子一次清掉</strong> — 走<code>/build #99</code>(另一種助理:<code>$build #99</code>)。那 16 張講的都是舊做法底下的問題,新做法上線之後它們已經不存在了,留著只會讓上面的數字看起來比實際嚴重;同一張單子也會順手把一份說明檔裡對不上的數字改掉。清完之後再走<code>/build #98</code>,補上這次沒做完的兩條(程式寫壞時要判不合格、一種常見主檔名被誤跳過)。不確定要開哪一棒的時候,問一句<code>/next</code>(<code>$next</code>)也行。</div>
   </div>
 </div>
 
@@ -82,20 +82,17 @@
     <div class="slice-row"><span class="slice-name">兩張改到同一處:助理自己解,解不掉就停下來講</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">做完一張自動補一張,同時保持三張在跑</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
     <div class="slice-row"><span class="slice-name">接進日常流程:問「接下來做什麼」時會自己推薦</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
-    <div class="slice-row"><span class="slice-name">把亂碼檢查從「猜會不會跑」換成固定規矩</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
-    <div class="slice-row"><span class="slice-name">補齊主檔、壞檔與多段入口三個缺口</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
-    <div class="slice-row"><span class="slice-name">清掉舊規則留下的過期單子</span><span class="badge">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
   </div>
 
   <div class="card">
     <h2><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>品質現況</h2>
     <div class="qa-tiles">
       <div class="tile"><div class="num" style="color:var(--ok)">0</div><div class="lbl">必須先修</div></div>
-      <div class="tile"><div class="num" style="color:var(--warn)">28</div><div class="lbl">小毛病(帶著走)</div></div>
+      <div class="tile"><div class="num" style="color:var(--warn)">27</div><div class="lbl">小毛病(帶著走)</div></div>
       <div class="tile"><div class="num" style="color:var(--ok)">8</div><div class="lbl">既有功能全數正常</div></div>
     </div>
     <ul class="list" style="margin-top:14px">
-      <li><span class="when">今天</span><span>收尾前把所有自動檢查重跑一次:<strong>8 道全綠</strong>。另外故意把新規矩改壞 15 個地方,15 處全部被抓到;三個最後缺口也都留了正反對照,以後改壞會立即出聲。</span></li>
+      <li><span class="when">今天</span><span>收尾前把所有自動檢查重跑一次:<strong>8 道全綠</strong>(上面那格的數字就是這個)—— 6 支程式各自的自我檢查、1 組「先做的簡易版跟正式版對同一份專案有沒有講一樣的話」、1 組<strong>故意把新規矩改壞 11 個地方、看檢查抓不抓得到</strong>(11 處全被抓到)。數字比上次少,是因為這輪換掉的那個做法連帶把好幾組舊掃描一起收掉了,不是有東西壞掉。</span></li>
       <li><span class="when">今天 · 已驗收</span><span>那道「會不會印出亂碼」的檢查,<strong>整個換了做法</strong>:從「猜這段會不會跑到」改成「照規矩寫在固定位置」。你逐條看過七種情況都對:寫對的位置過、搬到別處吵、藏在條件裡吵、只印英文也一樣要寫、同一支程式寫兩段執行區只釘一段也吵。<strong>檢查程式少了 557 行</strong>,整個專案實跑全綠。當時講好的兩個小毛病:一個當場修掉了,另一個(說明檔裡三個數字對不上)你決定併到下一張單子一起改。</span></li>
       <li><span class="when">已結案</span><span>同一道檢查在判斷「這段程式會不會真的跑到」時,只認得<strong>一種</strong>「把一個功能換個名字、再叫那個名字」的寫法 —— 換成一次指派兩個、順便標註型別、用迴圈變數、或由另一個功能交出來,它就當成「這段沒在跑」,<strong>把明明寫對的程式攔下來亂叫</strong>。已經修好:四種寫法全認得,<strong>六種情況全部答對</strong>(修之前六種爛五種)。這次一樣<strong>沒有只驗撞到的那三種</strong> —— 另外列了 <strong>31 種同類寫法</strong>一起跑,順手挖出兩族老毛病(見下面兩條)。也特別驗了<strong>反方向</strong>:放寬之後,那些「換了名字但根本沒叫」的程式<strong>要繼續被攔下來</strong> —— 11 種情況 10 種正確,唯一一種是事先講好的取捨。</span></li>
       <li><span class="when">帶著走</span><span>同一道檢查判斷「會不會跑到」的時候,漏看了<strong>寫在條件那一行上的東西</strong> —— 例如「如果這件事成立就…」的<strong>那個條件本身</strong>就會執行,它卻整行跳過。這是很常見的寫法,漏看的後果是<strong>把寫對的程式判成錯的</strong>。這次順手把同一族的五種寫法一次列完了。不是這輪弄壞的,是本來就在的。<strong>已開單子</strong>。</span></li>
@@ -105,10 +102,8 @@
       <li><span class="when">已結案</span><span>上一輪修這道檢查時,把「會不會跑到」放得太寬:只要<strong>名字在別的地方被提到</strong>(哪怕只是剛好同名的另一個東西),就當作有在跑而整支放行 —— 等於一行字就能把守門關掉。已經收回成「名字要真的出現在<strong>叫它</strong>的位置」,五種情況全部答對。</span></li>
       <li><span class="when">已結案</span><span>同一道檢查在看一支程式裡有沒有「開始執行」那段 —— 那段只要被<strong>往內縮一格</strong>,整支程式就連看都不看直接放行,一支會印亂碼的程式就這樣無聲過關。已經修好:現在整支程式從頭翻到尾。這次<strong>沒有只驗撞到的那兩種寫法</strong> —— 把「往內縮一格」的所有可能寫法一次列成 <strong>22 種情況</strong>全跑過,全部抓得到;拿修之前那版跑同一批,有 <strong>10 種是無聲放行</strong>的,所以修掉的是一整族,不是單一一條。順手確認寫對的程式<strong>不會被誤判成錯的</strong>。</span></li>
       <li><span class="when">帶著走</span><span>同一道檢查,在找「開始執行」那段時<strong>只認一種寫法</strong> —— 同樣意思換個寫法(把左右對調、拆成兩行寫)它就找不到,一樣整支放行。這不是這次弄壞的,是從一開始就在的。<strong>已開單子</strong>,等你決定什麼時候修。</span></li>
-      <li><span class="when">已驗收</span><span>「跳過暫存資料夾」以前會誤傷常見主檔名;現在主檔會正常受檢,真正的暫存與隱藏資料仍會跳過。</span></li>
-      <li><span class="when">已驗收</span><span>一支程式有兩段「開始執行」時,現在每段都要各自寫對;只寫對其中一段仍會被抓到。</span></li>
-      <li><span class="when">帶著走</span><span>目前判定範圍是正確的,但還缺一格專門防止日後把範圍改回舊寫法的檢查。你決定<strong>之後修</strong>,已有獨立單子。</span></li>
-      <li><span class="when">帶著走</span><span>驗收用的第二把尺遇到一種舊式中文檔案時會中斷,它自己也還缺自我檢查。正式守門不受影響;你決定<strong>之後修</strong>,已有獨立單子。</span></li>
+      <li><span class="when">帶著走</span><span>同一道檢查有一條「跳過暫存資料夾」的規則,誤傷到一種<strong>常見的程式主檔名</strong>,那種檔案永遠不會被檢查到。目前專案裡沒有這種檔,所以現在沒有破口,是一個空著的盲點。<strong>已開單子</strong>。</span></li>
+      <li><span class="when">帶著走</span><span>一支程式裡如果寫了<strong>兩段</strong>「開始執行」,這道檢查<strong>只看第一段</strong> —— 第一段寫對了,第二段寫錯也放行。同樣是老問題,這次還順手改善了其中一種情況。<strong>已開單子</strong>。</span></li>
       <li><span class="when">已結案</span><span>守門的自動檢查以前只擋得住「把那句話<strong>刪掉</strong>」,擋不住「把那句話的<strong>意思反過來寫</strong>、關鍵字留著」— 也就是有人把切單子那份說明改成「都沒標先後順序就直接發出去,不用問你」,檢查照樣全綠,而那道檢查存在的唯一理由就是守住「先問你一句」。這種寫法一共<strong>兩道,兩道都有同一個洞</strong>(另一道守「貼連結前要先上傳」),<strong>已經一起修好</strong>。驗的方式是把<strong>真的兩份說明書</strong>當場改成相反的意思,檢查兩次都當場變紅並指名檔案;整行刪掉也照樣變紅。已知的天花板:把相反的意思寫得離否定詞很遠(「…直接發出去,收工後再回報你」)還是漏得掉,那種要靠人看過稿才擋得住,已經寫在程式旁邊備註。</span></li>
       <li><span class="when">已結案</span><span>整批跑完會做一次「臨時工作區有沒有清乾淨」的檢查,但它把整台電腦上所有工作區都算進來,包含助理自己長期用的那幾份 — 所以永遠報「沒清乾淨」,反過來真的有殘留時也看不出來。已經修好、當場演給你看、你點頭收掉,而且這次真的跑批次時它第一次就答對。</span></li>
       <li><span class="when">已結案</span><span>說明書裡「把總結貼到單子上」有三個地方,只有貼給你看的那則沒寫成可以整行複製的指令。已經補齊三處一致;順手還抓掉一段本來要寫進去、但實測是錯的說明。</span></li>
@@ -186,8 +181,7 @@
       <li><span class="when">已結案</span><span>「守門檢查有個側門」這張 —— 一樣是<strong>助理自己撿到的</strong>,照約定<strong>不用排驗收會</strong>:測試全綠 + 一段白話回報就收掉。白話回報就是上面品質那格那條。</span></li>
       <li><span class="when">已結案</span><span>「守門檢查會誤會好程式」這張 —— 一樣是<strong>助理自己撿到的</strong>,照約定<strong>不用排驗收會</strong>:測試全綠 + 一段白話回報就收掉。白話回報就是上面品質那格那條。這一輪還特地<strong>找了一個沒看過前因後果的第三方</strong>,只拿驗收標準原句 + 測試紀錄去判 —— 它判過關,並指出兩族還沒收的老毛病,兩張單子都開了。</span></li>
       <li><span class="when">已結案</span><span>「那道亂碼檢查整個換做法」這張 —— 這次<strong>有排驗收會</strong>:七種情況現場逐條跑給你看,你說「全部都對,過關」,零回流。會上講好的兩個小毛病也當場定了處置。不用換裝(改的是專案自己的檢查程式)。</span></li>
-      <li><span class="when">剛完成</span><span>「亂碼檢查最後三個缺口」已逐條演給你看,你三條都點頭;兩個帶著走的小毛病也都決定之後再修。高價值情況已交給日常自動檢查守住。</span></li>
-      <li><span class="when">接下來</span><span>目前沒有排定的驗收會。下一張單子只整理舊帳:關掉已失效的單子、校正說明,完成與否由自動檢查把關。</span></li>
+      <li><span class="when">接下來</span><span>兩包功能到這裡都完整了、總單子也都結掉了,<strong>目前沒有排定的驗收會</strong>。下一張單子(把過期的 16 張一次關掉)是整理性質的,沒有東西要演給你看;再下一張補完剩下兩條的時候會再排一次。</span></li>
     </ul>
   </div>
 </div>

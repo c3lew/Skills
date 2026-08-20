@@ -1,0 +1,31 @@
+diff --git a/dashboard.html b/dashboard.html
+index fd61664..3d031c0 100644
+--- a/dashboard.html
++++ b/dashboard.html
+@@ -62 +62 @@
+-  <div class="where">現在在哪:兩包功能都做完、也都收尾了,現在在<strong>清掉累積的小毛病</strong>。這一輪不是再修一條,而是<strong>把出毛病的那個做法整個換掉</strong>。有一道檢查專門守「程式會不會在你的中文終端機上印出亂碼」,它原本要先<strong>猜</strong>「這段程式到底會不會真的跑到」才能判 —— 這件事在電腦上根本沒有標準答案,所以連續 30 幾張單子都在同一個地方繞:放寬一點就冤枉好程式,收緊一點就有壞程式溜過去。現在改成<strong>訂一條規矩</strong>:每支能直接執行的程式,都要把「設定中文編碼」那句話寫在固定位置。寫在那裡就過,寫在別處就吵,<strong>不再猜</strong>。換掉之後檢查程式<strong>少了 557 行</strong>,而且你已經逐條驗收過了。這一輪清掉的是<strong>守門檢查會誤會好程式</strong>的一個毛病:有一道檢查專門守「程式會不會在你的中文終端機上印出亂碼」,它得先判斷「這段程式到底會不會真的跑到」。<strong>還剩 27 張小毛病,其中 16 張是「猜」那個做法留下來的、現在已經不存在了</strong>,下一張單子就是去把它們一次關掉。</div>
++  <div class="where">現在在哪:「程式會不會在中文終端機印出亂碼」這道檢查,已經從<strong>猜程式會不會跑</strong>換成<strong>照固定位置檢查</strong>。你也逐條確認了三個最後缺口:同一支程式有兩段入口時每段都要檢查、程式寫壞讀不懂時要判不合格、常見的主檔名不能被誤跳過。這些情況都已交給日常自動檢查守住。<strong>接下來只剩整理舊帳</strong>:把舊做法留下、現在已經失效的單子一次關掉,並把說明數字對齊現況。</div>
+@@ -66 +66 @@
+-    <div><strong>下一步:</strong>先<strong>把過期的單子一次清掉</strong> — 走<code>/build #99</code>(另一種助理:<code>$build #99</code>)。那 16 張講的都是舊做法底下的問題,新做法上線之後它們已經不存在了,留著只會讓上面的數字看起來比實際嚴重;同一張單子也會順手把一份說明檔裡對不上的數字改掉。清完之後再走<code>/build #98</code>,補上這次沒做完的兩條(程式寫壞時要判不合格、一種常見主檔名被誤跳過)。不確定要開哪一棒的時候,問一句<code>/next</code>(<code>$next</code>)也行。</div>
++    <div><strong>下一步:</strong>把過期的單子一次清掉 — 走<code>/build #99</code>(Codex:<code>$build #99</code>)。那批單子量的是已經下架的舊做法,留下只會讓數字失真;同一輪也會把歷史說明整理清楚。</div>
+@@ -84,0 +85,3 @@
++    <div class="slice-row"><span class="slice-name">把亂碼檢查從「猜會不會跑」換成固定規矩</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
++    <div class="slice-row"><span class="slice-name">補齊主檔、壞檔與多段入口三個缺口</span><span class="badge b-ok">你已驗收</span><span class="bar"><i class="done" style="width:100%"></i></span></div>
++    <div class="slice-row"><span class="slice-name">清掉舊規則留下的過期單子</span><span class="badge">還沒開始</span><span class="bar"><i style="width:0%"></i></span></div>
+@@ -91 +94 @@
+-      <div class="tile"><div class="num" style="color:var(--warn)">27</div><div class="lbl">小毛病(帶著走)</div></div>
++      <div class="tile"><div class="num" style="color:var(--warn)">28</div><div class="lbl">小毛病(帶著走)</div></div>
+@@ -95 +98 @@
+-      <li><span class="when">今天</span><span>收尾前把所有自動檢查重跑一次:<strong>8 道全綠</strong>(上面那格的數字就是這個)—— 6 支程式各自的自我檢查、1 組「先做的簡易版跟正式版對同一份專案有沒有講一樣的話」、1 組<strong>故意把新規矩改壞 11 個地方、看檢查抓不抓得到</strong>(11 處全被抓到)。數字比上次少,是因為這輪換掉的那個做法連帶把好幾組舊掃描一起收掉了,不是有東西壞掉。</span></li>
++      <li><span class="when">今天</span><span>收尾前把所有自動檢查重跑一次:<strong>8 道全綠</strong>。另外故意把新規矩改壞 15 個地方,15 處全部被抓到;三個最後缺口也都留了正反對照,以後改壞會立即出聲。</span></li>
+@@ -105,2 +108,4 @@
+-      <li><span class="when">帶著走</span><span>同一道檢查有一條「跳過暫存資料夾」的規則,誤傷到一種<strong>常見的程式主檔名</strong>,那種檔案永遠不會被檢查到。目前專案裡沒有這種檔,所以現在沒有破口,是一個空著的盲點。<strong>已開單子</strong>。</span></li>
+-      <li><span class="when">帶著走</span><span>一支程式裡如果寫了<strong>兩段</strong>「開始執行」,這道檢查<strong>只看第一段</strong> —— 第一段寫對了,第二段寫錯也放行。同樣是老問題,這次還順手改善了其中一種情況。<strong>已開單子</strong>。</span></li>
++      <li><span class="when">已驗收</span><span>「跳過暫存資料夾」以前會誤傷常見主檔名;現在主檔會正常受檢,真正的暫存與隱藏資料仍會跳過。</span></li>
++      <li><span class="when">已驗收</span><span>一支程式有兩段「開始執行」時,現在每段都要各自寫對;只寫對其中一段仍會被抓到。</span></li>
++      <li><span class="when">帶著走</span><span>目前判定範圍是正確的,但還缺一格專門防止日後把範圍改回舊寫法的檢查。你決定<strong>之後修</strong>,已有獨立單子。</span></li>
++      <li><span class="when">帶著走</span><span>驗收用的第二把尺遇到一種舊式中文檔案時會中斷,它自己也還缺自我檢查。正式守門不受影響;你決定<strong>之後修</strong>,已有獨立單子。</span></li>
+@@ -184 +189,2 @@
+-      <li><span class="when">接下來</span><span>兩包功能到這裡都完整了、總單子也都結掉了,<strong>目前沒有排定的驗收會</strong>。下一張單子(把過期的 16 張一次關掉)是整理性質的,沒有東西要演給你看;再下一張補完剩下兩條的時候會再排一次。</span></li>
++      <li><span class="when">剛完成</span><span>「亂碼檢查最後三個缺口」已逐條演給你看,你三條都點頭;兩個帶著走的小毛病也都決定之後再修。高價值情況已交給日常自動檢查守住。</span></li>
++      <li><span class="when">接下來</span><span>目前沒有排定的驗收會。下一張單子只整理舊帳:關掉已失效的單子、校正說明,完成與否由自動檢查把關。</span></li>
