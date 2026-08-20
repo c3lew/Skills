@@ -48,6 +48,7 @@ BACKTICK_PATH_RE = re.compile(
 # the surrounding prose is internal wording, not the baton, and stays untouched.
 HANDOFF_SPAN_RE = re.compile(r"下一步[:︰:][^」\n]*")
 SLASH_CMD_RE = re.compile(r"`/([A-Za-z0-9_-]+)")
+CODEX_CMD_RE = re.compile(r"`\$([A-Za-z0-9_-]+)")
 # 「下一步:`/skill #N`」 is the template a skill quotes when describing the
 # convention, not a command anyone pastes — there is no skills/skill.
 PLACEHOLDER_SKILLS = {"skill"}
@@ -124,14 +125,36 @@ def find_path_refs(text):
     return [r for r in refs if r and not in_target_repo_dotdir(r)]
 
 
+def has_codex_form(text, name):
+    return re.search(rf"`\${re.escape(name)}(?![A-Za-z0-9_-])", text) is not None
+
+
 def find_slash_only_handoffs(text):
     """Return skill names whose handoff baton lacks the Codex `$name` twin."""
     missing = []
     for span in HANDOFF_SPAN_RE.findall(text):
         for name in SLASH_CMD_RE.findall(span):
-            if f"`${name}" not in span:
+            if not has_codex_form(span, name):
                 missing.append(name)
     return missing
+
+
+def find_incomplete_next_routes(text):
+    """Return (command, missing form) pairs from /next's route table."""
+    header = "| 現場 | 下一棒 |"
+    if header not in text:
+        return []
+    table = text.split(header, 1)[1].split("\n\n", 1)[0]
+    issues = []
+    for row in table.splitlines():
+        if row.count("|") < 3:
+            continue
+        route = row.rsplit("|", 2)[-2]
+        slash = set(SLASH_CMD_RE.findall(route))
+        codex = set(CODEX_CMD_RE.findall(route))
+        issues += [(name, "Codex") for name in sorted(slash - codex)]
+        issues += [(name, "slash") for name in sorted(codex - slash)]
+    return issues
 
 
 def unpushed_commit_link_issue(text):
@@ -370,6 +393,17 @@ def validate(skills_dir, repo):
                 f"{label}/SKILL.md: handoff 「下一步:… `/{name}`」 missing the "
                 f"Codex form `${name}` inside the same 「下一步:…」 baton"
             )
+        for name, missing in find_incomplete_next_routes(text):
+            if missing == "Codex":
+                errors.append(
+                    f"{label}/SKILL.md: /next route `/{name}` missing the "
+                    f"Codex form `${name}` in the same route row"
+                )
+            else:
+                errors.append(
+                    f"{label}/SKILL.md: /next route `${name}` missing the "
+                    f"slash form `/{name}` in the same route row"
+                )
         repo_scoped = skill_dir.name in REPO_SCOPED_SKILLS
         # every *.md ships with the skill, so every one of them can carry a
         # link that dies on install — references/ included, not just SKILL.md
@@ -482,6 +516,47 @@ def self_check():
                 text.replace(span, span.replace(f"`${name}", "`", 1), 1), encoding="utf-8"
             )
             assert expected in validate(skills.parent, Path(tmp)), label
+
+    # #42: /next's fallback route table is client-facing too. Drop each Codex
+    # half from the real table in turn; normal validate() must name the gap.
+    next_src = REPO / "skills" / "next" / "SKILL.md"
+    next_text = next_src.read_text(encoding="utf-8")
+    route_table = next_text.split("| 現場 | 下一棒 |", 1)[1].split("\n\n", 1)[0]
+    route_rows = [line for line in route_table.splitlines() if SLASH_CMD_RE.search(line)]
+    assert route_rows, "next route table has no slash commands to verify"
+    for row in route_rows:
+        assert find_incomplete_next_routes("| 現場 | 下一棒 |\n" + row) == [], row
+        route = row.rsplit("|", 2)[-2]
+        for name in SLASH_CMD_RE.findall(route):
+            expected = (
+                f"skills/next/SKILL.md: /next route `/{name}` missing the "
+                f"Codex form `${name}` in the same route row"
+            )
+            mutated_row, count = re.subn(
+                rf"`\${re.escape(name)}(?![A-Za-z0-9_-])", "`", row, count=1
+            )
+            assert count == 1, (row, name)
+            mutated = next_text.replace(row, mutated_row, 1)
+            with tempfile.TemporaryDirectory() as tmp:
+                skill = Path(tmp) / "skills" / "next"
+                skill.mkdir(parents=True)
+                (skill / "SKILL.md").write_text(mutated, encoding="utf-8")
+                assert expected in validate(skill.parent, Path(tmp)), (row, name)
+
+            expected = (
+                f"skills/next/SKILL.md: /next route `${name}` missing the "
+                f"slash form `/{name}` in the same route row"
+            )
+            mutated_row, count = re.subn(
+                rf"`/{re.escape(name)}(?![A-Za-z0-9_-])", "`", row, count=1
+            )
+            assert count == 1, (row, name)
+            mutated = next_text.replace(row, mutated_row, 1)
+            with tempfile.TemporaryDirectory() as tmp:
+                skill = Path(tmp) / "skills" / "next"
+                skill.mkdir(parents=True)
+                (skill / "SKILL.md").write_text(mutated, encoding="utf-8")
+                assert expected in validate(skill.parent, Path(tmp)), (row, name)
 
     # #49 固化:push-before-commit-links. Hand-written cases first — order is the
     # whole point, so a file with both instructions in the wrong order is red.

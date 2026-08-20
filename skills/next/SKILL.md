@@ -19,21 +19,21 @@ description: 產線路由入口:讀現場(交棒 comment、tickets、repo 地基
 
 | 現場 | 下一棒 |
 |------|--------|
-| 沒 git repo / 沒 GitHub tracker / 沒 `docs/agents/` | 鋪地基:`git init` + 開 GitHub repo + `/setup-matt-pocock-skills` |
-| 大而模糊的 idea,還沒有 map issue | `/wayfinder` 建圖 |
-| map 還有 open 子票(decision tickets) | 繼續 `/wayfinder` — 子票不逐張下指令 |
-| map 收斂、或某 feature 相關 decisions 已全關 | `/pm-intake`(會讀 map 的 Decisions so far,不重問) |
-| 清楚的單一 feature 需求,還沒有 spec | `/pm-intake` |
-| spec 拍板了,還沒切票 | `/slice-tickets` |
-| ≥2 張 `ready-for-agent` 切片票、彼此不卡(判法見下) | `/build-batch #<spec 票號>`;`/build #N` 列替代 |
-| 有 `ready-for-agent` 切片票沒開工 | `/build #N` |
-| implement 完成的票在等驗 | `/qa #N` |
-| QA blocking 清零在等驗收 | `/client-demo #N` |
-| 過關 / fix 驗完在等結案 | `/close #N` |
-| 有票但沒有交棒 comment、也沒有 `ready-for-agent`(手開的、或裸跑 `/triage` 分完類的) | `/maintain #N` 補分類 + 補交棒 |
-| 上線後 client 報問題 / 丟想法 / 要清 backlog | `/maintain` |
-| dashboard 提示「該 retro 了」 | `/retro`(client 說跑才跑) |
-| 只是想看現況、或 dashboard 過期 | `/tracking-viz` |
+| 沒 git repo / 沒 GitHub tracker / 沒 `docs/agents/` | 鋪地基:`git init` + 開 GitHub repo + `/setup-matt-pocock-skills`(Codex: `$setup-matt-pocock-skills`) |
+| 大而模糊的 idea,還沒有 map issue | `/wayfinder`(Codex: `$wayfinder`) 建圖 |
+| map 還有 open 子票(decision tickets) | 繼續 `/wayfinder`(Codex: `$wayfinder`) — 子票不逐張下指令 |
+| map 收斂、或某 feature 相關 decisions 已全關 | `/pm-intake`(Codex: `$pm-intake`)(會讀 map 的 Decisions so far,不重問) |
+| 清楚的單一 feature 需求,還沒有 spec | `/pm-intake`(Codex: `$pm-intake`) |
+| spec 拍板了,還沒切票 | `/slice-tickets`(Codex: `$slice-tickets`) |
+| ≥2 張 `ready-for-agent` 切片票、彼此不卡(判法見下) | `/build-batch #<spec 票號>`(Codex: `$build-batch #<spec 票號>`);`/build #N`(Codex: `$build #N`)列替代 |
+| 有 `ready-for-agent` 切片票沒開工 | `/build #N`(Codex: `$build #N`) |
+| implement 完成的票在等驗 | `/qa #N`(Codex: `$qa #N`) |
+| QA blocking 清零在等驗收 | `/client-demo #N`(Codex: `$client-demo #N`) |
+| 過關 / fix 驗完在等結案 | `/close #N`(Codex: `$close #N`) |
+| 有票但沒有交棒 comment、也沒有 `ready-for-agent`(手開的、或裸跑 `/triage` 分完類的) | `/maintain #N`(Codex: `$maintain #N`)補分類 + 補交棒 |
+| 上線後 client 報問題 / 丟想法 / 要清 backlog | `/maintain`(Codex: `$maintain`) |
+| dashboard 提示「該 retro 了」 | `/retro`(Codex: `$retro`)(client 說跑才跑) |
+| 只是想看現況、或 dashboard 過期 | `/tracking-viz`(Codex: `$tracking-viz`) |
 
 同時命中多個(例:一張票在等 QA、另一個 feature 想進 spec)就照表序推薦最上面的,其餘當替代列出。
 
@@ -59,6 +59,6 @@ JSON
 
 固定格式,推薦的放第一個標 `(Recommended)`:
 
-- **推薦指令**(可複製,雙寫:`/skill #N`(Codex: `$skill #N`)— 路由表寫單寫,輸出時補上 Codex 那半)+ 一兩句為什麼是它 + 代價/前提。
+- **推薦指令**(可複製;路由表已雙寫:`/skill #N`(Codex: `$skill #N`),照字面輸出)+ 一兩句為什麼是它 + 代價/前提。
 - 替代選項最多 1–2 個,各一句話講跟推薦差在哪。
 - 現場一句話總結(現在在哪),讓 client 不用自己讀 tickets。
