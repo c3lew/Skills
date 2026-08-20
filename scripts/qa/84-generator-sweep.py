@@ -28,6 +28,7 @@ not run there」—— 所以 `nodes_in` 走到 `Lambda` 就停,body 裡的 `Cal
 用法:
     python scripts/qa/84-generator-sweep.py <repo> --generator
     ... --prev84                                # 對照組:#84 修之前(4c58eab)
+    ... --prev86                                # 對照組:#86 修之前(cb7e030)
 """
 import importlib.util
 import sys
@@ -72,7 +73,7 @@ GENERATOR = [
      + '    list(sys.stdout.buffer.write(b"x") for _ in [1])\n' + TAIL, "GREEN"),
 ]
 
-BASELINES = {"--prev84": "4c58eab"}
+BASELINES = {"--prev84": "4c58eab", "--prev86": "cb7e030"}
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
