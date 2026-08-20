@@ -13,7 +13,7 @@
     python scripts/qa/97-mutate.py --list
     python scripts/qa/97-mutate.py <repo 副本> <knob 名稱>
 
-`--run` 不碰 repo 本體:validate.py 複製到拋棄式暫存目錄,mutation 全跑在副本上。
+`--run` 不碰 repo 本體:完整 repo 複製到拋棄式暫存目錄,mutation 全跑在副本上。
 """
 import pathlib
 import shutil
@@ -125,21 +125,28 @@ def apply(repo, knob):
     path.write_text(src.replace(old, new, 1), encoding="utf-8")
 
 
+def self_check(repo):
+    return subprocess.run(
+        [sys.executable, str(repo / "scripts" / "validate.py"), "--self-check"],
+        cwd=repo, capture_output=True)
+
+
 def run_table():
     """每個 knob 套上去跑 `--self-check`,回傳 (knob, exit code)。非 0 才是要的。"""
     out = []
     with tempfile.TemporaryDirectory() as td:
         copy = pathlib.Path(td) / "repo"
+        shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+        control = self_check(copy)
+        if control.returncode:
+            why = (control.stderr or control.stdout).decode("utf-8", "replace").strip()
+            raise RuntimeError("控制組未套 knob 就已經紅；儀器壞了，下面的 mutation 表不執行"
+                               + (f"\n{why}" if why else ""))
+        pristine = (copy / "scripts" / "validate.py").read_bytes()
         for knob in sorted(KNOBS):
-            shutil.rmtree(copy, ignore_errors=True)
-            (copy / "scripts").mkdir(parents=True)
-            shutil.copy2(ROOT / "scripts" / "validate.py", copy / "scripts")
+            (copy / "scripts" / "validate.py").write_bytes(pristine)
             apply(copy, knob)
-            # cwd=ROOT 只影響相對路徑的輸出；self_check 最後一條的 REPO 是從
-            # __file__ 解的，副本跑起來打的是這份只有 validate.py 的暫存副本，
-            # 不是 repo 本體 —— 整張表全靠 inline fixture 咬住（#101）。
-            r = subprocess.run([sys.executable, str(copy / "scripts" / "validate.py"),
-                                "--self-check"], cwd=ROOT, capture_output=True)
+            r = self_check(copy)
             out.append((knob, r.returncode))
     return out
 
@@ -151,7 +158,11 @@ if __name__ == "__main__":
         print("\n".join(sorted(KNOBS)))
         sys.exit(0)
     if "--run" in sys.argv:
-        rows = run_table()
+        try:
+            rows = run_table()
+        except RuntimeError as exc:
+            print(exc, file=sys.stderr)
+            sys.exit(1)
         for knob, code in rows:
             print(f"{'咬住' if code else '沒咬住'}  {knob:<22} self-check exit={code}")
         missed = [k for k, c in rows if c == 0]
