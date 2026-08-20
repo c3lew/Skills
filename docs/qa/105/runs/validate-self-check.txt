@@ -1,0 +1,2 @@
+OK validate self-check green
+EXIT_STATUS=0

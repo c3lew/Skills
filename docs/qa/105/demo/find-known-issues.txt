@@ -1,0 +1,59 @@
+### Result
+Found 4 matches for "小毛病":
+
+- generic [ref=e2]:
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - text: "現在在哪:"
+      - strong [ref=e8]: 舊帳已整理完
+      - text: "。原本 22 張圍繞舊做法的單子,21 張已逐張說明並結案,只留下 1 張刻意保留的規則邊界。歷史檢查的說明也已校正:現有 12 支舊工具仍跑得起來,看到舊答案不合不代表現在的規則壞掉。#99 建立後新開的 #103、#104 是另外兩個已決定之後再修的小毛病,沒有藏進這批舊帳。"
+    - generic [ref=e9]:
+      - strong [ref=e10]: "這次不用換裝:"
+      - text: 改的是工作紀錄、說明與這份儀表板,不是會裝到你電腦上的功能。反悔的話:儀表板與說明檔可由回復腳本還原;票面修改前的內容與狀態另有快照留存。
+
+----
+
+- generic [ref=e2]:
+  - generic [ref=e18]:
+    - generic [ref=e99]:
+      - generic [ref=e104]:
+        - generic [ref=e105]:
+          ...
+          - generic [ref=e107]: 必須先修
+        - generic [ref=e108]:
+          - generic [ref=e109]: "8"
+          - generic [ref=e110]: 小毛病(帶著走)
+        - generic [ref=e111]:
+          - generic [ref=e112]: "8"
+          - generic [ref=e113]: 既有功能全數正常
+
+----
+
+- generic [ref=e2]:
+  - generic [ref=e18]:
+    - generic [ref=e99]:
+      - list [ref=e114]:
+        - listitem [ref=e123]:
+          - generic [ref=e125]:
+            - strong [ref=e126]: 整個換了做法
+            - text: :從「猜這段會不會跑到」改成「照規矩寫在固定位置」。你逐條看過七種情況都對:寫對的位置過、搬到別處吵、藏在條件裡吵、只印英文也一樣要寫、同一支程式寫兩段執行區只釘一段也吵。
+            - strong [ref=e127]: 檢查程式少了 557 行
+            - text: ",整個專案實跑全綠。當時講好的兩個小毛病:一個當場修掉了,另一個(說明檔裡三個數字對不上)你決定併到下一張單子一起改。"
+        - listitem [ref=e128]:
+          - generic [ref=e129]: 已結案
+          - generic [ref=e130]:
+
+----
+
+- generic [ref=e2]:
+  - generic [ref=e18]:
+    - generic [ref=e369]:
+      - list [ref=e373]:
+        - listitem [ref=e414]:
+          - generic [ref=e416]:
+            - text: 「那道亂碼檢查整個換做法」這張 —— 這次
+            - strong [ref=e417]: 有排驗收會
+            - text: :七種情況現場逐條跑給你看,你說「全部都對,過關」,零回流。會上講好的兩個小毛病也當場定了處置。不用換裝(改的是專案自己的檢查程式)。
+        - listitem [ref=e418]:
+          - generic [ref=e419]: 剛完成
+          - generic [ref=e420]: 「整理舊帳」已完成:21 張逐張結案、1 張保留成規則邊界,原本寫錯的歷史工具數字與使用說明也已校正。

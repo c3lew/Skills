@@ -1,0 +1,235 @@
+{
+  "acceptance": "dashboard rerun numbers match",
+  "tile": 8,
+  "baseline_known_rows": 14,
+  "current_known_rows": [
+    "帶著走目前判定範圍是正確的,但還缺一格專門防止日後把範圍改回舊寫法的檢查。你決定之後修,已有獨立單子。",
+    "帶著走驗收用的第二把尺遇到一種舊式中文檔案時會中斷,它自己也還缺自我檢查。正式守門不受影響;你決定之後修,已有獨立單子。",
+    "帶著走貼總結的那行指令裡,單子編號要在兩個地方各寫一次 — 改一個忘另一個,總結會安靜地貼到別張單子上,不會報錯。你決定之後再修(要動程式的輸出格式,不適合順手做)。",
+    "帶著走上面那份名單的說明書,只寫了一種終端機的貼法;你如果用 Windows 內建的那兩種終端機,照抄會貼不動。你決定之後再修。",
+    "帶著走你問「接下來做什麼」時,如果那件工作上沒有留下現成的交接說明,助理會改照一張對照表回答 — 那張表還沒有電腦自動把關,少寫一種寫法不會被擋下來。你先前決定這條之後再修。",
+    "帶著走「檢查有沒有做錯 → 自動開一張修正單」這條路,在另一種助理上還沒真的被觸發過一次(那一輪剛好全部通過,沒東西可開)。你決定之後再補跑一次驗證。",
+    "帶著走上面那道「有沒有先上傳」的檢查,遇到一種還沒設定過上傳目標的工作分支時,會直接報一句看不太懂的錯誤訊息,而不是好好地說「還有東西沒上傳」。它不會放行、只是話講得醜,你決定之後再修。",
+    "帶著走「檢查」這道環節的說明書寫死了一種只有第一種助理才有的看網頁工具;第二種助理用的是另一套。這輪跑的工作單不碰網頁所以沒撞到,等到有畫面的功能才會遇到。你決定之後再修。"
+  ],
+  "removed_stale_rows": [
+    "帶著走同一道檢查判斷「會不會跑到」的時候,漏看了寫在條件那一行上的東西 —— 例如「如果這件事成立就…」的那個條件本身就會執行,它卻整行跳過。這是很常見的寫法,漏看的後果是把寫對的程式判成錯的。這次順手把同一族的五種寫法一次列完了。不是這輪弄壞的,是本來就在的。已開單子。",
+    "帶著走「換個名字再叫」這件事,還有六種寫法它認不得,一樣會把寫對的程式判成錯的。最莫名其妙的一種:同一件事寫成一行是好的、拆成兩行就被判錯 —— 換行不該改變對錯。已開單子。",
+    "帶著走同一道檢查的另一個豁免條件,只要把某個名字當成資料傳給任何一個指令(就算那個指令根本不會去執行它),它就當作「有在跑」而放行 —— 一行字就能讓守門閉嘴。已開單子。",
+    "帶著走同一道檢查判斷「這支程式會不會印東西給你看」時只認一種寫法,換五種等價寫法(先換個名字再印、走另一條輸出管道…)它就當成「這支不印東西」而整支放行 —— 一支印滿中文、完全沒設定編碼的程式會就這樣過關。已開單子。",
+    "帶著走同一道檢查,在找「開始執行」那段時只認一種寫法 —— 同樣意思換個寫法(把左右對調、拆成兩行寫)它就找不到,一樣整支放行。這不是這次弄壞的,是從一開始就在的。已開單子,等你決定什麼時候修。",
+    "帶著走守著「文字編碼有沒有設好」的那道檢查,有一個合法的例外寫法認得太寬鬆 — 只要在註解裡提到那個字,檢查就會放行。現在沒有人這樣繞過,但以後有可能無聲繞過。你決定之後再修。"
+  ],
+  "known_issue_states": [
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwXDieg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an autonomous agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 42,
+      "state": "OPEN",
+      "title": "`/next` 路由表那條路的雙寫沒有機器守門",
+      "url": "https://github.com/c3lew/Skills/issues/42"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwXDieg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an autonomous agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 47,
+      "state": "OPEN",
+      "title": "qa skill 綁死 Playwright MCP,Codex 端沒有這個 MCP",
+      "url": "https://github.com/c3lew/Skills/issues/47"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwXDieg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an autonomous agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 48,
+      "state": "OPEN",
+      "title": "Codex 端:`$qa` 判 fail → 自動開票這條分支沒被實測過",
+      "url": "https://github.com/c3lew/Skills/issues/48"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 50,
+      "state": "OPEN",
+      "title": "build 守門指令在沒 upstream 的分支上是 fatal,不是「未 push 數不是 0」",
+      "url": "https://github.com/c3lew/Skills/issues/50"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 59,
+      "state": "OPEN",
+      "title": "build-batch:SKILL.md §3 的指令只有 bash heredoc,Windows 原生 shell 照抄不了",
+      "url": "https://github.com/c3lew/Skills/issues/59"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 63,
+      "state": "OPEN",
+      "title": "build-batch:貼票指令的票號要手動同步兩處(gh 參數 + JSON 的 spec/numbers)",
+      "url": "https://github.com/c3lew/Skills/issues/63"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 103,
+      "state": "OPEN",
+      "title": "validate:過濾吃相對路徑這件事沒被釘住 — is_source(rel) 改回 is_source(py),self-check 照樣綠",
+      "url": "https://github.com/c3lew/Skills/issues/103"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 104,
+      "state": "OPEN",
+      "title": "qa:第二把尺自己會被 cp950 檔掀掉,而且沒有任何東西守著它的判準",
+      "url": "https://github.com/c3lew/Skills/issues/104"
+    }
+  ],
+  "closed_removed_issue_states": [
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwXDieg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an autonomous agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 60,
+      "state": "CLOSED",
+      "title": "validate:stream_encoding_issues 的 sys.stdout.buffer 豁免是 substring-anywhere,註解就能讓守門閉嘴",
+      "url": "https://github.com/c3lew/Skills/issues/60"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 74,
+      "state": "CLOSED",
+      "title": "validate:「沒有裸 print( 就豁免」的判準是 name-only,alias / builtins.print 等五種印中文的形狀誤放",
+      "url": "https://github.com/c3lew/Skills/issues/74"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 76,
+      "state": "CLOSED",
+      "title": "validate:名字交給任何 call 當引數就算 live,`print(dump)` 一行就讓死碼 bypass 豁免",
+      "url": "https://github.com/c3lew/Skills/issues/76"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 77,
+      "state": "CLOSED",
+      "title": "validate:`runs()` 只把 `for` 的 header 當成會跑的位置,`if`/`while`/`with`/decorator 的 header 全被丟掉",
+      "url": "https://github.com/c3lew/Skills/issues/77"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 78,
+      "state": "CLOSED",
+      "title": "validate:`bindings_in` 只認四種綁定節點,walrus / `with as` / attribute / subscript / comprehension / 預設引數誤紅",
+      "url": "https://github.com/c3lew/Skills/issues/78"
+    }
+  ],
+  "boundary_issue": {
+    "labels": [
+      {
+        "id": "LA_kwDOT4oaYs8AAAACwW-wlg",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      },
+      {
+        "id": "LA_kwDOT4oaYs8AAAACwXDieg",
+        "name": "ready-for-agent",
+        "description": "Fully specified and ready for an autonomous agent",
+        "color": "0E8A16"
+      }
+    ],
+    "number": 67,
+    "state": "OPEN",
+    "title": "validate:[宣告過的天花板] 只認正規 `__main__` 寫法",
+    "url": "https://github.com/c3lew/Skills/issues/67"
+  }
+}
