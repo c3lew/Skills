@@ -35,19 +35,22 @@ sys.stdin.reconfigure(encoding="utf-8")
 Windows 主控台預設 cp950,而這條線印給 client 的東西全是中文 — 沒釘就是壞碼,
 遇到 Big5 沒有的字(emoji、假名)直接 `UnicodeEncodeError` 當場中斷(#58)。
 
-釘在 `__main__` 不是 `main()`:self-check 會拿 StringIO 呼叫 `main()`,
-StringIO 沒有 `reconfigure`。另一條合法路是整段繞過 text layer 走
-`sys.stdout.buffer.write(...)` / `sys.stdin.buffer.read()`(hook 走這條,因為
-hook 掛了比壞碼更慘)— 這條沒有 encoding 可以搞錯,但要寫在 module 真的走得到的
-地方:死碼或沒人叫的 function 裡那行,執行時一個 byte 都不會寫出去(#70)。
-「走得到」認的是名字被提到,不限呼叫 — alias、handler dict、callback 傳進去
-都算(#71)。
+**沒有豁免**:不看你有沒有印東西,也不看你是不是走 `.buffer` 繞過 text layer。
+要寫 bytes 照寫(`sys.stdout.buffer.write(...)` / `sys.stdin.buffer.read()`,hook
+走這條,因為 hook 掛了比壞碼更慘)— 那支檔案還是照樣多寫這一行,對只寫 bytes 的
+檔它是無害的 no-op(#96)。
 
-整支檔案完全沒有裸 `print(` 的 script 不用釘 stdout:沒有東西要送到主控台,
-就沒有中文可以壞(#71)。
+釘在 `__main__` 的**第一層**:寫在 `main()` 裡不算(self-check 會拿 StringIO 呼叫
+`main()`,StringIO 沒有 `reconfigure`)、寫在模組層不算、巢狀進 `__main__` 裡面的
+`if` / `try` 也不算(死碼裡的 pin 不算數,#72)。一個檔有幾個 `__main__` 就要幾個
+都寫到(#69)。
 
-`scripts/validate.py` 的 `stream_encoding_issues` 兩條都會抓,而且抓位置:
-`reconfigure` 寫在 `__main__` 之外照樣紅。
+`scripts/validate.py` 的 `stream_encoding_issues` 就是在比這件事,整條是語法比對 ——
+沒有可達性分析。宣告過的天花板(#67):`__main__` 只認
+`if __name__ == "__main__":` 這一種正規寫法,反著寫與 `in (...)` 這類等價寫法不認。
+
+改這條判準的時候,`scripts/qa/97-mutate.py --run` 是那張 mutation 台:11 個 knob
+逐一改壞,`--self-check` 要 11/11 轉紅。
 
 ### 跨 skill 借判斷:走安裝根目錄,不走相對連結
 

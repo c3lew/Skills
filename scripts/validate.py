@@ -26,7 +26,6 @@ Usage:
 import ast
 import re
 import sys
-from collections import defaultdict
 from textwrap import indent
 from pathlib import Path
 
@@ -199,704 +198,86 @@ def handoff_target_issues(skills_dir):
 
 MAIN_BLOCK = 'if __name__ == "__main__"'
 MAIN_TEST = ast.unparse(ast.parse(MAIN_BLOCK + ":\n    pass").body[0].test)
-# (stream, pin, bypass, symptom). Two ways to survive a cp950 console: pin the
-# stream's encoding, or go around the text layer entirely via .buffer. Both
-# halves are positional (see the docstring): the pin must sit in the `__main__`
-# block, the bypass must sit somewhere the module actually reaches (#70).
+
+
+def norm(stmt):
+    """`stmt` written the way `ast.unparse` writes it — quotes and all.
+
+    Both sides of the comparison go through this. `ast.unparse` emits single
+    quotes, so a double-quoted literal lifted straight out of this file would
+    silently never match — and under a rule like this one, "nothing matched"
+    looks exactly like "everything is fine" (#96's prototype hit that twice).
+    """
+    return ast.unparse(ast.parse(stmt).body[0])
+
+
+# (stream, pin, symptom). One way to survive a cp950 console: pin the stream.
+# No `.buffer` bypass, no print detection, no exemptions — see the
+# `stream_encoding_issues` docstring for why the old 557 lines went away (#96).
 STREAM_PINS = (
-    ("stdout", 'sys.stdout.reconfigure(encoding="utf-8")', "sys.stdout.buffer",
+    ("stdout", norm('sys.stdout.reconfigure(encoding="utf-8")'),
      "its 中文 output is mojibake"),
-    ("stdin", 'sys.stdin.reconfigure(encoding="utf-8")', "sys.stdin.buffer",
+    ("stdin", norm('sys.stdin.reconfigure(encoding="utf-8")'),
      "中文 input is mojibake or UnicodeDecodeError"),
 )
 
 
-def code_exprs(node):
-    """Every attribute access and call under `node`, as normalised source.
+def main_blocks(tree):
+    """Every `if __name__ == "__main__":` block in `tree`.
 
-    Reading the AST instead of the file text is the whole point: comments are
-    gone before parsing and a docstring is a str constant, never an Attribute,
-    so prose *about* `sys.stdout.buffer` cannot pass for a use of it (#60).
+    walk, not tree.body: a block nested one level under a try or an `if` is
+    still what runs the script (#65). And every one of them counts, not just
+    the first one found (#69).
+
+    Declared ceiling (#67): only the canonical spelling is recognised.
+    `"__main__" == __name__` written the other way round, or
+    `__name__ in ("__main__",)`, is not — a short and rare list that #96 chose
+    to leave declared rather than enumerate.
     """
-    return {ast.unparse(n) for n in ast.walk(node)
-            if isinstance(n, (ast.Attribute, ast.Call))}
+    return [n for n in ast.walk(tree)
+            if isinstance(n, ast.If) and ast.unparse(n.test) == MAIN_TEST]
 
 
-def norm(expr):
-    """`expr` written the way ast.unparse would write it — quotes and all."""
-    return ast.unparse(ast.parse(expr, mode="eval").body)
+def reads_stdin(tree):
+    """True if `sys.stdin` is really touched — an AST attribute, not text.
 
-
-DEAD_END = (ast.Raise, ast.Return, ast.Break, ast.Continue)
-
-# The key for "whatever calling this name hands back". Not an identifier, so
-# it cannot collide with the real names it shares a dict with (#79).
-RET = "()"
-
-
-def runs(body):
-    """The statements in `body` that actually execute, dead code cut out.
-
-    Cut: a branch whose test is a constant the other way (`if False:`),
-    everything after a `raise`/`return`, and the body of a def — a def only
-    runs when something calls it, which `live_nodes` resolves separately.
-    A *class* body is not cut: unlike a def it runs the moment the `class`
-    statement does, so `class W: run = dump` really does bind `run` (#75).
-    An `except` handler counts as dead too: it is the error path, not the
-    path a script prints its output on.
+    Reading the AST is the whole point: a docstring or a rule table that spells
+    `sys.stdin.reconfigure(...)` out as a str constant is prose, never an
+    Attribute, so this guard's own `STREAM_PINS` cannot make it believe every
+    file in the repo reads stdin (#96 AC3).
     """
-    out = []
-    for stmt in body:
-        if isinstance(stmt, ast.If):
-            try:
-                branch = bool(ast.literal_eval(stmt.test))
-            except Exception:
-                branch = None  # not decidable — both halves may run
-            if branch is not False:
-                out += runs(stmt.body)
-            if branch is not True:
-                out += runs(stmt.orelse)
-        elif isinstance(stmt, ast.Try):
-            out += runs(stmt.body) + runs(stmt.orelse) + runs(stmt.finalbody)
-        elif isinstance(stmt, (ast.For, ast.AsyncFor)):
-            # the header runs too, and it is where `for f in [dump]` binds
-            # its target — the body is cut separately so it is not carried
-            # along here (#75). Position is copied over: callers may report
-            # or unparse whatever `runs` hands back.
-            out.append(ast.copy_location(
-                type(stmt)(target=stmt.target, iter=stmt.iter,
-                           body=[], orelse=[], type_comment=None), stmt))
-            out += runs(stmt.body) + runs(stmt.orelse)
-        elif isinstance(stmt, (ast.While, ast.With, ast.AsyncWith)):
-            out += runs(stmt.body) + runs(getattr(stmt, "orelse", []))
-        elif isinstance(stmt, ast.ClassDef):
-            out += runs(stmt.body)
-        elif isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            continue
-        else:
-            out.append(stmt)
-        if isinstance(stmt, DEAD_END):
-            break
-    return out
-
-
-CONSUMED_BY = frozenset(  # names that drain the iterable handed to them
-    "list tuple set frozenset dict sum min max any all sorted next join "
-    "extend writelines".split())
-
-DRIVEN_BY = frozenset(  # names that hand a coroutine to the event loop (#87)
-    "run gather wait wait_for create_task ensure_future "
-    "run_until_complete".split())
-
-LOOP_FROM = frozenset(  # asyncio calls that hand back something drivable (#91)
-    "new_event_loop get_event_loop get_running_loop Runner".split())
-
-
-def asyncio_graph(tree):
-    """What in this file really came out of `asyncio` (#91).
-
-    The upgrade the `consumes` ponytail note kept promising: a name-only
-    reading cannot tell `asyncio.run(c)` from `subprocess.run(c)`, and the
-    `DRIVEN_BY` names are the ones an ordinary script collides with —
-    `run`, `wait`, `gather`. Read as a name alone the list is a switch in
-    both directions at once: any object's `.run(...)` drives a coroutine
-    (a bypass parked in a body nobody runs exempts the file — the quiet
-    direction), and any `def run` / parameter / `import json as run`
-    strikes the name off, so the `asyncio.run(adump())` that really is
-    running stops counting (the noisy one). Both faces are one cause —
-    the callee is never resolved — so both close here.
-
-    Returns `(roots, funcs)`. `roots` are the names bound to the module
-    itself or to anything it handed back: `import asyncio [as aio]`, and
-    then, to a fixed point, every `x = <asyncio thing>` —
-    `loop = asyncio.new_event_loop()`, `r = asyncio.Runner()`, and the
-    same through a `with ... as`. `funcs` maps a local name to the
-    `asyncio` name it was imported under (`from asyncio import run as r`
-    → `{"r": "run"}`), which is what makes a bare `run(c)` count only
-    when it is that `run`.
-
-    ponytail: `import`s are collected wherever they sit, module level or
-    inside a def, and a rebinding that takes the name *away* from asyncio
-    is not tracked. Both widen the driven set, the quiet direction, but
-    only for a file that imports asyncio and then shadows its own module
-    name — and against that, reading every `b.run(...)` as the event loop
-    is the far wider hole (#91's ten false greens). Three shapes cost a
-    false red instead, the noisy direction: a non-asyncio driver (`trio`,
-    `anyio`, a test harness' own runner) is not on the list at all; a loop
-    reached through a def of one's own (`loop = get_loop()`) is a hop this
-    graph does not follow, the same second-name gap `consumes` leaves on
-    the generator half; and a loop handed in as a parameter has no binding
-    here to read.
-    """
-    roots, funcs, pairs = set(), {}, []
-    for n in ast.walk(tree):
-        if isinstance(n, ast.Import):
-            for a in n.names:  # `import asyncio`, `import asyncio as aio`
-                if a.name == "asyncio" or a.name.startswith("asyncio."):
-                    roots.add(a.asname or a.name.split(".")[0])
-        elif isinstance(n, ast.ImportFrom):
-            if (n.module or "").split(".")[0] == "asyncio":
-                for a in n.names:  # `from asyncio import run as r`
-                    funcs[a.asname or a.name] = a.name
-        elif isinstance(n, ast.Assign):
-            pairs += [(t, n.value) for t in n.targets]
-        elif isinstance(n, ast.withitem) and n.optional_vars is not None:
-            pairs.append((n.optional_vars, n.context_expr))
-    while True:  # `loop = asyncio.new_event_loop()` is asyncio's too
-        fresh = {t.id for t, src in pairs if isinstance(t, ast.Name)
-                 and t.id not in roots and from_asyncio(src, roots, funcs)}
-        if not fresh:
-            return roots, funcs
-        roots |= fresh
-
-
-def from_asyncio(expr, roots, funcs):
-    """Whether this expression is `asyncio`, or a loop it handed back.
-
-    Not *anything* asyncio handed back: `ok = asyncio.iscoroutinefunction(f)`
-    would put `ok.run(c)` back on the driven list, which is the same false
-    green `subprocess.run(c)` was. Only the calls that really do hand back
-    something you can drive a coroutine with are on `LOOP_FROM`, and a name
-    imported from asyncio counts through its *call*, never on its own —
-    `x = sleep` is a function lying around, not a loop.
-    """
-    if isinstance(expr, ast.Name):
-        return expr.id in roots
-    if isinstance(expr, ast.Await):
-        return from_asyncio(expr.value, roots, funcs)
-    if isinstance(expr, ast.Call):
-        f = expr.func
-        if isinstance(f, ast.Name):
-            return funcs.get(f.id) in LOOP_FROM
-        return (isinstance(f, ast.Attribute) and f.attr in LOOP_FROM
-                and from_asyncio(f.value, roots, funcs))
-    return False
-
-
-def drives(node, driven):
-    """Whether this `Call` really hands a coroutine to the event loop (#91).
-
-    `asyncio.run(c)` and `loop.run_until_complete(c)` are attribute calls
-    on something that came from `asyncio`, so the receiver is what decides
-    — not the attribute's name, which is why `shadowed` has no business
-    here: a module's own `def run` cannot reach `asyncio.run`. A bare
-    `run(c)` counts only when `from asyncio import run` put it there.
-    """
-    roots, funcs = driven
-    f = node.func
-    if isinstance(f, ast.Attribute):
-        return f.attr in DRIVEN_BY and from_asyncio(f.value, roots, funcs)
-    return isinstance(f, ast.Name) and funcs.get(f.id) in DRIVEN_BY
-
-
-def names_in(expr):
-    """Every identifier `expr` reads — `Name.id` and `Attribute.attr` alike.
-
-    A `Lambda` is not descended into. Its body is deferred code: it runs when
-    something *calls* the lambda, not where the literal sits — the same reason
-    `runs` cuts a def's body and `own_scope` stops at one. Walking in from here
-    read the lambda's own parameter as if it were the module's dead `dump`, and
-    read a lambda that merely *hands `dump` on* as if calling it ran `dump` —
-    either way `return lambda: dump` came back as "what `get()` gives you", and
-    `get()()` exempted a file where not one line of `dump` runs (#83). What a
-    lambda reaches once it really is called is `free_in`.
-
-    A `GeneratorExp` stops it for the same reason (#86): its body runs when
-    something *iterates* the generator, not where the literal sits, so
-    `keep(dump() for _ in [1])` hands `keep` a generator — it does not run
-    `dump`, and reading the body here counted it as run, because an argument
-    is assumed called. The first `for`'s iterable is the one part evaluated
-    where the literal sits, the same way a lambda's parameter default is, so
-    it is pushed back; the `ifs` and any later `for` are deferred with the
-    body. A `ListComp` / `SetComp` / `DictComp` is not stopped: it runs to
-    completion right there.
-    """
-    out, stack = set(), [expr]
-    while stack:
-        n = stack.pop()
-        if isinstance(n, ast.Lambda):
-            continue
-        if isinstance(n, ast.GeneratorExp):
-            stack.append(n.generators[0].iter)
-            continue
-        out.add(getattr(n, "id", getattr(n, "attr", None)))
-        stack += list(ast.iter_child_nodes(n))
-    return out
-
-
-def free_in(lam):
-    """What a `Lambda` reaches once something calls it — its args shadowed out.
-
-    The other half of `names_in` stopping at a lambda. `own_scope` already
-    refuses to walk into one, so a lambda's args never reach the `local` set a
-    def's `return` is filtered against, while `names_in` used to walk in and
-    read them anyway; that asymmetry is the one #83 was opened on, and putting
-    both halves on the same boundary is what closes its nine cases.
-
-    A parameter's *default* is not shadowed away with the parameter: it is
-    evaluated out here, in the enclosing scope, and reaching the parameter
-    inside the body is reaching whatever the default named — `lambda x=dump:
-    x()` really does run `dump`. Only the defaults of parameters the body
-    actually reads carry, because widening past that is the direction that
-    makes this guard go quiet.
-
-    Recursion falls out of `names_in`: a lambda nested in the body is left
-    alone, because calling the outer one only *builds* the inner one.
-
-    ponytail: this flattens "the body reads it" into "calling the lambda runs
-    it", the same over-approximation `bindings_in` makes for `f = dump; f()`,
-    and it is applied only where something really does call the lambda — a
-    lambda a def merely *hands back* is not walked at all, because #83's own
-    cases require `def get(): return lambda: dump` to stay dead under
-    `get()()`. Two false reds fall out of that, both the noisy direction: one
-    call level further (`get()()()`), and a returned lambda that does call
-    what it was handed (`return lambda x=dump: x()`). A third falls out of
-    the same flattening at the spot-call position: `(lambda: dump)()` merely
-    *hands `dump` back*, and this reads it as running it — #84 declared that
-    one a ceiling rather than close it, because separating the two needs the
-    lambda to carry its own `RET` key.
-    """
-    a = lam.args
-    slots = [p.arg for p in a.posonlyargs + a.args]
-    pairs = list(zip(slots[len(slots) - len(a.defaults):], a.defaults))
-    pairs += [(p.arg, d) for p, d in zip(a.kwonlyargs, a.kw_defaults) if d]
-    reads = names_in(lam.body)
-    bound = {p.arg for p in ast.walk(a) if isinstance(p, ast.arg)}
-    return (reads - bound).union(*[names_in(d) for n, d in pairs if n in reads]
-                                 or [set()])
-
-
-def nodes_in(stmt, through=()):
-    """Every node executing `stmt` reaches — deferred code stops it (#84, #86).
-
-    The third face of the boundary #83 drew through `names_in` and `own_scope`:
-    a lambda literal parked in a live statement is *built* there, not run
-    there. Walking in read the `Call` inside an uncalled lambda's body as a
-    call this statement makes, so `f = lambda: dump()` — bound to a name
-    nobody ever calls — marked `dump` live and exempted a file where not one
-    line of it runs. Six ways to park a lambda (a name, a list, a dict, a bare
-    literal, a comprehension, a conditional) all rode on that one walk.
-
-    A parameter *default* is not deferred: it is evaluated where the literal
-    sits, so `f = lambda x=dump(): 1` really does run `dump` — those keep
-    going.
-
-    A `GeneratorExp` is the other deferred body Python writes inline, and it
-    stops the walk on the same rule (#86): `g = (dump() for _ in [1])` builds
-    a generator nobody consumes, so not one line of `dump` runs, and walking
-    in read its `dump()` as a call this statement makes. Of the 6 shapes #86
-    caught, 5 ride on this one walk — bound to a name, bare in a live
-    statement, parked in a container, handed to a def that does not consume
-    it, and the bypass written straight into an unconsumed generator body;
-    the 6th, a generator function called but never iterated, is `live_nodes`'
-    half. What the first `for`'s iterable is to a genexp, a parameter default
-    is to a lambda: evaluated where the literal sits, so it is pushed back.
-    `ListComp` / `SetComp` / `DictComp` are not stopped.
-
-    `through` is the set of lambdas something really does call, and their
-    bodies are walked like any other live code. The name half of that answer
-    is `free_in`, which carries the *names* a called lambda reaches; this
-    carries the *nodes*, which is what the bypass is looked up in — a
-    `sys.stdout.buffer.write` written straight into a callback body has to
-    stay reachable, and `free_in` alone cannot say so.
-
-    ponytail: `through` is only ever handed in for the node list, never for
-    the scan that decides what is invoked. Walking a called lambda's body
-    there would read its *arguments* as the module's names again and hand
-    back the shadowed-argument shapes #83 closed (`(lambda dump: dump())(1)`).
-    """
-    out, stack = [], [stmt]
-    while stack:
-        n = stack.pop()
-        out.append(n)
-        if isinstance(n, ast.Lambda) and n not in through:
-            stack += [d for d in n.args.defaults + n.args.kw_defaults if d]
-            continue
-        if isinstance(n, ast.GeneratorExp) and n not in through:
-            stack.append(n.generators[0].iter)
-            continue
-        stack += list(ast.iter_child_nodes(n))
-    return out
-
-
-def consumes(node, through=(), shadowed=(), driven=((), {})):
-    """The expressions this one node really *runs* (#86, #87).
-
-    The other half of stopping at a `GeneratorExp`: a generator body does run
-    once something consumes it, and the guard has to say where. Four positions
-    consume — a `for`'s iterable, `yield from`, the iterables of a
-    comprehension that runs where it stands, and an argument handed to one of
-    the builtins that drains what it is given. A genexp's own iterables are on
-    this list only when the genexp itself is being consumed: evaluating
-    `for x in E` builds `E`, and only iterating the genexp iterates `E` in
-    turn.
-
-    A coroutine is the third deferred body and drains the same way (#87).
-    `adump()` on an `async def` builds a coroutine with not one line of its
-    body run — the same claim `gens` makes about a generator def — and what
-    really runs it is being driven: `await c`, `async for` over an async
-    generator (already the `AsyncFor` branch), or being handed to the event
-    loop by one of the `DRIVEN_BY` names (`asyncio.run(c)`, `gather`,
-    `create_task`, …) — resolved through `asyncio_graph`, not read off the
-    name (#91). Without those positions the `gens` half alone would turn
-    every awaited coroutine into a false red.
-
-    A name the module binds itself is *not* the builtin it collides with, so
-    `shadowed` takes it off the list: `def sorted(g): return g` consumes
-    nothing, and reading it as the builtin would hand back the switch #86 was
-    opened on — one def, and a bypass parked in a generator exempts the file.
-    That is why the collision is read off `binds`, the same collector #81 had
-    to complete for the same reason.
-
-    ponytail: `CONSUMED_BY` is a name list, not a type check — the callee is
-    read by the same name-only reading `live_nodes` uses everywhere else.
-    `DRIVEN_BY` no longer is: its names are the ones an ordinary script
-    collides with, so a hand-rolled `run(coro)` was read as the event
-    loop's (quiet) and any `def run` struck `asyncio.run` off the list
-    (noisy). `asyncio_graph` is the import graph that upgrade needed, and
-    `drives` resolves the callee through it (#91). The 15 names on
-    `CONSUMED_BY` drain an iterable; `map` / `filter` / `zip` / `enumerate` are
-    deliberately off it, because they are deferred themselves. Four
-    consuming shapes are left out and each costs a false red, the noisy
-    direction: unpacking (`a, b = gen()`, `*rest`), a consumer reached through
-    a second name (`h = g; list(h)`), a generator handed back and consumed a
-    level up (`return gen()`), and a user-defined def that iterates its
-    parameter — telling one of those from `keep(g)`, which merely hands the
-    generator back, is what the fourth case of #86 pins. One shape is left
-    open in the *quiet* direction and `shadowed` does not reach it: a method
-    call (`b.extend(g)`) is matched on the attribute alone, so an object with
-    a method of that name is read as draining what it is handed. Narrowing
-    that needs the receiver's type, which this name-only call graph never
-    has; `"".join(...)` is the shape that keeps the attribute reading here.
-    """
-    if isinstance(node, (ast.For, ast.AsyncFor)):
-        return [node.iter]
-    if isinstance(node, (ast.YieldFrom, ast.Await)):
-        return [node.value]
-    if isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp)):
-        return [c.iter for c in node.generators]
-    if isinstance(node, ast.GeneratorExp):
-        return [c.iter for c in node.generators] if node in through else []
-    if isinstance(node, ast.Call):
-        name = getattr(node.func, "id", getattr(node.func, "attr", None))
-        if ((name in CONSUMED_BY and name not in shadowed)
-                or drives(node, driven)):
-            return list(node.args) + [k.value for k in node.keywords]
-    return []
-
-
-def own_scope(node):
-    """Every node under `node` that belongs to *its* scope.
-
-    `ast.walk` would descend into a nested def, and a nested def's `return`
-    is its own — attributing it to the enclosing one would let a live
-    `outer()` drag in a name only `inner` ever hands back, which widens the
-    live set in the direction that makes the guard go quiet (#75).
-    """
-    stack = list(ast.iter_child_nodes(node))
-    while stack:
-        n = stack.pop()
-        yield n
-        if not isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef,
-                              ast.Lambda, ast.ClassDef)):
-            stack += list(ast.iter_child_nodes(n))
-
-
-def binds(node):
-    """Every name this one node introduces into the scope it sits in (#81).
-
-    A def's `return` hands back the *outer* `dump` only when `dump` is not a
-    name the def made itself, so what this collects is the node kinds that
-    make one. Eight branches cover them: `Name` in a `Store` context, `arg`,
-    `alias`, a nested `def` or `class`, an `except` handler, the three
-    `match` captures, and a PEP 695 type parameter. Two of those shipped with
-    the rule (#79) — `Name` and `arg` — and each of the rest shadows the same
-    name the same way, so leaving any one out hands `get()()` back as a
-    one-line switch that exempts the whole file, which is exactly what #81
-    hit. Collecting the whole face of one rule is what #75 had to do to
-    `bindings_in` for the same reason: patched shape by shape, the shapes not
-    yet named stay open. A `with ... as` target, a comprehension target and a
-    walrus need no branch of their own — each is already a `Name` in a
-    `Store` context. A `Lambda`'s args get no branch either, and the reason
-    once given for that — `own_scope` stops at a lambda, so they are
-    unreachable — described only half the reachability: `own_scope` stopped,
-    `names_in` did not, so the body's names came through while the args that
-    shadow them did not. That is the asymmetry #83 was opened on. Both halves
-    stop at a lambda now, and what a *called* lambda reaches, args shadowed
-    out, is `free_in`.
-
-    Evidence: `self_check` pins six of the eight — the nested `def` and
-    `class` share one branch and only `class` is pinned, because a nested def
-    of the same name is *also* held down by the collapsed `defs` dict (#80),
-    so a pin there would pass whether this branch collects it or not. It is
-    covered by `79-return-sweep.py --own-names` instead, and turns into real
-    evidence once #80 stops shadowing it. Lambda args are outside that count
-    of eight: they are shadowed by `free_in`, whose evidence is the eight dead
-    shapes and three ceilings `self_check` pins under #83, plus
-    `81-lambda-sweep.py --lambda-scope`.
-
-    ponytail: a `global`/`nonlocal` name is *not* collected — it declares the
-    binding to be someone else's, so it is not a local shadow. That costs a
-    false red on a def that returns a `global dump` it rebinds, the noisy
-    direction, not the quiet one.
-    """
-    if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
-        return {node.id}
-    if isinstance(node, ast.arg):
-        return {node.arg}
-    if isinstance(node, ast.alias):  # `import os as dump`, `import dump.sub`
-        return {node.asname or node.name.split(".")[0]}
-    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-        return {node.name}
-    if isinstance(node, (ast.ExceptHandler, ast.MatchAs, ast.MatchStar)):
-        return {node.name} if node.name else set()
-    if isinstance(node, ast.MatchMapping):
-        return {node.rest} if node.rest else set()
-    if isinstance(node, (ast.TypeVar, ast.ParamSpec, ast.TypeVarTuple)):
-        return {node.name}  # PEP 695 `def get[dump]()`
-    return set()
-
-
-def bound_pairs(target, value):
-    """`(name, source expression)` for one binding target, destructured.
-
-    A tuple or list target against a same-length tuple or list value pairs up
-    positionally (`a, b = dump, other` binds `a` to `dump` alone); anything
-    else hands the whole right-hand side to each name it binds, which is the
-    only reading available for `a, b = pair()`.
-    """
-    if isinstance(target, (ast.Tuple, ast.List)):
-        elts = value.elts if (isinstance(value, (ast.Tuple, ast.List))
-                              and len(value.elts) == len(target.elts)) else None
-        for i, elt in enumerate(target.elts):
-            yield from bound_pairs(elt, elts[i] if elts else value)
-    elif isinstance(target, ast.Name):
-        yield target.id, value
-
-
-def binding_pairs(node):
-    """`(name, source expression)` for every name the statement `node` binds.
-
-    Split out of `bindings_in` because `live_nodes` needs the *expression* as
-    well as the names it reaches: a name bound to a lambda has to be able to
-    say *which* lambda, so calling that name can walk the right body (#84).
-    """
-    if isinstance(node, ast.Assign):
-        pairs = [(t, node.value) for t in node.targets]
-    elif isinstance(node, ast.AnnAssign) and node.value is not None:
-        pairs = [(node.target, node.value)]
-    elif isinstance(node, (ast.For, ast.AsyncFor)):
-        pairs = [(node.target, node.iter)]
-    else:
-        return
-    for target, value in pairs:
-        yield from bound_pairs(target, value)
-
-
-def bindings_in(node):
-    """`{name: names it was bound to}` for the one statement `node` (#75).
-
-    The claim is one claim — calling this name calls whatever the right-hand
-    side named — and every statement that makes it gets the same reach:
-    `f = dump`, `f: object = dump`, `a, b = dump, dump`, `for f in [dump]`,
-    and `class W: run = dump` (a class body runs where it stands, so `runs`
-    hands its assignments through here like any other). Reading only a bare
-    `Assign` target, as #73 shipped, left the rest writing the same thing and
-    getting shouted at for it.
-
-    A call on the right-hand side binds the *result*, not the callee:
-    `f = get()` makes calling `f` call whatever `get` returns, which is the
-    `RET` key, not `get` itself (#79).
-
-    ponytail: a `with ... as f` is the same claim again and is *not*
-    collected. Leaving it out costs a false red — a legitimate script told to
-    pin a stream it already writes — which is the direction that makes noise,
-    not the direction that makes the guard go quiet. The 6 shapes that are
-    covered are the `--binding` sweep's; this is not one of them.
-    """
-    out = defaultdict(set)
-    for name, src in binding_pairs(node):
-        out[name] |= names_in(src)
-        if isinstance(src, ast.Lambda):  # calling the name runs the body
-            out[name] |= free_in(src)
-        if isinstance(src, ast.Call):
-            out[name] |= {RET + f for f in names_in(src.func) if f}
-    return out
-
-
-def live_nodes(tree):
-    """Every AST node the module actually reaches (#70).
-
-    The bypass half of the guard has to be positional like the pin half: a
-    `sys.stdout.buffer` sitting in a never-called function or behind
-    `if False:` is not "the script writes bytes", it is a switch anyone can
-    flip to silence the guard — the same failure shape #60 closed for prose.
-
-    Reachability is a name-only call graph from the module's top level, and
-    what pulls a def's body in is its name in a *call* position: the `func` of
-    a `Call` (`dump()`, `W().go()`), or an argument handed to something that
-    calls it (`run(dump)`). A name bound to another name carries the same
-    reach once that binding is itself called, however that binding is
-    written — `=`, an annotated `=`, a tuple unpack, a `for` target or a
-    class attribute, all collected by `bindings_in` — which is how an alias
-    (`f = dump; f()`) and a handler dict (`H = {"a": dump}; H["a"]()`) reach
-    the body without ever naming `dump` at a call (#71, #75).
-
-    A def that returns a name carries it the same way, but the binding it
-    makes is on the *result* of calling it, under the `RET` key: a factory
-    reaches `dump` when the thing it hands back is itself called
-    (`get()()`, `f = get(); f()`), and not when the result is dropped
-    (`get()`) or parked in a name nobody calls (`x = get()`) — there not one
-    line of `dump` runs, so exempting the file would be the switch again
-    (#79). A name the def makes itself is not what it hands back either:
-    `def get(): dump = 1; return dump` returns its local, which merely
-    collides with the def's name — and so does every other way Python binds a
-    local, `import as` and `except as` and a `match` capture and a nested
-    `class` alike, all collected by `binds` (#81).
-
-    A bare mention does not count and must not: `x = [dump]`, a local
-    `dump = 1` that happens to shadow the def, an unrelated `c.dump` — none of
-    them runs a line of `dump`, and counting them would hand back the switch
-    #70 took away, since one colliding name anywhere live would exempt the
-    whole file (#73).
-
-    A lambda literal parked in a live statement is *built* there, not run
-    there, so `reaches` stops the walk at it: `f = lambda: dump()` bound to a
-    name nobody calls does not make `dump` live (#84). The two positions that
-    really do call one still carry — on the spot via `free_in`, through a name
-    via `bindings_in`.
-
-    A generator is the same claim on the other deferred body (#86). Building
-    one runs nothing: `g = (dump() for _ in [1])`, and `gen()` on a def whose
-    body yields, both hand back a generator with not one line of that body
-    run — so a genexp stops the walk (`nodes_in`), and a call on a generator
-    def is dropped from `invoked`. What makes either live is being
-    *consumed*, and `consumes` names the positions: a genexp consumed on the
-    spot or through the name it was bound to, a generator def called in a
-    consumed position.
-
-    A coroutine is the third, and the same two halves carry it (#87). An
-    `async def` goes on `gens` whether or not its body yields — calling one
-    only builds a coroutine — and `consumes` names where one is really
-    driven: `await`, `async for`, and the event-loop entry points. An async
-    generator was already on `gens` for its `yield`; the plain `async def`
-    was not, which is why five shapes — a coroutine bound, bare, parked in a
-    container, handed to a def that does not await it, and the bypass written
-    straight into an un-awaited coroutine body — all rode on one `async`
-    keyword.
-
-    ponytail: two approximations remain here — two defs sharing a name are
-    one node, and a name handed to a call is assumed called by it (the three
-    the generator half leaves are counted in `consumes`). Both widen the
-    live set, which is the direction that makes this guard go *silent* on a
-    script printing unpinned 中文, so each is kept to a shape where a call is
-    the ordinary reading of the code; the four dead-`dump` shapes `self_check`
-    pins under #73 stay dead. A call result handed straight to another call
-    (`run(get())`) is *not* carried — that costs a false red, the noisy
-    direction. Dead code is cut by `runs`.
-    """
-    defs = {n.name: n for n in ast.walk(tree)
-            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
-    returned = defaultdict(set)  # what calling a def hands back, by RET key
-    for name, node in defs.items():
-        own = list(own_scope(node))
-        local = set().union(*map(binds, own))
-        for n in own:
-            if isinstance(n, ast.Return) and n.value is not None:
-                returned[RET + name] |= names_in(n.value) - local
-    gens = {name for name, node in defs.items()  # calling one runs no line
-            if isinstance(node, ast.AsyncFunctionDef)  # a coroutine — #87
-            or any(isinstance(n, (ast.Yield, ast.YieldFrom))
-                   for n in own_scope(node))}
-    shadowed = set().union(*map(binds, ast.walk(tree)) or [set()])
-    driven = asyncio_graph(tree)
-    live, body, eaten_gens = set(), runs(tree.body), set()
-    while True:
-        invoked, called, lam_of = set(), set(), defaultdict(set)
-        eaten_names, eaten_calls, gen_of = set(), set(), defaultdict(set)
-        before = len(eaten_gens)
-        bound = defaultdict(set, {k: set(v) for k, v in returned.items()})
-        for stmt in body:
-            for n in nodes_in(stmt, eaten_gens):
-                for e in consumes(n, eaten_gens, shadowed, driven):  # really run
-                    if isinstance(e, ast.GeneratorExp):
-                        eaten_gens.add(e)
-                    elif isinstance(e, ast.Call):
-                        eaten_calls |= names_in(e.func)
-                    else:
-                        eaten_names |= names_in(e)
-                if isinstance(n, ast.Call):
-                    invoked |= names_in(n.func)
-                    if isinstance(n.func, ast.Lambda):  # `(lambda: x)()` — #83
-                        invoked |= free_in(n.func)
-                        called.add(n.func)
-                    if isinstance(n.func, ast.Call):  # `get()()` — #79
-                        invoked |= {RET + f for f in names_in(n.func.func) if f}
-                    for arg in list(n.args) + [k.value for k in n.keywords]:
-                        invoked |= names_in(arg)
-                        if isinstance(arg, ast.Lambda):  # `sorted(key=…)` — #84
-                            invoked |= free_in(arg)
-                            called.add(arg)
-                else:
-                    for name, srcs in bindings_in(n).items():
-                        bound[name] |= srcs
-                    for name, src in binding_pairs(n):
-                        if isinstance(src, ast.Lambda):
-                            lam_of[name].add(src)
-                        if isinstance(src, ast.GeneratorExp):
-                            gen_of[name].add(src)
-        for seed in (invoked, eaten_calls):
-            todo = list(seed)
-            while todo:  # an invoked binding invokes whatever it was bound to
-                for name in bound.get(todo.pop(), ()):
-                    if name not in seed:
-                        seed.add(name)
-                        todo.append(name)
-        for name in eaten_names & set(gen_of):  # `g = (…); list(g)` — #86
-            eaten_gens |= gen_of[name]
-        fresh = (((invoked - gens) | eaten_calls) & set(defs)) - live
-        if not fresh and before == len(eaten_gens):
-            through = called.union(*[lam_of[n] for n in invoked & set(lam_of)]
-                                   or [set()]) | eaten_gens
-            return [n for stmt in body for n in nodes_in(stmt, through)]
-        live |= fresh
-        body = runs(tree.body) + [s for name in live for s in runs(defs[name].body)]
+    return any(isinstance(n, ast.Attribute) and n.attr == "stdin"
+               and getattr(n.value, "id", None) == "sys"
+               for n in ast.walk(tree))
 
 
 def stream_encoding_issues(repo):
-    """Every runnable script must pin its streams to UTF-8 (#58).
+    """Every runnable script pins its streams to UTF-8, by convention (#58, #96).
 
-    A Windows console is cp950 by default, and everything this line carries is
-    中文: an unpinned stdout prints the名單 as mojibake, and an unpinned stdin
-    cannot even read a heredoc of ticket titles. Worse than mojibake, any
-    character Big5 lacks (an emoji, a kana in a title) raises
-    UnicodeEncode/DecodeError and kills the command outright.
+    A Windows console is cp950 by default and everything these scripts carry is
+    中文: an unpinned stdout prints the 名單 as mojibake, an unpinned stdin
+    cannot read a heredoc of ticket titles, and any character Big5 lacks raises
+    UnicodeEncode/DecodeError and kills the command outright. Both symptoms are
+    invisible to an in-process assert — there the streams are a pipe or a
+    StringIO, never the console — so the guard has to be structural.
 
-    Both symptoms are invisible to an in-process assert — there the streams are
-    a pipe or a StringIO, never the console — so the guard is structural: a
-    file with a `__main__` block pins stdout, and pins stdin too if it reads
-    it. No case-by-case judgement about whether *this* script's text happens to
-    be ASCII today.
+    The rule is deliberately syntactic: a file with a `__main__` block writes
+    the stdout pin among that block's *direct* statements, and the stdin pin
+    too if it really touches `sys.stdin`. No exemption for `.buffer`, none for
+    "this one never prints", and no question about whether a given line runs.
 
-    The pin must sit *inside* the `__main__` block, so the check is positional
-    like `unpushed_commit_link_issue`. A pin in `main()` is the shape that
-    breaks: self_check calls `main()` with stdout captured into a StringIO,
-    which has no `reconfigure` — a substring-anywhere check would call that
-    green, which is exactly how this guard first shipped.
+    That last question is what this used to be: 557 lines of reachability
+    analysis across 12 functions and 31 tickets (#60–#95). 「這一行會不會跑」is
+    the halting problem in a language with aliases, dynamic dispatch and
+    getattr, so every round either widened into false reds on ordinary Python
+    or narrowed into a bypass hiding in dead code. A convention has a finite
+    state space, so it converges. The price is one no-op line in the one file
+    that only writes bytes.
 
-    The `.buffer` bypass is positional too, but by reachability rather than by
-    block: `main()` legitimately writes bytes and `__main__` calls it, while a
-    `.buffer` line in dead code or in a function nobody calls is a switch that
-    silences the guard without printing a single byte (#70).
-
-    A script that never prints is exempt outright: with nothing on its way to
-    the console there is no 中文 to mangle, and demanding a pin there is a red
-    against a legitimate script (#71). Unlike the bypass, this half reads the
-    *whole file*, not the live set — #60 AC1 says 「檔案裡沒有裸 `print(`」, and
-    a print sitting in dead code still means someone wrote this script to talk
-    to a console. ponytail: `print(` is the whole test — a live
-    `sys.stdout.write("中文")` with no `print` slips through; tighten if that
-    shape ever ships.
+    First level, not anywhere inside: a pin under a nested `if` or `try` is the
+    dead-code pin #72 filed, and a pin in `main()` is the shape this guard
+    originally shipped broken — self_check calls `main()` with stdout captured
+    into a StringIO, which has no `reconfigure`.
     """
     errors = []
     for py in sorted(repo.rglob("*.py")):
@@ -906,30 +287,19 @@ def stream_encoding_issues(repo):
             tree = ast.parse(py.read_text(encoding="utf-8"))
         except SyntaxError:
             continue  # nothing runs it either — not this guard's failure
-        # walk, not tree.body: a `__main__` block nested one level under a
-        # try or an `if` is still what runs the script (#65)
-        main = next((n for n in ast.walk(tree) if isinstance(n, ast.If)
-                     and ast.unparse(n.test) == MAIN_TEST), None)
-        if main is None:
+        mains = main_blocks(tree)
+        if not mains:
             continue
-        whole, inside = code_exprs(tree), code_exprs(main)
-        reached = {ast.unparse(n) for n in live_nodes(tree)
-                   if isinstance(n, (ast.Attribute, ast.Call))}
-        prints = any(isinstance(n, ast.Call)
-                     and getattr(n.func, "id", None) == "print"
-                     for n in ast.walk(tree))
         label = py.relative_to(repo).as_posix()
-        for stream, pin, bypass, symptom in STREAM_PINS:
-            if stream == "stdin" and f"sys.{stream}" not in whole:
+        for stream, pin, symptom in STREAM_PINS:
+            if stream == "stdin" and not reads_stdin(tree):
                 continue  # a script that never reads stdin has nothing to pin
-            if stream == "stdout" and not prints:
-                continue  # nothing reaches the console — nothing to mangle
-            if norm(bypass) in reached or norm(pin) in inside:
+            if all(any(ast.unparse(s) == pin for s in m.body) for m in mains):
                 continue
             errors.append(
-                f"{label}: runnable script does not pin {stream} to UTF-8 "
-                f"inside its `{MAIN_BLOCK}` block — {symptom} on a cp950 "
-                f"console (#58)"
+                f"{label}: runnable script does not pin {stream} to UTF-8 at "
+                f"the first level of its `{MAIN_BLOCK}` block — {symptom} on a "
+                f"cp950 console (#58)"
             )
     return errors
 
@@ -1422,9 +792,10 @@ def self_check():
             "docs/disciplines/disc.md (docs is source of truth)"
         ], errs
 
-    # #58 guard
-    (out_stream, out_pin, out_bypass, _), (_, in_pin, in_bypass, _) = STREAM_PINS
-    assert out_stream == "stdout"
+    # #58 / #96 guard — the rule is syntactic: a `__main__` block writes the
+    # pin among its own direct statements. No bypass, no exemptions.
+    (out_stream, out_pin, _), (in_stream, in_pin, _) = STREAM_PINS
+    assert (out_stream, in_stream) == ("stdout", "stdin")
     with tempfile.TemporaryDirectory() as td:
         repo = Path(td)
         (repo / "scripts").mkdir()
@@ -1439,419 +810,76 @@ def self_check():
 
         bad = repo / "scripts" / "run.py"
         runnable = MAIN_BLOCK + ":\n    "
-        bad.write_text(runnable + 'print("要開")\n', encoding="utf-8")
-        assert [e.split(":")[0] for e in stream_encoding_issues(repo)] == ["scripts/run.py"]
-        for pin in (out_pin, out_bypass):
-            bad.write_text(runnable + pin + "\n", encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], pin
-        # the pin has to be *in* the __main__ block. A reconfigure sitting in
-        # main() is the shape AGENTS.md warns about — self_check calls main()
-        # with a StringIO, which has no reconfigure — so it must still be red.
-        bad.write_text(f"def main():\n    {out_pin}\n    print('要開')\n\n\n"
-                       f"{runnable}main()\n", encoding="utf-8")
-        assert len(stream_encoding_issues(repo)) == 1, stream_encoding_issues(repo)
-        # ...while .buffer in main() is fine: it carries no encoding to get wrong
-        bad.write_text(f"def main():\n    {out_bypass}.write(b'x')\n"
-                       f"    print('要開')\n\n\n{runnable}main()\n",
-                       encoding="utf-8")
-        assert stream_encoding_issues(repo) == []
 
-        # reading stdin is its own half of #58 — a pinned stdout is not enough
+        def reds(src):
+            bad.write_text(src, encoding="utf-8")
+            return stream_encoding_issues(repo)
+
+        # the pin at the first level of `__main__` — that is the whole rule
+        assert reds(runnable + out_pin + "\n    print('要開')\n") == []
+        # ...and everything that is not that is red, however sane it looks
+        for label, src in (
+            ("no pin at all", runnable + "print('要開')\n"),
+            # self_check calls main() with stdout captured into a StringIO,
+            # which has no `reconfigure` — the shape this guard shipped broken
+            ("pin lives in main()",
+             f"def main():\n    {out_pin}\n    print('要開')\n\n\n"
+             + runnable + "main()\n"),
+            ("pin lives at module level", out_pin + "\n" + runnable + "pass\n"),
+            # #72: a pin sitting in dead code does not count
+            ("pin nested under an `if`",
+             runnable + f"if True:\n        {out_pin}\n    print('要開')\n"),
+            ("pin nested under a `try`",
+             runnable + f"try:\n        {out_pin}\n    except Exception:\n"
+             "        pass\n"),
+            # #96 AC7: `.buffer` is no longer an exemption. Writing bytes stays
+            # legal — the file just owes the same one no-op line as everyone.
+            ("writes bytes, no pin", runnable
+             + "sys.stdout.buffer.write('要開'.encode())\n"),
+            ("writes bytes from main(), no pin",
+             "def dump():\n    sys.stdout.buffer.write(b'x')\n\n\n"
+             + runnable + "dump()\n"),
+            # #96 AC8: the 「沒有裸 print( 就免 pin」 exemption is gone
+            ("`__main__` block that prints nothing", runnable + "pass\n"),
+            ("writes to a file, prints nothing",
+             runnable + "open('out', 'w').write('要開')\n"),
+            # #60: prose is not code, in both directions
+            ("names the pin in a comment only",
+             runnable + f"pass  # 記得補 {out_pin}\n"),
+            ("names the pin as a str constant",
+             f"x = {out_pin!r}\n" + runnable + "pass\n"),
+        ):
+            assert len(reds(src)) == 1, (label, reds(src))
+
+        # #69: one pinned block does not cover a second, unpinned one
+        assert len(reds(runnable + out_pin + "\n    print('要開')\n"
+                        + MAIN_BLOCK + ":\n    print('要開')\n")) == 1
+
+        # stdin is its own half — a pinned stdout does not cover it
         reader = runnable + out_pin + "\n    json.load(sys.stdin)\n"
-        bad.write_text(reader, encoding="utf-8")
-        assert len(stream_encoding_issues(repo)) == 1, stream_encoding_issues(repo)
-        assert "stdin" in stream_encoding_issues(repo)[0]
-        for pin in (in_pin, in_bypass):
-            bad.write_text(reader + "    " + pin + "\n", encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], pin
+        assert [e.split(":")[0] for e in reds(reader)] == ["scripts/run.py"]
+        assert "stdin" in reds(reader)[0]
+        assert reds(reader + "    " + in_pin + "\n") == []
+        # ...and 「有沒有碰 stdin」 is an AST attribute, not a text match: a file
+        # that only *spells* sys.stdin owes nothing. This is what keeps
+        # validate.py's own STREAM_PINS table from marking the whole repo red.
+        assert reds(runnable + out_pin + "\n    x = 'sys.stdin.buffer'\n") == []
 
-        # #60: prose is not code. A comment or docstring that *mentions*
-        # the bypass (or the pin) used to satisfy a substring scan, so one
-        # line of 「這裡沒走 sys.stdout.buffer」 switched the guard off.
-        naked = runnable + 'print("要開")\n'
-        for mention in (
-            naked + "    # 這裡沒走 " + out_bypass + "\n",
-            '"""' + out_bypass + ' 的說明,不是呼叫"""\n' + naked,
-            naked + "    # 記得補 " + out_pin + "\n",
-            'x = "' + out_bypass + '"\n' + naked,
-        ):
-            bad.write_text(mention, encoding="utf-8")
-            assert len(stream_encoding_issues(repo)) == 1, mention
-
-        # #70: the bypass only counts where the module actually reaches it.
-        # Every one of these writes bytes *somewhere* in the AST — and every
-        # one of them still prints naked 中文 when you run it.
-        for dead in (
-            f"def dump():\n    {out_bypass}.write(b'x')\n" + naked,
-            f"if False:\n    {out_bypass}.write(b'x')\n" + naked,
-            f"try:\n    pass\nexcept Exception:\n"
-            f"    {out_bypass}.write(b'x')\n" + naked,
-            naked + f"    raise SystemExit\n    {out_bypass}.write(b'x')\n",
-        ):
-            bad.write_text(dead, encoding="utf-8")
-            assert len(stream_encoding_issues(repo)) == 1, dead
-        # ...and the two shapes that do reach it stay green
-        for alive in (
-            runnable + f"{out_bypass}.write('要開'.encode())\n    print('要開')\n",
-            f"def main():\n    {out_bypass}.write(b'x')\n    print('要開')\n"
-            + runnable + "main()\n",
-        ):
-            bad.write_text(alive, encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], alive
-
-        # #65: the `__main__` block does not have to be top-level. Indent it
-        # one level under a try or an `if True` and a `tree.body`-only scan
-        # stops finding it — the file is skipped and a naked print sails past.
+        # #65: a `__main__` block indented under a try or an `if` is still what
+        # runs the script — a `tree.body`-only scan stops finding it and a
+        # whole unpinned file sails past.
         for wrapper in ("try:\n{body}except Exception:\n    pass\n",
                         "if True:\n{body}"):
-            nested = wrapper.format(body=indent(naked, "    "))
-            bad.write_text(nested, encoding="utf-8")
-            assert len(stream_encoding_issues(repo)) == 1, nested
-            pinned = wrapper.format(
-                body=indent(runnable + out_pin + "\n    print('要開')\n", "    "))
-            bad.write_text(pinned, encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], pinned
+            naked = wrapper.format(body=indent(runnable + "print('要開')\n", "    "))
+            assert len(reds(naked)) == 1, naked
+            pinned = wrapper.format(body=indent(
+                runnable + out_pin + "\n    print('要開')\n", "    "))
+            assert reds(pinned) == [], pinned
 
-        # #71(a): the call graph counts a name in a *call* position, which an
-        # alias, a handler dict and a callback all reach without ever naming
-        # `dump` at a call — and every one really does write its bytes.
-        for reach in ("f = dump\n    f()",
-                      "H = {'a': dump}\n    H['a']()",
-                      "run(dump)"):
-            indirect = (f"def dump():\n    {out_bypass}.write(b'x')\n\n\n"
-                        f"def run(cb):\n    cb()\n\n\n"
-                        + runnable + reach + "\n    print('要開')\n")
-            bad.write_text(indirect, encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], indirect
-        # #75: the same binding claim, in the other shapes it gets written
-        # in — each really does run `dump`, so a red here is the guard
-        # shouting at a script that already writes its bytes. Three knobs
-        # carry them: `bindings_in` collects the tuple unpack, the annotated
-        # assignment and the `for` target (narrow it back to a bare `Assign`
-        # and those three turn red); `runs` no longer cutting a class body is
-        # what makes `class W: run = dump` an `Assign` anyone can collect;
-        # and the `RET` binding in `live_nodes` is what carries the factory,
-        # whether the result is called on the spot or through a name (#79).
-        for reach in ("a, b = dump, dump\n    a()",
-                      "f: object = dump\n    f()",
-                      "for f in [dump]:\n        f()",
-                      "get()()",
-                      "f = get()\n    f()",
-                      "W.run()"):
-            shape = (f"def dump():\n    {out_bypass}.write(b'x')\n\n\n"
-                     f"def get():\n    return dump\n\n\n"
-                     f"class W:\n    run = dump\n\n\n"
-                     + runnable + reach + "\n    print('要開')\n")
-            bad.write_text(shape, encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], shape
-        # ...and each of those three knobs stops where #73 put the line: bind
-        # the name and never call it and `dump` is still dead. Without this
-        # half the widening is only checked in the direction that makes noise,
-        # not the direction that makes the guard go silent.
-        for label, tail in (
-                ("`for` target bound, never called",
-                 runnable + "for f in [dump]:\n        pass\n    print('要開')\n"),
-                ("class attribute bound, never called",
-                 "class W:\n    run = dump\n\n\n" + runnable + "print('要開')\n"),
-                ("factory returns it, nothing calls the factory",
-                 "def get():\n    return dump\n\n\n" + runnable + "print('要開')\n"),
-                ("a *nested* def returns it, only the outer one runs",
-                 "def outer():\n    def inner():\n        return dump\n"
-                 "    return 1\n\n\n" + runnable + "outer()\n    print('要開')\n"),
-                # #79: the factory runs, but what it hands back never does.
-                # Carry a return unconditionally and one `get()` exempts the
-                # file without running a line of `dump` — the switch again.
-                ("factory called, result dropped",
-                 "def get():\n    return dump\n\n\n"
-                 + runnable + "get()\n    print('要開')\n"),
-                ("factory called, result parked in a name nobody calls",
-                 "def get():\n    return dump\n\n\n"
-                 + runnable + "x = get()\n    print('要開')\n"),
-                ("what it returns is its own local, colliding by name",
-                 "def get():\n    dump = 1\n    return dump\n\n\n"
-                 + runnable + "get()()\n    print('要開')\n"),
-                # #81: and its own local in every other shape that binds
-                # one. Collect only `Name`/`arg`, as #79 shipped, and each of
-                # these hands `get()()` back as a one-line exemption switch.
-                *[(f"what it returns is its own {label}, colliding by name",
-                   f"{head}\n{body}    return dump\n\n\n"
-                   + runnable + "get()()\n    print('要開')\n")
-                  for label, head, body in (
-                      ("`import as`", "def get():",
-                       "    import os as dump\n"),
-                      ("plain `import`", "def get():", "    import dump\n"),
-                      ("`from ... import as`", "def get():",
-                       "    from os import path as dump\n"),
-                      ("`except as`", "def get():",
-                       "    try:\n        pass\n"
-                       "    except Exception as dump:\n        pass\n"),
-                      ("nested class", "def get():",
-                       "    class dump:\n        pass\n"),
-                      ("`match` capture", "def get():", "    match []:\n"
-                       "        case [dump]:\n            pass\n"),
-                      ("`match` star capture", "def get():", "    match []:\n"
-                       "        case [*dump]:\n            pass\n"),
-                      ("`match` mapping rest", "def get():", "    match {}:\n"
-                       "        case {**dump}:\n            pass\n"),
-                      ("type parameter", "def get[dump]():", ""),
-                  )],
-                # #83: `own_scope` stops at a `Lambda`, so the names a lambda
-                # binds never reach `local` — while the other half of the same
-                # line walked straight *into* the lambda body. Either way the
-                # module's `dump` came out as what `get()` hands back, and not
-                # one of these runs a line of it.
-                *[(f"lambda scope: {shape.splitlines()[-1].strip()}",
-                   f"def get():\n    {shape}\n\n\n"
-                   + runnable + f"{call}\n    print('要開')\n")
-                  for shape, call in (
-                      ("return (lambda dump: dump)(1)", "get()()"),
-                      ("f = lambda dump: dump\n    return f(1)", "get()()"),
-                      ("return lambda dump: dump", "get()(1)"),
-                      ("return lambda: dump", "get()()"),
-                      ("return lambda x=dump: x", "get()()"),
-                      # the default is evaluated, but naming `dump` is not
-                      # calling it — and nothing here calls `x` either
-                      ("f = lambda x=dump: 1\n    return f()", "get()"),
-                      ("return (lambda: dump,)[0]", "get()()"),
-                      ("return (lambda: (lambda: dump))()", "get()()"),
-                  )],
-                # #84: the other face of #83's boundary. `live_nodes` walked
-                # each live statement with `ast.walk`, so a `Call` sitting in
-                # a lambda *body* counted as invoked whether or not anything
-                # ever called that lambda. Park a lambda in a live statement —
-                # any of the six ways an expression gets parked — and the
-                # `dump()` inside it exempted the file without running a line
-                # of `dump`: the one-line switch #70 took away.
-                *[(f"uncalled lambda in a live statement: {label}", tail)
-                  for label, tail in (
-                      ("f = lambda: dump()",
-                       "f = lambda: dump()\n" + runnable + "print('要開')\n"),
-                      ("xs = [lambda: dump()]",
-                       "xs = [lambda: dump()]\n" + runnable + "print('要開')\n"),
-                      ("d = {'k': lambda: dump()}",
-                       "d = {'k': lambda: dump()}\n" + runnable + "print('要開')\n"),
-                      ("bare literal (lambda: dump())",
-                       runnable + "(lambda: dump())\n    print('要開')\n"),
-                      ("[lambda: dump() for _ in []]",
-                       "xs = [lambda: dump() for _ in []]\n"
-                       + runnable + "print('要開')\n"),
-                      ("None if xs else (lambda: dump())",
-                       "f = None if xs else (lambda: dump())\n"
-                       + runnable + "print('要開')\n"),
-                  )],
-                # #84: the same walk hands back the node list the bypass is
-                # looked up in, so the write does not even need a dead def to
-                # hide behind — parking it in an uncalled lambda's body was
-                # the switch on its own.
-                ("bypass written inside an uncalled lambda body",
-                 f"f = lambda: {out_bypass}.write(b'x')\n"
-                 + runnable + "print('要開')\n"),
-                # #86: a generator is the other deferred body, and the same
-                # walk read it as run. Building one runs nothing — a genexp
-                # nobody consumes, and a generator def called but never
-                # iterated — so 7 of the 8 shapes below exempted the file
-                # without running a line of `dump`, and two of those did not
-                # even need the dead def to hide behind: one extra pair of
-                # parentheses around the write, or one def colliding with a
-                # consumer's name, was the switch on its own. The 8th, a
-                # generator def bound and never called, was already dead
-                # before #86 and is here so the fix cannot hand it back.
-                *[(f"unconsumed generator: {label}", tail) for label, tail in (
-                    ("g = (dump() for _ in [1])",
-                     "g = (dump() for _ in [1])\n" + runnable + "print('要開')\n"),
-                    ("bare (dump() for _ in [1])",
-                     runnable + "(dump() for _ in [1])\n    print('要開')\n"),
-                    ("xs = [(dump() for _ in [1])]",
-                     "xs = [(dump() for _ in [1])]\n"
-                     + runnable + "print('要開')\n"),
-                    ("handed to a def that does not consume it",
-                     "def keep(g):\n    return g\n\n\n"
-                     + runnable + "keep(dump() for _ in [1])\n"
-                     "    print('要開')\n"),
-                    ("generator def called, never iterated",
-                     "def gen():\n    yield dump()\n\n\n"
-                     + runnable + "gen()\n    print('要開')\n"),
-                    ("generator def bound, never called",
-                     "def gen():\n    yield dump()\n\n\n"
-                     + runnable + "print('要開')\n"),
-                    ("a def shadowing a consumer does not consume",
-                     "def sorted(g):\n    return g\n\n\n" + runnable
-                     + f"sorted({out_bypass}.write(b'x') for _ in [1])\n"
-                     "    print('要開')\n"),
-                    ("bypass written inside an unconsumed generator body",
-                     f"g = ({out_bypass}.write(b'x') for _ in [1])\n"
-                     + runnable + "print('要開')\n"),
-                )],
-        ):
-            still_dead = f"def dump():\n    {out_bypass}.write(b'x')\n\n\n" + tail
-            bad.write_text(still_dead, encoding="utf-8")
-            assert len(stream_encoding_issues(repo)) == 1, label
-
-        # #83 ceiling: the lambda *is* called, what it hands back really is the
-        # dead def, and the result of that is called too — every line of `dump`
-        # runs, so stopping at a `Lambda` must not redden this one.
-        # A parameter default is the same story from the other side: it is
-        # evaluated out here, so reaching the parameter reaches what it named.
-        for body, call in (
-                # #84: a lambda's parameter *default* is not deferred — it
-                # is evaluated where the literal sits, so this one really does
-                # run `dump` even though nothing ever calls the lambda.
-                ("f = lambda x=dump(): 1\n    return 1", "get()"),
-                # #84: the two positions that really do call the lambda
-                # right where the literal sits — stopping at a `Lambda` must
-                # not touch either. `free_in` carries the spot call, and
-                # `bindings_in` carries the name it was bound to.
-                ("f = lambda: dump()\n    f()\n    return 1", "get()"),
-                ("(lambda: dump())()\n    return 1", "get()"),
-                ("f = lambda: dump\n    return f()", "get()()"),   # bound, called
-                ("return (lambda: dump)()", "get()()"),        # called on the spot
-                ("f = lambda x=dump: x()\n    return f()", "get()"),   # default run
-        ):
-            alive = (f"def dump():\n    {out_bypass}.write(b'x')\n\n\n"
-                     f"def get():\n    {body}\n\n\n"
-                     + runnable + f"{call}\n    print('要開')\n")
-            bad.write_text(alive, encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], alive
-
-        # #84 (the cost side): stopping at a `Lambda` must not take the bypass
-        # away from a lambda something really does call. `free_in` carries the
-        # *names* at those positions, never the *nodes*, so without `through`
-        # every one of these — a name called later, a spot call, and the two
-        # ordinary callback shapes — turned red on a script that writes its
-        # bytes on every run.
-        for alive in (
-            f"f = lambda: {out_bypass}.write(b'x')\n" + runnable
-            + "f()\n    print('要開')\n",
-            runnable + f"(lambda: {out_bypass}.write(b'x'))()\n"
-            "    print('要開')\n",
-            f"def dump():\n    {out_bypass}.write(b'x')\n" + runnable
-            + "sorted([1], key=lambda v: dump())\n    print('要開')\n",
-            f"def dump():\n    {out_bypass}.write(b'x')\n" + runnable
-            + "list(map(lambda v: dump(), [1]))\n    print('要開')\n",
-        ):
-            bad.write_text(alive, encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], alive
-
-        # #86 (the cost side): consuming a generator really does run its body,
-        # so stopping at a `GeneratorExp` must not redden these. Four
-        # consuming positions carry — a builtin that drains it, on the spot or
-        # through the name it was bound to; a `for` over what a generator def
-        # hands back; and a comprehension, which is not deferred at all — plus
-        # the bypass written into a generator body something really consumes,
-        # which only the node half (`through`) can keep reachable.
-        dead_def = f"def dump():\n    {out_bypass}.write(b'x')\n\n\n"
-        gen_def = "def gen():\n    yield dump()\n\n\n"
-        for alive in (
-            dead_def + runnable + "sum(1 for _ in (dump() for _ in [1]))\n"
-            "    print('要開')\n",
-            dead_def + "g = (dump() for _ in [1])\n" + runnable
-            + "list(g)\n    print('要開')\n",
-            dead_def + gen_def + runnable
-            + "for _ in gen():\n        pass\n    print('要開')\n",
-            dead_def + gen_def + runnable
-            + "list(gen())\n    print('要開')\n",
-            # a comprehension consumes what it loops over, so a generator
-            # handed to one really does run
-            dead_def + runnable + "[y for y in (dump() for _ in [1])]\n"
-            "    print('要開')\n",
-            # `names_in` carries the same eager iterable where `nodes_in`
-            # cannot reach — into the body of a lambda something calls
-            dead_def + "f = lambda: sum(x for x in dump())\n" + runnable
-            + "f()\n    print('要開')\n",
-            # the first `for`'s iterable is evaluated where the literal sits,
-            # the way a lambda's parameter default is — this one runs `dump`
-            # even though nothing ever consumes the generator
-            dead_def + "g = (x for x in dump())\n" + runnable
-            + "print('要開')\n",
-            dead_def + runnable + "[dump() for _ in [1]]\n    print('要開')\n",
-            runnable + f"list({out_bypass}.write(b'x') for _ in [1])\n"
-            "    print('要開')\n",
-        ):
-            bad.write_text(alive, encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], alive
-
-        # #91: whether a call really hands a coroutine to the event loop is
-        # read off the *receiver*, not the name. Both faces are one cause, so
-        # both are pinned here. The quiet direction first — an object that is
-        # not asyncio drives nothing, and a bypass parked in a body nobody
-        # runs must not exempt the file, or one `subprocess.run(...)` is the
-        # switch again.
-        adump_bypass = f"async def adump():\n    {out_bypass}.write(b'x')\n\n\n"
-        adump = "async def adump():\n    dump()\n\n\n"
-        own_run = "def run(x):\n    return x\n\n\n"
-        for never in (
-            adump_bypass + "import queue\nb = queue.Queue()\n" + runnable
-            + "b.run(adump())\n    print('要開')\n",
-            adump_bypass + "import subprocess\n" + runnable
-            + "subprocess.run(adump())\n    print('要開')\n",
-            # ...and a `run` the module wrote itself still drives nothing
-            dead_def + adump + own_run + runnable
-            + "run(adump())\n    print('要開')\n",
-            # ...and neither does *anything* asyncio ever handed back: only a
-            # loop or a Runner is drivable, so a predicate's result is not a
-            # way back onto the driven list
-            adump_bypass + "import asyncio\n"
-            + "ok = asyncio.iscoroutinefunction(adump)\n" + runnable
-            + "ok.run(adump())\n    print('要開')\n",
-        ):
-            bad.write_text(never, encoding="utf-8")
-            assert len(stream_encoding_issues(repo)) == 1, never
-
-        # the noisy direction: a name the module happens to bind cannot reach
-        # `asyncio.run`, so the coroutine really is driven and the bypass
-        # inside it really runs. Each line below is a hop the import graph
-        # has to carry — how the module name is spelt, and how a loop gets
-        # from asyncio to the receiver.
-        for alive in (
-            dead_def + "import asyncio\n" + adump + own_run + runnable
-            + "asyncio.run(adump())\n    print('要開')\n",
-            dead_def + "import asyncio as aio\n" + adump + runnable
-            + "aio.run(adump())\n    print('要開')\n",
-            dead_def + "from asyncio import run\n" + adump + runnable
-            + "run(adump())\n    print('要開')\n",
-            # the receiver is the loop asyncio handed back — bound to a name,
-            # taken straight off the call, or held by a `with`
-            dead_def + "import asyncio\n" + adump + runnable
-            + "loop = asyncio.new_event_loop()\n"
-            + "    loop.run_until_complete(adump())\n    print('要開')\n",
-            dead_def + "from asyncio import new_event_loop\n" + adump
-            + runnable + "loop = new_event_loop()\n"
-            + "    loop.run_until_complete(adump())\n    print('要開')\n",
-            dead_def + "import asyncio\n" + adump + runnable
-            + "asyncio.get_event_loop().run_until_complete(adump())\n"
-            + "    print('要開')\n",
-            dead_def + "import asyncio\n" + adump + runnable
-            + "with asyncio.Runner() as r:\n        r.run(adump())\n"
-            + "    print('要開')\n",
-        ):
-            bad.write_text(alive, encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], alive
-
-        # #73: and a bare *mention* stays dead. Widen the rule back to "the
-        # name appears live" and one colliding local — or an unrelated
-        # attribute — exempts the whole file, which is #70's switch again.
-        for mention in ("", "x = [dump]\n    ", "dump = 1\n    ", "c.dump\n    "):
-            never = (f"def dump():\n    {out_bypass}.write(b'x')\n"
-                     + runnable + mention + "print('要開')\n")
-            bad.write_text(never, encoding="utf-8")
-            assert len(stream_encoding_issues(repo)) == 1, never
-
-        # #71(b): #60 AC1's second branch — a script with no live `print(` has
-        # nothing on its way to the console, so it owes no pin.
-        for quiet in (
-            runnable + "open('out', 'w').write('要開')\n",
-            runnable + "pass  # print('要開') only in a comment\n",
-        ):
-            bad.write_text(quiet, encoding="utf-8")
-            assert stream_encoding_issues(repo) == [], quiet
-        # ...but a print anywhere in the file counts, live or not: #65 keeps a
-        # `__main__` block nested in a def red, and that print is not reachable.
-        parked = "def dump():\n    print('nobody calls this')\n" + runnable + "pass\n"
-        bad.write_text(parked, encoding="utf-8")
-        assert len(stream_encoding_issues(repo)) == 1, parked
-        # ...and one live print brings the pin back
-        bad.write_text(naked, encoding="utf-8")
-        assert len(stream_encoding_issues(repo)) == 1, naked
+        # declared ceiling (#67): only the canonical spelling is recognised.
+        # Written the other way round this file is not seen as runnable at all,
+        # so it owes nothing and gets nothing. Declared, not fixed — #96.
+        assert reds('if "__main__" == __name__:\n    print("要開")\n') == []
 
     # and the live repo is clean — every script that can be run pins its streams
     assert stream_encoding_issues(REPO) == [], stream_encoding_issues(REPO)
