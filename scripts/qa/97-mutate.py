@@ -6,14 +6,17 @@
 
 新判準只剩語法比對,knob 因此是有限的:每一個都對應 `stream_encoding_issues` /
 `main_blocks` / `reads_stdin` 裡「拿掉就會漏掉一種形狀」的那一行。改壞之後
-`validate.py --self-check` 要轉紅;紅不了就表示那條判準沒有證據住在預設會跑的地方。
+`--self-check` 要轉紅;紅不了就表示那條判準沒有證據住在預設會跑的地方。
 
-表上不只一支檔(#118):每個 knob 自己宣告要改哪一支,而改壞之後跑的就是**那支檔
-自己的** `--self-check`。判準住在 `skills/build-batch/batch.py` 的那幾條(分級被拒
-時整批照不照印)拿 `validate.py --self-check` 量不到 —— 那是在量別支檔。
+`--self-check` 是兩支:`scripts/validate.py --self-check` 與
+`skills/build-batch/batch.py --self-check`,任一支非 0 就算咬住。knob 預設打在
+`scripts/validate.py`,第三個元素填相對路徑就改打別支 —— #120 的分級散文 pin
+與 #118 的「分級被拒還是整批照印」都住在 `batch.py`,那兩面 validate.py 量不到,
+拿它當儀器是在量別支檔。
 
 用法:
     python scripts/qa/97-mutate.py --run          # 整張表跑完,每格報 exit code
+    python scripts/qa/97-mutate.py --attribute    # 逐 gate 歸因:誰咬住這個 knob
     python scripts/qa/97-mutate.py --list
     python scripts/qa/97-mutate.py <repo 副本> <knob 名稱>
 
@@ -25,10 +28,10 @@ import subprocess
 import sys
 import tempfile
 
-VALIDATE = "scripts/validate.py"
+DEFAULT_TARGET = "scripts/validate.py"
 BATCH = "skills/build-batch/batch.py"
-
-VALIDATE_KNOBS = {
+# 每個 knob 是 (改壞前, 改壞後) 或 (改壞前, 改壞後, 目標檔相對路徑)。
+KNOBS = {
     # 「第一層」放寬成「__main__ 裡面任何地方」—— #72 的死碼 pin 重新算數
     "pin_anywhere_in_main": (
         "            if all(any(ast.unparse(s) == pin for s in m.body) for m in mains):",
@@ -141,6 +144,100 @@ VALIDATE_KNOBS = {
     "grade_guard_off": (
         "    issues = []\n    lines = GRADE_LINE_RE.findall(text)",
         "    return []\n    issues = []\n    lines = GRADE_LINE_RE.findall(text)"),
+    # ---- #120 硬規則的處置:錯誤訊息 + 散文 pin -----------------------
+    # 錯誤訊息把繞道寫回去 —— agent 被 client 頂著就照字面把 judgement 改成
+    # false 重跑,一路綠,而硬規則是這條線唯一的防護
+    "hardrule_msg_signposts_flag": (
+        '                "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"\n'
+        '                "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"\n'
+        '                "票的內容沒變就是慢,client 說了也一樣")',
+        '                "驗收清單第 4 條就是它,要改請先改 judgement 旗標")',
+        BATCH),
+    # 「回去改票的內容」那半拿掉 —— 只說改不成,不說真的那條路長怎樣
+    "hardrule_msg_no_real_path": (
+        '                "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"\n'
+        '                "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"\n'
+        '                "票的內容沒變就是慢,client 說了也一樣")',
+        '                "驗收清單第 4 條就是它。")',
+        BATCH),
+    # 硬規則處置那句的 pin 整項刪掉 —— 守門自己少一條的那面
+    "hardrule_pin_dropped": (
+        '    (re.compile(re.escape("不要自己去改 `judgement` 旗標讓它過")),\n'
+        '     "slice-tickets SKILL.md: 硬規則被 client 頂著時的處置那句不見了 —— 沒有它,"\n'
+        '     "agent 會把 judgement 改成 false 重跑,而拆掉的當下沒有任何東西會紅"),\n',
+        "",
+        BATCH),
+    # 天花板那句(降級回路只接得住有驗收項的那半)的 pin 整項刪掉
+    "ceiling_half_pin_dropped": (
+        '    (re.compile(re.escape("接得住的是**有驗收項**的那半")),\n'
+        '     "slice-tickets SKILL.md: 降級回路只接得住一半那句不見了 —— 少了它天花板就"\n'
+        '     "回到「關住」那個過度宣稱,而 coverage 是空的那半根本不會觸發降級回路"),\n',
+        "",
+        BATCH),
+    # 散文守門整條放行 —— 對照組:逐句比對真的接在跑得到的地方
+    "classify_lines_never_complains": (
+        "    for pattern, message in CLASSIFY_LINES:\n"
+        "        if not pattern.search(text):\n"
+        "            return message\n"
+        "    return None",
+        "    return None\n"
+        "    for pattern, message in CLASSIFY_LINES:\n"
+        "        if not pattern.search(text):\n"
+        "            return message\n"
+        "    return None",
+        BATCH),
+    # ---- #118 分級被拒的那張:整批先算完再退出 -----------------------
+    # 判準一樣住在 batch.py,所以證據也要在 `batch.py --self-check` 上轉紅 ——
+    # 拿 validate.py 的 self-check 當儀器量它,量的是別支檔。
+    # 退回「第一張被拒就把整批打死」—— #118 出廠時的形狀:client 一行分級都
+    # 看不到,連他同一輪改的那幾張也一起消失
+    "classify_batch_dies_on_first": (
+        "        except OverrideRejected as exc:\n"
+        "            rows.append((t[\"number\"], None, str(exc)))",
+        "        except OverrideRejected as exc:\n"
+        "            raise SystemExit(str(exc))",
+        BATCH),
+    # 被拒的那張從 client 清單上消失 —— 其餘各張照印,但他不知道少了誰
+    "classify_rejected_row_hidden": (
+        "    lines += [f\"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}\"\n"
+        "              for n, grade, reason in rows] or [\"  (無)\"]",
+        "    lines += [f\"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}\"\n"
+        "              for n, grade, reason in rows if grade] or [\"  (無)\"]",
+        BATCH),
+    # 有張被拒還是把貼票那段印出來 —— agent 會照著貼進一份 client 沒點過的清單
+    "classify_paste_anyway": (
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]\n"
+        "        return \"\\n\".join(lines)\n",
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]\n",
+        BATCH),
+    # 退出碼變 0 —— 印歸印,但「當場停」沒了,靜靜往下走
+    "classify_reject_exit_zero": (
+        "        if rejected:\n            # 整批印完了才停",
+        "        if False and rejected:\n            # 整批印完了才停",
+        BATCH),
+    # 訊息退回「這張」—— 停得對,但 client 手上沒有可以動作的票號(#118 第 2 條)
+    "classify_reject_unnamed": (
+        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected))",
+        "                + \"\\n\".join(f\"  這張 — {reason}\" for n, reason in rejected))",
+        BATCH),
+    # 兩張同時被拒時只算第一張 —— 單張的批次上一格都看不出來(review WARN)
+    "classify_reject_count_hardcoded": (
+        "        head += f\",其中 {len(rejected)} 張改不了\"",
+        "        head += \",其中 1 張改不了\"",
+        BATCH),
+    "classify_reject_list_first_only": (
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]",
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected[:1]]",
+        BATCH),
+    "classify_reject_only_first": (
+        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected))",
+        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected[:1]))",
+        BATCH),
+    # 左欄補寬回退成不補 —— client 那份清單左欄歪掉
+    "classify_grade_cell_unpadded": (
+        "    return label + \"  \" * (width - len(label))",
+        "    return label",
+        BATCH),
     # 守門整條關掉 —— 對照組:確認 self-check 真的在量這支,不是在量別的
     "guard_off": (
         "    errors = []\n"
@@ -150,102 +247,77 @@ VALIDATE_KNOBS = {
         "    for py in sorted(repo.rglob(\"*.py\")):"),
 }
 
-# ---- #118 分級被拒的那張:整批先算完再退出 -------------------------------
-# 判準住在 batch.py,所以證據也要在 `batch.py --self-check` 上轉紅 —— 拿
-# validate.py 的 self-check 當儀器量它,量的是別支檔。
-BATCH_KNOBS = {
-    # 退回「第一張被拒就把整批打死」—— #118 出廠時的形狀:client 一行分級都
-    # 看不到,連他同一輪改的那幾張也一起消失
-    "classify_batch_dies_on_first": (
-        "        except OverrideRejected as exc:\n"
-        "            rows.append((t[\"number\"], None, str(exc)))",
-        "        except OverrideRejected as exc:\n"
-        "            raise SystemExit(str(exc))"),
-    # 被拒的那張從 client 清單上消失 —— 其餘各張照印,但他不知道少了誰
-    "classify_rejected_row_hidden": (
-        "    lines += [f\"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}\"\n"
-        "              for n, grade, reason in rows] or [\"  (無)\"]",
-        "    lines += [f\"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}\"\n"
-        "              for n, grade, reason in rows if grade] or [\"  (無)\"]"),
-    # 有張被拒還是把貼票那段印出來 —— agent 會照著貼進一份 client 沒點過的清單
-    "classify_paste_anyway": (
-        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]\n"
-        "        return \"\\n\".join(lines)\n",
-        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]\n"),
-    # 退出碼變 0 —— 印歸印,但「當場停」沒了,靜靜往下走
-    "classify_reject_exit_zero": (
-        "        if rejected:\n            # 整批印完了才停",
-        "        if False and rejected:\n            # 整批印完了才停"),
-    # 訊息退回「這張」—— 停得對,但 client 手上沒有可以動作的票號(#118 第 2 條)
-    "classify_reject_unnamed": (
-        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected))",
-        "                + \"\\n\".join(f\"  這張 — {reason}\" for n, reason in rejected))"),
-    # 兩張同時被拒時只算第一張 —— 單張的批次上一格都看不出來(review WARN)
-    "classify_reject_count_hardcoded": (
-        "        head += f\",其中 {len(rejected)} 張改不了\"",
-        "        head += \",其中 1 張改不了\""),
-    "classify_reject_list_first_only": (
-        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]",
-        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected[:1]]"),
-    "classify_reject_only_first": (
-        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected))",
-        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected[:1]))"),
-    # 左欄補寬回退成不補 —— client 那份清單左欄歪掉
-    "classify_grade_cell_unpadded": (
-        "    return label + \"  \" * (width - len(label))",
-        "    return label"),
-}
-
-TARGETS = {VALIDATE: VALIDATE_KNOBS, BATCH: BATCH_KNOBS}
-# knob 名稱 -> (要改的檔, 舊字串, 新字串)。第一欄同時決定「改壞之後跑哪一支
-# `--self-check`」:判準住在哪支檔,證據就要在那支檔預設會跑的地方轉紅。
-KNOBS = {name: (target, old, new)
-         for target, table in TARGETS.items()
-         for name, (old, new) in table.items()}
-if len(KNOBS) != sum(len(t) for t in TARGETS.values()):
-    # 不寫 assert:`python -O` 下 assert 整條被剝掉,而撞名是靜的
-    raise SystemExit("兩張表的 knob 名字撞了 —— 後面那個會靜靜蓋掉前面那個")
-
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
+def target_of(knob):
+    """這個 knob 打在哪一支檔(沒宣告第三個元素就是 validate.py)。"""
+    spec = KNOBS[knob]
+    return spec[2] if len(spec) > 2 else DEFAULT_TARGET
+
+
+TARGETS = sorted({DEFAULT_TARGET} | {target_of(k) for k in KNOBS})
+# 每個被打的目標檔自己就是一支守門 —— 兩份分開寫的話,新加一支的 knob 會
+# 還原正確但 self-check 永遠不跑它。
+GATES = tuple(TARGETS)
+
+
 def apply(repo, knob):
-    target, old, new = KNOBS[knob]
-    path = pathlib.Path(repo) / target
+    path = pathlib.Path(repo) / target_of(knob)
     src = path.read_text(encoding="utf-8")
+    old, new = KNOBS[knob][0], KNOBS[knob][1]
     assert old in src, f"mutation 目標不在 — 判準被改過了:{knob}"
     path.write_text(src.replace(old, new, 1), encoding="utf-8")
 
 
-def self_check(repo, target=VALIDATE):
-    return subprocess.run(
-        [sys.executable, str(pathlib.Path(repo) / target), "--self-check"],
-        cwd=repo, capture_output=True)
+def gate_codes(repo):
+    """每一支守門各自的 exit code,`{相對路徑: returncode}`。
+
+    分開記是因為「咬住」不分辨是誰咬的:一個 knob 打在 batch.py,卻被
+    validate.py 順便咬住的話,batch.py 那條 pin 靜靜失效表上照樣印「咬住」。
+    """
+    return {gate: subprocess.run(
+        [sys.executable, str(repo / gate), "--self-check"],
+        cwd=repo, capture_output=True).returncode for gate in GATES}
+
+
+def self_check(repo):
+    """兩支守門各跑一次 `--self-check`,回第一支非 0 的;全綠回最後一支。
+
+    回傳形狀維持 `subprocess.CompletedProcess` —— `run_table` 只讀 returncode
+    與 stderr,而 `98-mutate-control.py` 會整支換掉它。
+    """
+    done = None
+    for gate in GATES:
+        done = subprocess.run(
+            [sys.executable, str(repo / gate), "--self-check"],
+            cwd=repo, capture_output=True)
+        if done.returncode:
+            return done
+    return done
 
 
 def run_table():
     """每個 knob 套上去跑 `--self-check`,回傳 (knob, exit code)。非 0 才是要的。
 
-    跑的是**那個 knob 自己那支檔**的 self-check:判準散在兩支檔上,拿其中一支
-    的 self-check 量另一支,量到的是別的東西。
+    `--attribute` 另外逐 gate 拆開跑一次,答「是誰咬住的」—— 表本身不拆,
+    因為控制組那條路(`98-mutate-control.py`)換掉的是 `self_check`。
     """
     out = []
     with tempfile.TemporaryDirectory() as td:
         copy = pathlib.Path(td) / "repo"
         shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", "__pycache__"))
-        for target in TARGETS:
-            control = self_check(copy, target)
-            if control.returncode:
-                why = (control.stderr or control.stdout).decode("utf-8", "replace").strip()
-                raise RuntimeError(f"控制組({target})未套 knob 就已經紅；儀器壞了，"
-                                   "下面的 mutation 表不執行"
-                                   + (f"\n{why}" if why else ""))
-        pristine = {t: (copy / t).read_bytes() for t in TARGETS}
+        control = self_check(copy)
+        if control.returncode:
+            why = (control.stderr or control.stdout).decode("utf-8", "replace").strip()
+            raise RuntimeError("控制組未套 knob 就已經紅；儀器壞了，下面的 mutation 表不執行"
+                               + (f"\n{why}" if why else ""))
+        pristine = {rel: (copy / rel).read_bytes() for rel in TARGETS}
         for knob in sorted(KNOBS):
-            target = KNOBS[knob][0]
-            (copy / target).write_bytes(pristine[target])
+            for rel, blob in pristine.items():
+                (copy / rel).write_bytes(blob)
             apply(copy, knob)
-            r = self_check(copy, target)
+            r = self_check(copy)
             out.append((knob, r.returncode))
     return out
 
@@ -264,11 +336,36 @@ if __name__ == "__main__":
             sys.exit(1)
         for knob, code in rows:
             print(f"{'咬住' if code else '沒咬住'}  {knob:<30} "
-                  f"{KNOBS[knob][0]} --self-check exit={code}")
+                  f"目標={target_of(knob)} self-check exit={code}")
         missed = [k for k, c in rows if c == 0]
         print(f"\n{len(rows) - len(missed)}/{len(rows)} 個 knob 被 self-check 咬住")
         if missed:
             print("沒咬住:" + ", ".join(missed))
         sys.exit(1 if missed else 0)
+    if "--attribute" in sys.argv:
+        # 逐 gate 歸因:knob 打在哪支檔,就該是那支檔咬住它。對不上代表那條 pin
+        # 其實沒在守,只是被另一支順便判紅 —— 表上看起來一模一樣。
+        bad = []
+        with tempfile.TemporaryDirectory() as td:
+            copy = pathlib.Path(td) / "repo"
+            shutil.copytree(ROOT, copy,
+                            ignore=shutil.ignore_patterns(".git", "__pycache__"))
+            pristine = {rel: (copy / rel).read_bytes() for rel in TARGETS}
+            for knob in sorted(KNOBS):
+                for rel, blob in pristine.items():
+                    (copy / rel).write_bytes(blob)
+                apply(copy, knob)
+                codes = gate_codes(copy)
+                want = target_of(knob)
+                ok = codes.get(want, 0) != 0
+                if not ok:
+                    bad.append(knob)
+                print(f"{'對得上' if ok else '對不上'}  {knob:<30} "
+                      f"目標={want} " + " ".join(f"{g}={c}" for g, c in codes.items()))
+        print()
+        print(f"{len(KNOBS) - len(bad)}/{len(KNOBS)} 個 knob 由它自己的目標守門咬住")
+        if bad:
+            print("對不上:" + ", ".join(bad))
+        sys.exit(1 if bad else 0)
     apply(sys.argv[1], sys.argv[2])
     print("mutation 已套用:", sys.argv[2])

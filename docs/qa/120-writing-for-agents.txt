@@ -1,0 +1,472 @@
+================================================================================
+/writing-for-agents REVIEW — skills/slice-tickets/SKILL.md  (#120 rewrite round)
+================================================================================
+
+Date            : 2026-08-22
+Reviewer        : agent (read-only; nothing edited, nothing committed)
+Verdict         : PASS WITH CONCERNS — 2 items should be fixed before this is
+                  called clean (see FIX LIST at the end). No FAIL that blocks
+                  behaviour; one FAIL on pointer discipline (context load).
+
+--------------------------------------------------------------------------------
+0. WHAT WAS REVIEWED AGAINST WHAT
+--------------------------------------------------------------------------------
+
+Discipline (read in full, both files):
+  C:\Users\user\.claude\skills\writing-for-agents\SKILL.md
+      82 lines, 11047 bytes, mtime 2026-08-18 10:48
+      md5 4d35e30cb213104b4c80950b6e11b918
+      (not under git at that path — identified by size/mtime/md5)
+  C:\Users\user\.claude\skills\writing-for-agents\SKILL-MECHANICS.md
+      23 lines, 2673 bytes, mtime 2026-08-18 10:48
+      md5 0ebb75b22136ba16b0a9e7cc3836c45e
+
+Levers named by the discipline and used below:
+  context pointers (branches / front-loaded leading word / no restated identity),
+  the two loads, information hierarchy, progressive disclosure, co-location,
+  sprawl, steps and completion criteria (clarity + demand), when to split,
+  leading words, negation, pruning (single source of truth, duplication,
+  environment-as-truth, relevance/sediment, no-ops).
+
+Document under review:
+  D:\Self Project\Skills\.git\batch-worktrees\120\skills\slice-tickets\SKILL.md
+  worktree HEAD 16039f6 ("test(#120): QA findings 收尾 …"), 86 lines, 3098 chars.
+
+Changed this round (diff 53662a1..16039f6 on that file) — reviewed hardest:
+  - line 3   frontmatter description (added "、對帳 blocking 邊")
+  - line 16  "先做完 §3–§5,再照 §6 對帳與發佈"
+  - line 52  "印出來的清單直接給 client 看…"
+  - lines 54-59 new block "**硬規則蓋過 client 的 override**" … through
+             "`judgement` 是你讀 diff 的判斷結果…沒有任何東西會紅。"
+  - line 69  ceiling paragraph "**這條判準的天花板**…"
+
+Constraint acknowledged (reviewed WITHIN, not used as an excuse):
+  skills/build-batch/batch.py CLASSIFY_LINES (lines 741-766) pins these exact
+  substrings into this file:
+      "這批的快慢分級,有要改的嗎?"
+      "照你說的改,改完的才是寫進票裡的那個"
+      "`batch.py` 不在 → 這批整批判慢車道"
+      "判錯必然會發生"
+      "不要自己去改 `judgement` 旗標讓它過"
+      "接得住的是**有驗收項**的那半"
+  Where a finding collides with a pin, that is stated explicitly and the fix is
+  aimed at the pin, not waved away.
+
+--------------------------------------------------------------------------------
+1. CONTEXT POINTERS — FAIL
+--------------------------------------------------------------------------------
+
+Line 3 (the always-loaded pointer, changed this round):
+
+  "description: 把拍板的 spec 切成 vertical slice tickets:薄層 wrap /to-tickets,
+   每張 ticket 標注它覆蓋的驗收項、判快車道還是慢車道並整批給 client 點頭、對帳
+   blocking 邊,並檢查驗收清單每條都有票覆蓋。當 spec 拍板後要切票(pm-intake/
+   to-spec 交棒指路「/slice-tickets #N」)時使用;沒有拍板驗收清單的 spec 先回
+   pm-intake 補。"
+
+(a) Front-loaded leading word — PASS. It opens on "把拍板的 spec 切成 vertical
+    slice tickets". "vertical slice" is a genuine pretrained leading word and it
+    is in the first clause, where the triggering work happens.
+
+(b) Branches — PASS on count, and correctly two. The trigger half names exactly
+    one positive branch ("spec 拍板後要切票", with the literal hand-off string
+    「/slice-tickets #N」 that actually appears in upstream comments — a real
+    trigger token, not a synonym) plus one redirect branch ("沒有拍板驗收清單的
+    spec 先回 pm-intake 補"). No synonym padding. This half is well built.
+
+(c) Cut identity the body already carries — FAIL, and this round made it worse.
+    Everything between the colon and 。 is a body table-of-contents:
+        "薄層 wrap /to-tickets,每張 ticket 標注它覆蓋的驗收項、判快車道還是慢
+         車道並整批給 client 點頭、對帳 blocking 邊,並檢查驗收清單每條都有票覆蓋"
+    Compare line 8, the body's own opening:
+        "薄層 wrap 原件 `/to-tickets`:切票邏輯全依原件,本檔補三個 delta —
+         **驗收項覆蓋標注**…、**快/慢分級**…與 **blocking 邊對帳**…"
+    Same four items, same order, same words ("薄層 wrap", "/to-tickets",
+    "覆蓋", "blocking 邊對帳"). The discipline is explicit: "Every word of an
+    always-loaded pointer costs on every turn… Cut identity the body already
+    carries." This round's edit added "、對帳 blocking 邊" — a fourth body item
+    into the pointer. It adds no branch: no run reaches this skill *because*
+    blocking edges need reconciling; the caller always arrives via "spec 拍板了,
+    去切票". So the added words buy zero triggering and cost on every turn of
+    every session. That is the pointer failure mode in its pure form.
+
+    Fix: the ~40 CJK chars of body summary collapse to what the pointer needs to
+    do its two jobs — say what the material is, list the branches. E.g.
+        "把拍板的 spec 切成 vertical slice tickets(薄層 wrap /to-tickets)。當
+         spec 拍板後要切票…時使用;沒有拍板驗收清單的 spec 先回 pm-intake 補。"
+    The delta list stays at line 8, where it is already written, once.
+
+--------------------------------------------------------------------------------
+2. THE TWO LOADS — CONCERN
+--------------------------------------------------------------------------------
+
+Context load: line 3 is ~130 CJK chars held in every context window forever.
+Roughly a third of it (finding 1c) is a body restatement. The skill genuinely
+needs model-invocation — upstream `pm-intake`/`to-spec` hand off to it by name,
+so per SKILL-MECHANICS "Pick model-invocation only when the agent must reach the
+skill on its own, or another skill must" the invocation choice is correct
+(PASS). What is wrong is the price paid for it, not the choice.
+
+Cognitive load: nothing hidden from the human that should be; the file names the
+one external dependency out loud —
+  line 32: "由 `build-batch` skill 目錄底下的 `batch.py` 算與印"
+— so the human is not the index for it. PASS on that half.
+
+--------------------------------------------------------------------------------
+3. INFORMATION HIERARCHY — CONCERN
+--------------------------------------------------------------------------------
+
+The file is a step sequence (§1→§7), the primary tier, correctly ordered, with
+in-file reference hung off §4. That shape is right.
+
+The problem is §4's weight. §4 runs lines 30-69: 40 of the file's 86 lines —
+just under half the document — for one of three deltas. Inside it, two blocks
+are not step material and not every-branch reference:
+
+  line 54  "**硬規則蓋過 client 的 override**:`judgement` 是 `true` 的票被
+            client 說「改快」時,`batch.py` 會當場停…"
+      This is a branch. It fires only when (i) a ticket is judgement=true AND
+      (ii) the client asks for 快 on that specific ticket. Most runs never touch
+      it. The discipline's disclosure test is exactly this: "inline what every
+      branch needs, and push behind a pointer what only some branches reach."
+
+  line 69  "**這條判準的天花板**…"
+      This is pure rationale — it instructs no action except one prohibition at
+      its tail. It is the single densest line in the file (five clauses, ~200
+      chars, one paragraph) sitting in the middle of a step sequence.
+
+Both are inline because CLASSIFY_LINES greps THIS file for "不要自己去改
+`judgement` 旗標讓它過" / "判錯必然會發生" / "接得住的是**有驗收項**的那半".
+So the guard, as written, forbids the disclosure the discipline prescribes.
+Reviewed within that constraint: the current arrangement is the only one the
+guard allows, so this is a CONCERN and not a FAIL — but the honest fix is to
+teach the guard to follow a pointer (grep the disclosed sibling file too), not
+to keep growing §4 every time a new pinned sentence is needed. The trend line
+matters: this round added 7 lines to §4 and rewrote its longest paragraph
+longer. One more round of the same and §4 is the document.
+
+--------------------------------------------------------------------------------
+4. PROGRESSIVE DISCLOSURE — CONCERN (same evidence as 3)
+--------------------------------------------------------------------------------
+
+Nothing in this skill is disclosed behind a pointer; everything is in-file. For
+an 86-line file that is defensible on its own. It is flagged because the two
+blocks quoted in §3 are the textbook disclosure candidates (branch-only +
+pure rationale) and they are the two blocks this round grew. Cross-reference to
+another file is used correctly where it exists (line 32 points at batch.py
+rather than restating its logic) — that is the right instinct, applied to code
+but not to prose.
+
+--------------------------------------------------------------------------------
+5. CO-LOCATION — PASS
+--------------------------------------------------------------------------------
+
+The strongest lever in this file. Everything about the 快/慢 classification
+concept — how to run it (34-42), what to feed it (44-48), what to do when the
+tool is missing (50), the client gate (52), the override conflict (54-59), the
+output format (61-67), the ceiling (69) — sits under one heading, in the order
+a run encounters them. Reading any part brings its neighbours. Likewise §5
+keeps the blocking-edge rule, its rationale (75) and its scope limit (77)
+together. This reads like documentation written for the agent.
+
+One drift worth noting under this lever: line 54's block was placed after the
+client gate (52) and before the paste step (61) — i.e. exactly where the run
+hits it. Correct placement; the objection in §3 is about tier, not neighbours.
+
+--------------------------------------------------------------------------------
+6. SPRAWL — PASS (with a watch item)
+--------------------------------------------------------------------------------
+
+86 lines / 3098 chars is not a sprawling document; no line is dead weight in the
+"mere exposition" sense. The watch item is line 69, a single paragraph carrying
+five distinct claims (judgement is agent-judged / misjudgement is certain / the
+downgrade loop is the mitigation / the loop has not shipped / the loop only
+covers half). Attention thins inside a wall like that, and its last clause —
+the actual instruction "不要為了把它判準而加規則" — is the least prominent thing
+in it. Splitting the paragraph after "還沒出貨…實作它。" would cost nothing and
+keep the pins intact.
+
+--------------------------------------------------------------------------------
+7. STEPS AND COMPLETION CRITERIA — PASS
+--------------------------------------------------------------------------------
+
+Clarity:
+  line 16 (changed this round) "先做完 §3–§5,再照 §6 對帳與發佈"
+      Sharper than what it replaced ("先做完 §3–§6 再發佈", which folded the
+      publish step into the range it was gating and left "done" ambiguous about
+      whether §6 precedes or contains publishing). Now the gate and the
+      publishing act are separated and both named. Good edit.
+  line 81 "驗收清單每一條至少被一張 ticket 覆蓋…每條都有著落才發佈"
+      Checkable and exhaustive — the discipline's "strongest criteria" case.
+  line 52 "點頭之前不要寫進票,也不要發佈" — binary, observable (client said yes
+      or did not). Not fuzzy.
+  lines 54-57 the override branch has a real terminal state: "票的內容沒變就是
+      慢。" That single clause is what stops the branch looping forever, and it
+      is stated. This is the part of the new block that earns its place.
+
+Demand:
+  line 81's "每一條" and line 12's "找不到就停下回報…不要自己編" both force
+  legwork rather than a summary. §5's "一張 blocking 邊都沒宣告的時候…等他回答"
+  binds a whole-batch check.
+
+Post-completion steps: all steps are visible in one file, which the discipline
+warns invites rushing the one in front. Here the pull is resisted by naming the
+gate explicitly at each stop (line 16, line 52, line 73, line 81), so no split
+is needed. See lever 8.
+
+Minor clarity nit (not a CONCERN on its own): line 52 "要改就把那張的 `override`
+填進去重跑一次" reads as a single iteration. If the client changes his mind again
+on the reprinted list, the text does not say to loop. In practice the pinned
+sentence "照你說的改,改完的才是寫進票裡的那個" carries the intent.
+
+--------------------------------------------------------------------------------
+8. WHEN TO SPLIT — PASS
+--------------------------------------------------------------------------------
+
+By sequence: no split warranted. The one candidate would be hiding §6-§7 from
+§4 so the agent does not rush the client gate — but the discipline says to
+sharpen the bound first, and the bound here is already binary ("點頭之前不要
+寫進票"), so splitting would spend a load to buy nothing.
+By invocation: no candidate. There is no distinct leading word that should
+trigger a sub-skill on its own, and nothing else needs to reach §4's material —
+batch.py already owns the computable half.
+
+--------------------------------------------------------------------------------
+9. LEADING WORDS — PASS (strongest in the new prose)
+--------------------------------------------------------------------------------
+
+Working words, each repeated as a token and never re-defined as a sentence:
+  快車道 / 慢車道, 分級, 對帳, 否決權, 天花板, 硬規則, 放行開關, 紅.
+
+Two are worth calling out in the new material:
+  line 59 "拆掉的當下沒有任何東西會紅"
+      Reuses the red-loop word from the wider discipline. It converts a fuzzy
+      warning ("this is risky") into a binary observable ("nothing goes red"),
+      which is exactly the "a loop you believe in → 紅" move the discipline
+      names. Best single sentence added this round.
+  line 59 "不是放行開關" / line 54 "硬規則"
+      "放行開關" earns its tokens: it names the wrong mental model in one word
+      instead of arguing against it in three sentences.
+  line 69 "天花板"
+      Coined-ish but defined by use in one clause and then carried consistently
+      ("這是宣告過的天花板"). Meets the discipline's bar for coining.
+
+Drift (minor): the concept has two surface forms — "快車道/慢車道" (lines 3, 50)
+vs "快/慢" (lines 30, 32, 64, 67). The ticket-body format is pinned to 快/慢 by
+batch.py's output, so the drift is inherited, not invented. Not worth churn, but
+if line 3 is rewritten per finding 1c, prefer the pinned form there.
+
+--------------------------------------------------------------------------------
+10. NEGATION — CONCERN  (the lever that matters most here)
+--------------------------------------------------------------------------------
+
+11 occurrences of 不要 in 86 lines. Prohibition is this file's dominant steering
+mode. The discipline: "steering by prohibition drags the forbidden behaviour
+into context and makes it more available… A prohibition earns its place only as
+a hard guardrail you cannot phrase positively; even then, pair it with the
+positive target."
+
+Graded individually.
+
+EARNS ITS PLACE (hard guardrail + paired positive) — acceptable:
+  line 12 "找不到就停下回報,指路回 `pm-intake` 補拍,不要自己編"
+      Positive first ("停下回報、指路回 pm-intake"), ban second. Correct order.
+  line 50 "`batch.py` 不在 → 這批整批判慢車道,不要自己重寫一份判斷。"
+      Positive target stated before the ban, plus the reason. Pinned by
+      CLASSIFY_LINES. Fine as written.
+  line 69 "不要為了把它判準而加規則 —— 這是宣告過的天花板,要補的是那個洞"
+      Ban immediately followed by the positive redirect ("要補的是那個洞"). The
+      textbook pairing.
+  line 73 "等他回答,不要自己補一條邊,也不要靜靜發佈"
+      Positive first ("等他回答"). Fine.
+  line 67 "不要自己改寫措辭 —— 下游要拿這一行認車道,漂掉就認不出來"
+      Guardrail that cannot be phrased positively ("copy it exactly" IS the
+      positive, and line 61-65 already shows the exact string). Acceptable.
+
+WEAKEST — pure negation where the positive is already on the page:
+  line 32 "由 `batch.py` 算與印 —— 不要自己判、也不要自己排版那份清單"
+      The positive ("由 batch.py 算與印") is in the same sentence, eight
+      characters earlier. The ban then names the forbidden act twice ("自己判"
+      / "自己排版"). Two elephants for one already-stated target.
+  line 52 "點頭之前不要寫進票,也不要發佈。"
+      The positive form of this exact rule already exists nine lines later —
+      line 61: "點頭之後,把清單最後那段逐張貼進票 body…". So the file states
+      the same gate twice, once positively and once as a double ban, and the
+      ban is the copy that comes first.
+
+THE NEW BLOCK — CONCERN, the sharpest one this round:
+  line 59 "`judgement` 是你讀 diff 的判斷結果,不是放行開關 —— 不要自己去改
+           `judgement` 旗標讓它過。為了讓 client 那句話成立而把 `true` 改成
+           `false`,拆掉的是這條線上唯一的一道防護,而拆掉的當下沒有任何東西
+           會紅。"
+      Assessment, in the discipline's terms:
+      - The ban itself is pinned by CLASSIFY_LINES ("不要自己去改 `judgement`
+        旗標讓它過") and is a genuine hard guardrail — the cheat is the shortest
+        green path and nothing else on the line catches it. It qualifies for the
+        exception.
+      - Pairing requirement: SATISFIED, and well. Lines 56-57 give the positive
+        target as two numbered actions ("當場回報他為什麼停" / "回去改票的內容:
+        把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級"), and they come
+        BEFORE the ban. This is the correct construction and is the main reason
+        this lever is CONCERN rather than FAIL.
+      - Residual problem: after the ban lands, the sentence goes on to spell the
+        forbidden move out as a recipe — "把 `true` 改成 `false`". That is the
+        elephant drawn in full colour: the file now contains, in operational
+        detail, the exact one-token edit that defeats its own guardrail, plus
+        the observation that it leaves no red. An agent under client pressure
+        reading this paragraph has been told the shortcut twice (once as a flag
+        name, once as the literal value swap) and told the target once.
+      - Note the same clause carries real value the discipline endorses caching
+        ("拆掉的當下沒有任何東西會紅" — the gotcha no test confesses). The fix is
+        not to delete the clause; it is to keep the consequence and drop the
+        how-to, e.g. "…不是放行開關 —— 不要自己去改 `judgement` 旗標讓它過。
+        改掉它,拆掉的是這條線上唯一的一道防護,而拆掉的當下沒有任何東西會紅。"
+        Pins survive that edit (the pinned substring is untouched).
+
+Aggregate verdict on this lever: CONCERN. The new block is the best-constructed
+prohibition in the file (positive first, numbered, terminal state named) and
+still carries one avoidable restatement of the forbidden move; lines 32 and 52
+are the two places where prohibition is doing work a positive already does.
+
+--------------------------------------------------------------------------------
+11. PRUNING — CONCERN
+--------------------------------------------------------------------------------
+
+(a) SINGLE SOURCE OF TRUTH — CONCERN.
+    line 3 vs line 8: the delta list exists in both, near-verbatim (see finding
+    1c). Changing what this skill does is a two-place edit today, and this round
+    proved it — "對帳 blocking 邊" had to be added to the pointer to match a
+    body item that already existed. That is the maintenance cost the discipline
+    names, incurred live.
+
+(b) DUPLICATION — CONCERN, with drift already visible.
+    The judgement criterion is written four times, and not identically:
+      line 47 "這張票會不會動到判斷邏輯、篩選條件、分類判準、或任何資料寫入"
+      line 56 "這張動到判斷邏輯或資料寫入"
+      line 57 "把動到判斷邏輯或資料寫入的那部分切出去"
+      line 59 (implicitly, via `judgement`)
+    Lines 56/57 drop "篩選條件、分類判準" from line 47's definition. The short
+    form is now the one an agent reads twice while handling the conflict branch,
+    so the narrower definition is the more prominent one — exactly the
+    "inflates a meaning's prominence past its real rank" failure. §4 is
+    authoritative at line 47; 56/57 should point at it ("這張命中 §4 的硬規則")
+    rather than re-state a lossy copy. Neither line is pinned, so this is
+    freely fixable.
+
+(c) ENVIRONMENT AS TRUTH / RELEVANCE — CONCERN, and this is the second item
+    that should be fixed.
+    line 69: "…而那個回路**還沒出貨**,repo 裡沒有任何一支 skill 實作它。"
+    Verified true at review time: `grep -rn 降級 --include=*.md skills/` in this
+    worktree returns exactly one hit — line 69 itself. So the claim is accurate
+    today.
+    The problem is that it is a cache of a cheap lookup about repo state, and it
+    is stale-by-design: the day the downgrade loop ships into `qa` or
+    `client-demo`, this sentence becomes false. Nothing catches that — the
+    CLASSIFY_LINES pins cover "判錯必然會發生" and "接得住的是**有驗收項**的那半"
+    but NOT "還沒出貨" / "repo 裡沒有任何一支 skill 實作它". An unpinned,
+    unverified, dated claim about the contents of the repo is precisely the
+    sediment the discipline describes: it will settle, because removing it will
+    feel riskier than leaving it.
+    The durable half of the paragraph is the structural claim — the downgrade
+    loop can only ever catch tickets that HAVE acceptance items, so coverage=[]
+    tickets are covered by `judgement` alone. That is true whether or not the
+    loop ships, and it is the pinned half. The "還沒出貨" clause should either
+    go, or carry its expiry explicitly (a spec ref the reader can go check,
+    which "spec #106 決策 3" already provides for the other half).
+
+(d) NO-OPS — PASS. Sentence-by-sentence, the instructions here change behaviour
+    versus the default: an agent left alone WOULD hand-write the classification
+    list (32), WOULD publish without the blocking-edge question (73), WOULD flip
+    a flag to satisfy a client (59), WOULD invent an acceptance checklist rather
+    than stop (12). None of these is "be thorough". The one line closest to a
+    no-op is line 56's "當場回報他為什麼停" (an agent generally does explain a
+    tool error) — but it survives because it prescribes the *content* of the
+    report ("那種改動表面上看不出來、錯了最慘"), which is not the default.
+
+--------------------------------------------------------------------------------
+12. PER-LEVER SUMMARY
+--------------------------------------------------------------------------------
+
+  Context pointers .............. FAIL     (line 3 restates line 8's delta list;
+                                            this round added a 4th item that
+                                            buys no branch)
+  The two loads ................. CONCERN  (context load inflated by the above;
+                                            invocation choice itself correct)
+  Information hierarchy ......... CONCERN  (§4 = 40/86 lines; branch-only and
+                                            rationale blocks sit at step tier)
+  Progressive disclosure ........ CONCERN  (same evidence; guard currently
+                                            forbids the disclosure)
+  Co-location ................... PASS     (best lever in the file)
+  Sprawl ........................ PASS     (watch item: line 69 paragraph)
+  Steps / completion criteria ... PASS     (line 16 sharpened; line 81
+                                            exhaustive; override branch has a
+                                            stated terminal state)
+  When to split ................. PASS     (no split earns its load)
+  Leading words ................. PASS     ("紅", "放行開關", "天花板" all work)
+  Negation ...................... CONCERN  (11x 不要; new block pairs correctly
+                                            but re-draws the forbidden move;
+                                            lines 32 and 52 are pure negation)
+  Pruning ....................... CONCERN  (3↔8 duplication; judgement criterion
+                                            written 4x with drift; unpinned,
+                                            stale-by-design repo claim at 69)
+                                            no-ops: clean
+
+--------------------------------------------------------------------------------
+13. DOES THE REWRITTEN PROSE PASS /writing-for-agents?
+--------------------------------------------------------------------------------
+
+Yes — the rewritten prose passes, with concerns.
+
+Judged narrowly on the five changed regions, this round is a net improvement and
+each edit is defensible on the discipline's own terms:
+  - line 16 sharpened a completion criterion that was genuinely ambiguous.
+  - lines 54-59 introduced the file's best-constructed prohibition: positive
+    target first, as two numbered actions, with a stated terminal state
+    ("票的內容沒變就是慢") — and coined "放行開關" plus reused "紅" to do in two
+    tokens what would otherwise be a paragraph.
+  - line 69 replaced an over-claim ("判錯的代價由降級回路關住") with something
+    true, which is the right direction even though the replacement is longer.
+
+Two changes are net-negative against the discipline and should be fixed:
+the description edit (a body item pushed into an always-loaded pointer for no
+triggering gain) and the ceiling paragraph's unpinned repo-state claim (a cache
+of a cheap lookup that will go stale silently). Neither breaks behaviour today,
+which is why this is not a FAIL overall.
+
+--------------------------------------------------------------------------------
+14. FIX LIST (ordered; none of these break a CLASSIFY_LINES pin)
+--------------------------------------------------------------------------------
+
+SHOULD FIX
+  1. line 3 — cut the body's delta list out of the description. Keep the
+     identity clause and both trigger branches; drop "每張 ticket 標注它覆蓋的
+     驗收項、判快車道還是慢車道並整批給 client 點頭、對帳 blocking 邊,並檢查
+     驗收清單每條都有票覆蓋". Line 8 already says all of it, once.
+  2. line 69 — drop or date-stamp "repo 裡沒有任何一支 skill 實作它". It is an
+     unpinned claim about repo contents that nothing re-verifies. Keep the
+     structural half ("接得住的是有驗收項的那半…") — that one is pinned and
+     stays true.
+
+WORTH FIXING
+  3. line 59 — keep the pinned ban and the "沒有任何東西會紅" consequence; drop
+     the how-to restatement "把 `true` 改成 `false`". The paragraph currently
+     names the shortcut twice and the target once.
+  4. lines 56-57 — stop re-stating the judgement criterion in a lossy short form
+     ("動到判斷邏輯或資料寫入" drops 篩選條件/分類判準 from line 47). Point at
+     §4's definition instead.
+  5. line 52 — "點頭之前不要寫進票,也不要發佈" duplicates, as a double ban, the
+     positive rule already at line 61 ("點頭之後,把清單…貼進票"). Prefer the
+     positive; the pinned sentences in that paragraph are untouched by this.
+  6. line 69 — split the paragraph after "…實作它。" so its actual instruction
+     ("要補的是那個洞") is not the last clause of a five-claim wall.
+
+STRUCTURAL, NOT THIS ROUND
+  7. §4 is 40 of 86 lines and grew again this round. The branch-only override
+     block and the ceiling rationale are the discipline's disclosure candidates,
+     but CLASSIFY_LINES greps this file for their sentences. If §4 grows again,
+     fix the guard first (let it follow a pointer to a sibling reference file),
+     then disclose. Do not treat the guard as a reason to keep stacking.
+
+================================================================================
+END OF REVIEW — file left uncommitted in the #120 worktree, nothing edited.
+================================================================================
