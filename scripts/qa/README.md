@@ -17,3 +17,7 @@
   `python scripts/qa/107-mutate.py --run` 要整張表全部咬住(exit 0)。
 - `87-oracle.py` —— 不讀守門規則、真的把檔案跑起來的獨立尺。新規則不需要它當判準,
   但下次再有「這東西自己就是尺」的票,它是現成的第二把尺。
+- `113-wide.py` —— 散文那面的第二把尺,`python scripts/qa/113-wide.py .`。
+  `validate.py` 明說它不驗散文,所以 stale `§N`、指錯節的 `§N`、無界全稱詞、
+  delta 記帳這四種問題在 repo 裡沒有機械判準。這支刻意寫寬,撈出來的多餘項要
+  逐筆判讀,不列入 regression(它的輸出不是綠/紅,是一份等人看的清單)。
