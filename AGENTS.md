@@ -68,9 +68,22 @@ walkthrough 產出的 a11y snapshot,提早開就拿到空證據,然後把每一�
 那張表列的 lane 必須剛好是這三支(上下順序自由 —— 三支同時開,順序沒有語意),而且
 「judge 排在 walkthrough 之後」要在文字裡沒被否定地出現一次。
 
+**錨在宣告,不錨在排版**(#112):池的宣告是**表頭第一欄寫 `lane` 的那張表**,lane
+名字就是它資料列的第一欄 —— 粗體與否不算數,同一段裡別的表(資源分配之類)不是宣告。
+排序約束只讀正文:`^#` 開頭的標題先剪掉(fence 內的 `# ` 是註解不是標題,留著)——
+§3 的標題自己就同時含 judge 與「walkthrough…之後」,不剪的話正文那句 load-bearing 的
+約束整句刪掉還是綠。錨在排版與關鍵字的版本有四個同型缺口,四格都在 `--self-check` 的
+real-skill layer 上拿出貨檔實測。
+
+**判準錨在哪,就要寫在被讀的那份文件裡**:`lane` 這個表頭字是宣告的一部分,所以
+`skills/qa/SKILL.md` §2 自己寫著「這張表就是池的宣告,表頭第一欄寫 `lane`」——
+#112 的根因原句就是「那條約束只活在 code comment 裡」,活在註解裡的約束下一個 agent
+讀不到。認的是小寫 literal `lane`;改成別的字不會靜音,守門會當成池沒被宣告而紅。
+
 **宣告過的天花板**:母體只認**自己開一支 judge** 的 skill,認的字是 `subagent 當
-judge`。散文裡光提到「獨立 judge」的(交棒行、路由表的一列)不上鉤 —— 跟 #57 的
-「呼叫 `/to-tickets`」同一種有界啟發式;改寫那句話就掉出母體,那條靠 review 擋。
+judge`。散文裡光提到 judge 的(`skills/build-batch/SKILL.md` 引「QA 第 6 輪 judge
+實測」當出處)不上鉤 —— 跟 #57 的「呼叫 `/to-tickets`」同一種有界啟發式;改寫那句
+話就掉出母體,那條靠 review 擋。
 
 改這條判準的時候,`scripts/qa/107-mutate.py --run` 是那張 mutation 台:表上每個 knob
 逐一改壞,`--self-check` 要全部轉紅。
