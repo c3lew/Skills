@@ -57,6 +57,24 @@ Windows 主控台預設 cp950,而這條線印給 client 的東西全是中文 �
 逐一改壞,`--self-check` 要**全部**轉紅,一個沒咬住就是那條判準沒有測試釘著。
 (總數看 `--run` 自己印的那行,不要抄進文件 —— 抄了就會過期。)
 
+### `/qa` 的並行池是三線,judge 不在池裡
+
+`/qa` 同時開 regression / walkthrough / code-review 三支 sub-agent(三個 call 在同一則
+訊息裡一次發出去,一支一支發就是排隊)。獨立 judge 排在 walkthrough 之後 —— 它吃的是
+walkthrough 產出的 a11y snapshot,提早開就拿到空證據,然後把每一條驗收項都判 pass,
+而那份報告跟真的全過長得一模一樣:沒有紅字、沒有例外、每條 pass(#107)。
+
+`scripts/validate.py` 的 `judge_ordering_issues` 就是在比這件事,整條是散文比對:並行池
+那張表列的 lane 必須剛好是這三支(上下順序自由 —— 三支同時開,順序沒有語意),而且
+「judge 排在 walkthrough 之後」要在文字裡沒被否定地出現一次。
+
+**宣告過的天花板**:母體只認**自己開一支 judge** 的 skill,認的字是 `subagent 當
+judge`。散文裡光提到「獨立 judge」的(交棒行、路由表的一列)不上鉤 —— 跟 #57 的
+「呼叫 `/to-tickets`」同一種有界啟發式;改寫那句話就掉出母體,那條靠 review 擋。
+
+改這條判準的時候,`scripts/qa/107-mutate.py --run` 是那張 mutation 台:表上每個 knob
+逐一改壞,`--self-check` 要全部轉紅。
+
 ### 跨 skill 借判斷:走安裝根目錄,不走相對連結
 
 一個 skill 要重用另一個 skill 已經測過的判斷(`/next` 的批次那一列借 `build-batch`

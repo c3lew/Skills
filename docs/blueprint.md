@@ -66,8 +66,8 @@ ui-mockup #8、技術決策層 #9、維護流程 #10、接線圖 #11、組裝 #1
 
 ### QA → demo → 過關 loop
 
-`build` → `qa`(regression 先跑 + 驗收清單 walkthrough + 獨立 judge 抓
-works-but-wrong)→ blocking 清零 → `client-demo`(client 親手操作)→
+`build` → `qa`(regression / 驗收清單 walkthrough / code-review 三線並行 + 獨立 judge
+排在 walkthrough 之後抓 works-but-wrong)→ blocking 清零 → `client-demo`(client 親手操作)→
 「不對」四分類回流(spec 錯回 pm-intake / 實作錯開 bug ticket / 新想法開 feature
 ticket / 技術拍板錯重拍)→ 過關(client 點頭 + blocking 清零 + known issues 有
 處置 + regression 全綠 + 高價值 scenarios 固化)。
