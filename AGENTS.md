@@ -80,6 +80,16 @@ real-skill layer 上拿出貨檔實測。
 #112 的根因原句就是「那條約束只活在 code comment 裡」,活在註解裡的約束下一個 agent
 讀不到。認的是小寫 literal `lane`;改成別的字不會靜音,守門會當成池沒被宣告而紅。
 
+**讀不到的地方不算寫下來**:``` fence 裡是範例、HTML comment 讀者根本看不到,兩者
+在比對前都先拿掉(`readable_text`);標題(ATX 與 setext 都算)在比對排序約束前再剪一次
+(`prose_text`)。#112 QA 打穿過五個同型繞過:judge lane 那一列縮排 3 個空白、排序約束
+只寫在 fence 裡、只寫在 HTML comment 裡、`## 3.` 改寫成 setext、整張 lane 表包進 fence。
+
+**認得的 markdown 文法(宣告過的天花板)**:ATX 標題、setext 標題、``` / `~~~` fence、
+HTML comment、GFM 的「行首最多 3 個空白」縮排。**不認** indented code block(四個空白)、
+巢狀 fence、HTML `<table>` —— 出貨的 SKILL.md 一份都沒用到,要用就得先把這幾條擴進
+`scripts/validate.py` 並補 knob,不然它們就是下一批繞過方向。
+
 **宣告過的天花板**:母體只認**自己開一支 judge** 的 skill,認的字是 `subagent 當
 judge`。散文裡光提到 judge 的(`skills/build-batch/SKILL.md` 引「QA 第 6 輪 judge
 實測」當出處)不上鉤 —— 跟 #57 的「呼叫 `/to-tickets`」同一種有界啟發式;改寫那句

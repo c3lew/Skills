@@ -48,8 +48,8 @@ KNOBS = {
     # #112 A1:lane 名字退回「只認粗體第一欄」—— markdown 不要求粗體,散文也沒寫過
     # 那條規矩,所以插一列不粗體的 judge lane 就整個繞過去,守門一聲不吭
     "lane_cell_requires_bold": (
-        'LANE_FIRST_CELL_RE = re.compile(r"^\\|([^|\\n]*)\\|", re.M)',
-        'LANE_FIRST_CELL_RE = re.compile(r"^\\|\\s*\\*\\*([^*|]+)\\*\\*\\s*\\|", re.M)'),
+        'LANE_FIRST_CELL_RE = re.compile(r"^ {0,3}\\|([^|\\n]*)\\|", re.M)',
+        'LANE_FIRST_CELL_RE = re.compile(r"^ {0,3}\\|\\s*\\*\\*([^*|]+)\\*\\*\\s*\\|", re.M)'),
     # #112 A4:lane 名字改成「這一段裡任何粗體」—— 散文的強調字與資源分配表都被當成
     # lane,判準失去錨點(池的宣告是表頭寫 `lane` 的那張表,不是排版)
     "lane_cell_any_bold": (
@@ -59,13 +59,31 @@ KNOBS = {
     # #112 review:表頭 `lane` 那個字放掉 —— 並行池那一段裡任何一張表都被讀成
     # lane 表,資源分配表的第一欄就變成 lane(A4 的假陽性回來)
     "pool_table_any_header": (
-        'r"^\\|[ \\t]*lane[ \\t]*\\|',
-        'r"^\\|[^\\n]*\\|'),
+        'r"^ {0,3}\\|[ \\t]*lane[ \\t]*\\|',
+        'r"^ {0,3}\\|[^\\n]*\\|'),
+    # #112 QA B1:表格的資料列不准縮排 —— GFM 行首 ≤3 空白照樣是同一列,
+    # 縮排一下 judge lane 就從宣告裡消失,讀者卻看得到四支
+    "table_rows_no_indent": (
+        'r"((?: {0,3}\\|[^\\n]*\\n?)+)", re.M)',
+        'r"((?:\\|[^\\n]*\\n?)+)", re.M)'),
+    # #112 QA B2/B5:fence 裡的東西當成正文 —— 範例區塊就能餵飽排序約束,
+    # 整張 lane 表包進 fence 也還算宣告
+    "read_fenced_examples": (
+        "        if FENCE_RE.match(line):",
+        "        if False:"),
+    # #112 QA B3:HTML comment 當成正文 —— 讀者看不到的那句話也算寫下來了
+    "read_html_comments": (
+        'return HTML_COMMENT_RE.sub("", "\\n".join(out))',
+        'return "\\n".join(out)'),
+    # #112 QA B4:setext 標題不當標題 —— 把 `## 3. …` 改寫成底線式就餵飽排序約束
+    "setext_not_a_heading": (
+        "                   or (line.strip() and SETEXT_UNDERLINE_RE.match(nxt)))",
+        "                   or False)"),
     # #112 A3:池的宣告退回「標題有沒有那三個字」—— 別段的標題也含「並行池」,
     # 池整段消失時會走進「lanes are []」而不是「整段不見」,訊息指錯地方
     "pool_declared_by_heading": (
-        "        for table in LANE_TABLE_RE.finditer(body):",
-        "        declared = True\n        for table in LANE_TABLE_RE.finditer(body):"),
+        'return "並行池" in head and LANE_TABLE_RE.search(body) is not None',
+        'return "並行池" in head'),
     # 排序約束整條不看 —— 「judge 排在 walkthrough 之後」可以從文件裡消失
     "ordering_never_checked": (
         "    if not any(any(unnegated(JUDGE_AFTER_RE, span))\n"
@@ -80,7 +98,7 @@ KNOBS = {
     # #112 A2:排序約束改掃整份文件 —— §3 標題自己就同時含 judge 與「walkthrough…之後」,
     # 正文那句 load-bearing 的約束整句刪掉,單靠標題就把檢查餵飽
     "ordering_scans_headings": (
-        "    prose = prose_lines(text)",
+        "    prose = prose_text(text)",
         "    prose = text"),
 }
 
