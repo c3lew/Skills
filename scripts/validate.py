@@ -197,18 +197,91 @@ def missing_blocking_audit_issue(text):
 # 然後把每一條驗收項都判 pass —— 而那份報告跟真的全過長得一模一樣(沒有紅字、沒有例外、
 # 每條 pass),讀報告的人分不出來。這種靠肉眼看不出來的破壞要有守門咬著,所以判準有兩半:
 # 並行池那張表列的 lane 必須**剛好**是這三支(多出一支 judge 就是有人把它丟進池裡,少
-# 一支就是並行沒做滿),而且「judge 排在 walkthrough 之後」這句要在文字裡沒被否定地出現一次。
-# 母體只認**自己開一支 judge** 的 skill —— 光在散文裡提到「獨立 judge」的
-# (client-demo 的收尾、/next 的路由列)一支 judge 都沒跑,要它帶並行池是假陽性。
-# 對照組是 TO_TICKETS_CALL_RE 的「呼叫」那個字(#57)。
+# 一支就是並行沒做滿),而且「judge 排在 walkthrough 之後」這句要在正文裡沒被否定地出現一次。
+# 母體只認**自己開一支 judge** 的 skill —— 光在散文裡提到 judge 的
+# (`skills/build-batch/SKILL.md` 引用「QA 第 6 輪 judge 實測」當出處)一支 judge 都沒跑,
+# 要它帶並行池是假陽性。對照組是 TO_TICKETS_CALL_RE 的「呼叫」那個字(#57)。
+#
+# #112 修的是錨點:原本三個 regex 錨在排版與關鍵字,不是錨在宣告本身,四個同型缺口 ——
+#   A1 lane 名只認粗體第一欄,但 markdown 不要求粗體、散文也從沒寫過這條規矩,
+#      那條約束只活在 code comment 裡 → 插一列不粗體的 judge lane 照樣綠。
+#   A2 排序約束掃整份文件,而 §3 的標題本身就含 judge 與「walkthrough…之後」→ 正文那句
+#      load-bearing 的約束整句刪掉,單靠標題就把檢查餵飽。
+#   A3 池的區段只認標題含「並行池」,§3 標題也含這三個字 → 池整段消失時比對到 §3,
+#      走進 lanes 為空的分支,「整段不見」那條訊息在出貨檔上到不了。
+#   A4 區段吃到下一個 `## ` 為止,§2 的 `###` 子段裡任何粗體第一欄的表(資源分配之類)
+#      都被讀成 lane → 假陽性。
+# 錨點因此改成宣告本身:池的宣告是**那張表頭第一欄寫 `lane` 的表**(在標題含「並行池」的
+# `##` 區段裡),lane 名字就是它的資料列第一欄,粗體與否不算數;排序約束只讀正文,標題不算。
 JUDGE_RUNNER_RE = re.compile(r"subagent 當 judge")
 POOL_LANES = ["regression", "walkthrough", "code-review"]
-POOL_SECTION_RE = re.compile(r"^##[^\n]*並行池[^\n]*\n(.*?)(?=^## |\Z)", re.M | re.S)
-# lane 名字只認表格第一欄的粗體 —— 那一欄就是池的宣告,散文裡提到 lane 名字不算
-LANE_CELL_RE = re.compile(r"^\|\s*\*\*([^*|]+)\*\*\s*\|", re.M)
+# 認得的 markdown 文法(宣告過的天花板):ATX 標題、setext 標題、``` / ~~~ fence、
+# HTML comment、GFM 的「行首最多 3 個空白」縮排。不認 indented code block、
+# 巢狀 fence、HTML `<table>` —— 出貨的 SKILL.md 一份都沒用,要用就得先擴這裡。
+H2_SECTION_RE = re.compile(r"^ {0,3}(## [^\n]*)\n(.*?)(?=^ {0,3}## |\Z)", re.M | re.S)
+# 池的宣告 = 表頭第一欄寫 `lane` 的那張表。同一段裡別的表不是宣告(#112 A4)
+LANE_TABLE_RE = re.compile(
+    r"^ {0,3}\|[ \t]*lane[ \t]*\|[^\n]*\n"
+    r" {0,3}\|[ \t:|-]+\|[^\n]*\n"
+    r"((?: {0,3}\|[^\n]*\n?)+)", re.M)
+# lane 名字 = 資料列的第一欄。粗體不是宣告,markdown 不要求它(#112 A1);
+# 行首 ≤3 空白照樣是同一張表的一列,縮排也不是宣告(#112 QA B1)
+LANE_FIRST_CELL_RE = re.compile(r"^ {0,3}\|([^|\n]*)\|", re.M)
+# 讀不到的地方不算寫下來:fence 裡是範例、HTML comment 讀者根本看不到(#112 QA B2/B3/B5)
+FENCE_RE = re.compile(r"^ {0,3}(?:```|~~~)")
+HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
+# 標題不是宣告:約束要寫在正文裡,靠標題餵飽檢查不算寫下來(#112 A2)。
+# setext 標題(底下一行 === / ---)跟 ATX 同級(#112 QA B4)
+ATX_HEADING_RE = re.compile(r"^ {0,3}#{1,6} ")
+SETEXT_UNDERLINE_RE = re.compile(r"^ {0,3}(?:=+|-{2,})[ \t]*$")
 # 排序約束照 #64 的形狀:span 斷在句號/換行,條件(judge)與動作(walkthrough…之後)要在同一句
 JUDGE_SPAN_RE = re.compile(r"[^。\n]*judge[^。\n]*")
 JUDGE_AFTER_RE = re.compile(r"walkthrough[^。\n]{0,6}之後")
+
+
+def readable_text(text):
+    """下一個 agent 真的讀得到的那份:fence 內是範例、HTML comment 看不到,兩者都拿掉。
+
+    行數保持不變(拿掉的行換成空行),錯誤訊息與原檔的行號才對得上。
+    """
+    out, in_fence = [], False
+    for line in text.split("\n"):
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+            out.append("")
+        else:
+            out.append("" if in_fence else line)
+    return HTML_COMMENT_RE.sub("", "\n".join(out))
+
+
+def prose_text(text):
+    """正文 = `readable_text` 再剪掉標題行(ATX 與 setext)—— 標題不是宣告。"""
+    lines = readable_text(text).split("\n")
+    kept = []
+    for i, line in enumerate(lines):
+        nxt = lines[i + 1] if i + 1 < len(lines) else ""
+        heading = (ATX_HEADING_RE.match(line)
+                   or (line.strip() and SETEXT_UNDERLINE_RE.match(nxt)))
+        kept.append("" if heading else line)
+    return "\n".join(kept)
+
+
+def is_pool_section(head, body):
+    """一個 `##` 區段是不是池的宣告:標題含「並行池」且段內有那張 lane 表。"""
+    return "並行池" in head and LANE_TABLE_RE.search(body) is not None
+
+
+def pool_lane_declaration(text):
+    """Return (池有沒有被宣告, lane 名字清單) — 宣告 = 並行池區段裡的 lane 表。"""
+    declared, lanes = False, []
+    for head, body in H2_SECTION_RE.findall(readable_text(text)):
+        if not is_pool_section(head, body):
+            continue
+        declared = True
+        for table in LANE_TABLE_RE.finditer(body):
+            lanes += [c.strip().strip("*").strip()
+                      for c in LANE_FIRST_CELL_RE.findall(table.group(1))]
+    return declared, lanes
 
 
 def judge_ordering_issues(text):
@@ -216,26 +289,29 @@ def judge_ordering_issues(text):
     if not JUDGE_RUNNER_RE.search(text):
         return []
     issues = []
-    section = POOL_SECTION_RE.search(text)
-    if not section:
+    declared, lanes = pool_lane_declaration(text)
+    if not declared:
         issues.append(
-            "runs an 獨立 judge but declares no 並行池 section — the three "
-            "lanes have to be written down where the next agent reads them"
+            "runs an 獨立 judge but no 並行池 section declares its lane "
+            "table — the three lanes have to be written down in a table "
+            "under a 「並行池」 heading, its first header column literally "
+            "`lane`, where the next agent reads them"
         )
-    else:
-        lanes = [c.strip() for c in LANE_CELL_RE.findall(section.group(1))]
-        if sorted(lanes) != sorted(POOL_LANES):
-            issues.append(
-                f"並行池 lanes are {lanes} — must be exactly {POOL_LANES} "
-                f"(order is free, the set is not); a "
-                f"judge lane in that pool reads an empty a11y snapshot and "
-                f"passes every criterion, which looks identical to a real pass"
-            )
+    elif sorted(lanes) != sorted(POOL_LANES):
+        issues.append(
+            f"並行池 lanes are {lanes} — must be exactly {POOL_LANES} "
+            f"(order is free, the set is not); a "
+            f"judge lane in that pool reads an empty a11y snapshot and "
+            f"passes every criterion, which looks identical to a real pass"
+        )
+    prose = prose_text(text)
     if not any(any(unnegated(JUDGE_AFTER_RE, span))
-               for span in JUDGE_SPAN_RE.findall(text)):
+               for span in JUDGE_SPAN_RE.findall(prose)):
         issues.append(
             "never states that the 獨立 judge runs walkthrough…之後 — the ordering "
-            "constraint is load-bearing, so it is written, not inferred"
+            "constraint is load-bearing, so it is written in the prose the next "
+            "agent reads: not carried by a heading, a code fence, or an HTML "
+            "comment"
         )
     return issues
 
@@ -746,6 +822,19 @@ def self_check():
         POOL_DOC.replace("| **code-review** | 讀 diff |",
                          "| **code-review** | 讀 diff |\n| **judge** | 判定 |")
     ), "judge lane in the pool must redden"
+    # #112 A1:lane 名字不粗體照樣是 lane —— markdown 不要求粗體,散文也沒寫過這條規矩,
+    # 只認粗體等於把判準錨在排版上,插一列不粗體的 judge lane 就繞過去了
+    assert judge_ordering_issues(
+        POOL_DOC.replace("| **code-review** | 讀 diff |",
+                         "| **code-review** | 讀 diff |\n| judge | 判定 |")
+    ), "a non-bold judge lane must redden"
+    # #112 A4:並行池那一段裡別的表(資源分配之類)不是 lane 宣告,不該被讀成 lane
+    assert judge_ordering_issues(
+        POOL_DOC.replace(
+            "\n## 3. 獨立 judge\n",
+            "\n### 資源分配\n\n| 資源 | 誰用 |\n| --- | --- |\n"
+            "| **port** | walkthrough |\n\n## 3. 獨立 judge\n")
+    ) == [], "a non-lane table in the pool section is not a lane declaration"
     # 少一支 lane:並行沒做滿,一樣是紅的
     assert judge_ordering_issues(
         POOL_DOC.replace("| **code-review** | 讀 diff |\n", "")
@@ -801,6 +890,100 @@ def self_check():
             assert got and all(e.startswith(label) for e in got), (label, got)
             got = reds(JUDGE_AFTER_RE.sub("walkthrough 之前", text))
             assert got and all(e.startswith(label) for e in got), (label, got)
+
+            # #112 的四個同型缺口,全部拿出貨檔實測 —— 手寫 fixture 綠不算數,
+            # 這四格當初就是「fixture 照不到、出貨檔上打得穿」才變成 blocking。
+            # A1:插一列**不粗體**的 judge lane。markdown 不要求第一欄粗體,散文
+            # 也從沒寫過那條規矩 —— 只認粗體就是把判準錨在排版上。
+            got = reds(text.replace(lane, "| judge | 逐條判定 | pass/fail |\n" + lane, 1))
+            assert got and all(e.startswith(label) for e in got), (label, got)
+            # A2:排序約束的正文整句刪掉,只留標題。標題自己就同時含 judge 與
+            # 「walkthrough…之後」,掃整份文件的話單靠標題就把檢查餵飽。
+            cut_prose = "\n".join(
+                "" if (not ln.startswith("#") and JUDGE_AFTER_RE.search(ln)) else ln
+                for ln in text.splitlines()
+            )
+            assert cut_prose != text, label
+            got = reds(cut_prose)
+            assert got and any("ordering" in e for e in got), (label, got)
+            assert all(e.startswith(label) for e in got), (label, got)
+            # A3:並行池整段拿掉,訊息要指到「整段不見」而不是「lanes are []」——
+            # 池的宣告是那張 lane 表,別段標題裡的「並行池」三個字不是宣告。
+            def is_pool(m):
+                return is_pool_section(m.group(1), m.group(2))
+
+            def drop_pool(m):
+                return "" if is_pool(m) else m.group(0)
+            no_pool = H2_SECTION_RE.sub(drop_pool, text)
+            assert no_pool != text, label
+            got = reds(no_pool)
+            assert got and all("declares its lane table" in e for e in got), (label, got)
+            assert all(e.startswith(label) for e in got), (label, got)
+            # 表頭 `lane` 那個字是宣告的一部分:改成別的字 = 池沒被宣告,守門要吵
+            # 出「no 並行池 section declares its lane table」而不是靜音(#112 review)
+            renamed = text.replace("| lane |", "| 線 |", 1)
+            assert renamed != text, label
+            got = reds(renamed)
+            assert got and all("declares its lane table" in e for e in got), (label, got)
+            # A4:並行池那一段的子段多一張非 lane 表 —— 該綠。資源分配表的第一欄
+            # 也是粗體,把它讀成 lane 是假陽性。
+            def add_table(m):
+                if not is_pool(m):
+                    return m.group(0)
+                return (m.group(1) + "\n" + m.group(2).rstrip("\n")
+                        + "\n\n### 資源分配\n\n| 資源 | 誰用 |\n| --- | --- |\n"
+                          "| **port** | walkthrough |\n| **fixture** | regression |\n\n")
+            extra_table = H2_SECTION_RE.sub(add_table, text)
+            assert extra_table != text, label
+            assert reds(extra_table) == [], (label, reds(extra_table))
+
+            # #112 QA 的五個繞過方向(code-review lane 拿出貨檔實測打穿過)——
+            # 上面四格改的是「拿掉」,這五格改的是「換一種寫法」:主張照樣沒寫下來,
+            # 但排版上看起來還在。#64 的教訓,換到 markdown 文法上。
+            hdr = next(l for l in text.split("\n") if l.strip().startswith("| lane "))
+            lane_line = next(l for l in text.split("\n") if l.startswith(lane))
+            # B1:judge 那一列縮排 3 個空白。GFM 行首 ≤3 空白照樣是同一張表的一列,
+            # 讀者看到的就是四支 lane —— 縮排不是宣告。
+            indented = text.replace(
+                lane_line, lane_line + "\n   | **judge** | 逐條判定 | pass/fail |", 1)
+            assert indented != text, label
+            got = reds(indented)
+            assert got and all("lanes are" in e for e in got), (label, got)
+            # B2:排序約束只寫在 ``` fence 裡 —— fence 裡是範例,不是宣告。
+            fenced_order = "\n".join(
+                "```bash\n# " + ln + "\n```" if (not ln.startswith("#")
+                                              and JUDGE_AFTER_RE.search(ln)) else ln
+                for ln in text.split("\n")
+            )
+            assert fenced_order != text, label
+            got = reds(fenced_order)
+            assert got and any("ordering constraint" in e for e in got), (label, got)
+            assert all(e.startswith(label) for e in got), (label, got)
+            # B3:排序約束只寫在 HTML comment 裡 —— 讀者根本看不到那句話。
+            commented = "\n".join(
+                "<!-- " + ln + " -->" if (not ln.startswith("#")
+                                          and JUDGE_AFTER_RE.search(ln)) else ln
+                for ln in text.split("\n")
+            )
+            assert commented != text, label
+            got = reds(commented)
+            assert got and any("ordering constraint" in e for e in got), (label, got)
+            assert all(e.startswith(label) for e in got), (label, got)
+            # B4:標題改寫成 setext(底下一行 ---)還是標題,一樣餵不飽排序約束。
+            setext_head = next(l for l in cut_prose.split("\n")
+                               if l.startswith("#") and JUDGE_AFTER_RE.search(l))
+            setext = cut_prose.replace(
+                setext_head, setext_head.split(" ", 1)[1] + "\n---", 1)
+            assert setext != cut_prose, label
+            got = reds(setext)
+            assert got and any("ordering constraint" in e for e in got), (label, got)
+            assert all(e.startswith(label) for e in got), (label, got)
+            # B5:整張 lane 表包進 ``` fence —— 範例不是宣告,池等於沒宣告。
+            fenced_table = text.replace(hdr, "```markdown\n" + hdr, 1)
+            fenced_table = fenced_table.replace(lane_line, lane_line + "\n```", 1)
+            assert fenced_table != text, label
+            got = reds(fenced_table)
+            assert got and all("declares its lane table" in e for e in got), (label, got)
 
     # #41 固化:the baton is a command the client pastes into Codex, so the skill
     # it names has to exist. Repo-level, so it lives outside validate() — a

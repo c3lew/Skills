@@ -11,9 +11,16 @@
       寫的,不是從 `judge_ordering_issues` 的實作反推的 —— 實作同意它是結論,不是前提。
 
 驗收原句(QA 判期望值的唯一依據):
-  「凡是自己開一支 subagent 當 judge 的 SKILL.md,必須有一段 `## …並行池…`,表格
-   第一欄粗體的 lane 名字剛好是 regression / walkthrough / code-review 三支(順序自由),
-   而且文字裡要有一句沒被否定的『judge … walkthrough …之後』。」
+  「凡是自己開一支 subagent 當 judge 的 SKILL.md,必須有一段 `## …並行池…`,那一段裡
+   宣告的 lane 剛好是 regression / walkthrough / code-review 三支(順序自由),而且
+   文字裡要有一句沒被否定的『judge … walkthrough …之後』。」
+
+#112 的四個破壞形狀原句(QA 實測後寫進票的完工定義,g07 / r07 / r08 的期望值讀這幾句
+判,不是從 `judge_ordering_issues` 的實作反推):
+  A1「不粗體 lane 要紅」—— markdown 不要求第一欄粗體,粗體是排版不是宣告。
+  A2「刪正文留標題要紅」—— §3 標題自己就同時含 judge 與『walkthrough…之後』。
+  A3「訊息要指到整段不見」—— 不是『lanes are []』。
+  A4「§2 多一張非 lane 表要維持綠」—— 資源分配之類的表不是 lane 宣告。
 
 fixture 母體含 #57 的假陽性對照組:「只是散文提到 judge、自己沒跑 judge」的該綠 ——
 #57 的教訓是關鍵詞上鉤會把沒跑 judge 的 skill 一起紅掉。
@@ -80,6 +87,13 @@ FIXTURES = {
         "| **code-review** | 讀 diff |\n\n"
         "## 3. 獨立 judge\n\n" + ORDER_OK + JUDGE_RUN
     ),
+    # #112 A4:並行池那一段的子段多一張非 lane 表(第一欄也是粗體)—— 該綠,
+    # 資源分配表不是 lane 宣告
+    "g07-extra-non-lane-table": (
+        POOL3 + "### 資源分配\n\n| 資源 | 誰用 |\n| --- | --- |\n"
+        "| **port** | walkthrough |\n| **fixture** | regression |\n\n"
+        "## 3. 獨立 judge\n\n" + ORDER_OK + JUDGE_RUN
+    ),
     # ---- 該紅的一面 ----
     # judge 混進 lane 表 —— #107 指名的那個失敗形狀
     "r01-judge-in-pool": (
@@ -91,6 +105,23 @@ FIXTURES = {
         "| **code-review** | 讀 diff |\n"
         "| **judge** | 判定 |\n\n"
         "## 3. 獨立 judge\n\n" + ORDER_OK + JUDGE_RUN
+    ),
+    # #112 A1:judge 混進 lane 表,但那一列**不粗體** —— markdown 不要求粗體,
+    # 一樣是把 judge 丟進池裡
+    "r07-judge-lane-not-bold": (
+        "## 2. 並行池\n\n"
+        "| lane | 做什麼 |\n"
+        "| --- | --- |\n"
+        "| **regression** | 跑既有 suite |\n"
+        "| **walkthrough** | 照驗收原句實測 |\n"
+        "| **code-review** | 讀 diff |\n"
+        "| judge | 判定 |\n\n"
+        "## 3. 獨立 judge\n\n" + ORDER_OK + JUDGE_RUN
+    ),
+    # #112 A2:排序約束的正文整句刪掉,只留把關鍵字一起帶著的標題 —— 該紅
+    "r08-ordering-only-in-heading": (
+        POOL3 + "## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)\n\n"
+        "judge 逐條判 pass / fail。\n" + JUDGE_RUN
     ),
     # 少一支 lane:並行沒做滿
     "r02-missing-lane": (
