@@ -123,16 +123,23 @@ walkthrough 之後才開,不進 §2 的並行池」還在;理由段前兩句完�
 `judge_ordering_issues` 依賴的三 lane 表與「judge 排在 walkthrough 之後」都在 ——
 `107-mutate.py --run` 8/8 咬住是這條的機械證據。
 
-### A2 「兩份 SKILL.md 各再走一次 `/writing-for-agents`」
+### A2 「兩份 SKILL.md 各再走一次 `/writing-for-agents`」 —— **works-but-wrong,fail**
 
-| 母體 | 輪 | verdict |
-| --- | --- | --- |
-| `skills/qa/SKILL.md` | 1 | **pass**(3 minor + 2 info,無 blocking) |
-| `skills/build/SKILL.md` | 1 | fail(8 條) |
-| `skills/build/SKILL.md` | 2 | fail(清 5 剩 3) |
-| `skills/build/SKILL.md` | 3 | **pass** |
+| 母體 | 輪 | 走查時的 commit | verdict |
+| --- | --- | --- | --- |
+| `skills/qa/SKILL.md` | 1 | `d58a0d5` 前的工作區 | **pass**(3 minor + 2 info,無 blocking) |
+| `skills/build/SKILL.md` | 1 | `d58a0d5` 前的工作區 | fail(8 條) |
+| `skills/build/SKILL.md` | 2 | `d58a0d5` 前的工作區 | fail(清 5 剩 3) |
+| `skills/build/SKILL.md` | 3 | `d58a0d5` 前的工作區 | **pass** |
 
-兩份都各走過(build 走了三輪才綠),**pass**。
+四輪都跑在 `d58a0d5` 的內容上。**之後 `4dc10e4` 又動了 `skills/build/SKILL.md` 兩處**
+(`:3` description 整段改回原句型、`:37` `gh issue view <N>` → `#N`),**沒有再走一次**。
+
+也就是說:實際交付的那版 `build/SKILL.md` 從來沒被 `/writing-for-agents` 走過。
+驗收原句要的是「兩份 SKILL.md 各再走一次」,走過的是**前一版**。這條判 fail。
+
+而且 `4dc10e4` 把 round 1 走查明確點名的 finding(`N` 沒寫成 placeholder)反轉回去,
+換成一條照字面貼上去跑不動的指令 —— 見下面 A5。
 
 ### A3 「結果寫進票,可覆核,不是自我宣稱」
 
@@ -149,6 +156,38 @@ walkthrough 之後才開,不進 §2 的並行池」還在;理由段前兩句完�
 
 `OK validate green`,exit 0。**pass**。
 
+### A5(不在驗收原句上,本輪引入的 regression)—— **fail**
+
+`skills/build/SKILL.md:37`:
+
+```
+完成標準:未 push 的 commit 數是 `0`,`gh issue view #N --comments` 兩則 comment…
+```
+
+`#` 起頭的 token 在 bash 與 PowerShell 都被當成註解吃掉。實測:
+
+```
+$ bash -c 'gh issue view #113 --comments'
+accepts 1 arg(s), received 0
+```
+
+`gh issue view #113 --comments` 等於 `gh issue view` 沒帶參數。這違反本檔 §4 自己指過去的
+`references/written-evidence.md` 那條「給人照抄的指令是交付物 —— 照字面貼上去,跑得動」。
+
+**這是本輪引入的**:`b11c43c` 原本寫 `gh issue view N --comments`,代換 N→113 之後跑得動。
+`d58a0d5` 改成 `<N>`(照 round 1 走查的 finding),`4dc10e4` 又依 code-review 意見改成 `#N`。
+review 的理由是「repo 一律用 #N」,但那個慣例講的是**散文裡指涉票號**(`/build #N`),
+不是 shell 指令的參數位置。
+
+**同型全掃**(母體 `skills/` + `docs/specs/`,找反引號指令裡帶 `#` 參數的):
+
+```
+$ grep -rnoE '`[^`]*(gh|git|python|bash|sh|node|npm)[^`]*#[A-Za-z0-9<]+[^`]*`' skills/ docs/specs/
+skills/build/SKILL.md:37:`gh issue view #N --comments`
+```
+
+全 repo **1 筆**,就是本輪這行。沒有第二處同形狀。
+
 ---
 
 ## 未涵蓋
@@ -164,6 +203,12 @@ walkthrough 之後才開,不進 §2 的並行池」還在;理由段前兩句完�
 
 ## 一鍵重開
 
+**注意母體**:下面的差額表跑的是 `b11c43c..4dc10e4`。本輪的 QA artifacts
+(`docs/qa/113-walkthrough.md`、`scripts/qa/113-wide.py`)在 `9f05f50` 進了 repo 之後
+**自己也進了 `113-wide.py` 的母體**,所以在 `9f05f50` 之後照抄下面的指令會跑出
+未解析 202 / 指錯節 1 / 無界全稱詞 334 / delta 記帳 7,不是表上的 187 / 1 / 323 / 6。
+要重現表上的數字,兩側都要用 `git archive` 解到乾淨目錄(見最後一段)。
+
 ```
 cd .git/batch-worktrees/113
 python scripts/validate.py && python scripts/validate.py --self-check
@@ -176,6 +221,66 @@ python scripts/qa/113-wide.py .
 修前對照:
 
 ```
-git archive b11c43c skills docs | tar -x -C <某個空目錄>
-python scripts/qa/113-wide.py <某個空目錄>
+git archive b11c43c skills docs | tar -x -C <空目錄A>
+git archive 4dc10e4 skills docs | tar -x -C <空目錄B>
+python scripts/qa/113-wide.py <空目錄A>
+python scripts/qa/113-wide.py <空目錄B>
 ```
+
+兩側都從 `git archive` 出來,母體才對稱、數字才重現得出來。
+
+---
+
+## 步驟 4 — 獨立 judge
+
+乾淨 subagent,只餵驗收原句 + 證據路徑,不餵實作脈絡。要求它**自己重跑**所有數字。
+
+**verdict: fail**
+
+| 驗收原句的哪一段 | 判定 |
+| --- | --- |
+| 三條都改完 | pass |
+| 兩份 SKILL.md 各再走一次 `/writing-for-agents` | **works-but-wrong** — 四輪走查都跑在 `d58a0d5`,交付的是 `4dc10e4`,那版從沒被走過 |
+| 結果寫進票(可覆核,不是自我宣稱) | pass |
+| `python scripts/validate.py` 綠 | pass |
+
+judge 逐項重跑的數字與本文表格**逐筆一致**(指錯節 1→0、delta 記帳 `[1] vs 3`→`[3] vs 3`、
+`qa/SKILL.md` 唯一 1→0 與候選 9→8、repo-wide 2→1 / 324→323 / 7→6、未解析 187 兩側同數,
+以及殘留項的逐筆行號)。
+
+judge 另外自己抓到 A5 那條壞指令(它用 PowerShell 實測 `#113` 被吃成註解),
+與本輪 code-review lane 各自獨立命中同一條。
+
+### judge 指出「藏證據」一項 —— 已補
+
+judge 判本文原稿藏了對自己不利的一半:`4dc10e4` 動到 `:37` 這件事全文沒提,
+A2 表也沒揭露最後一輪走查跑的是 `d58a0d5`、交付的是 `4dc10e4`。那條在票上的
+code-review comment 裡有揭露,走查紀錄裡沒有。
+
+已補進 A2 與 A5 兩節。judge 同時確認其餘沒藏:寬掃描的多餘項逐筆判讀且標明誤報、
+repo-wide 323 筆明說「只用差額、沒逐筆判」把天花板宣告出來、`113-wide.py` 第一版
+被 `validate.py` 擋下那條也主動留了紀錄。
+
+### judge 指出「一鍵重開重跑不出自己的表」 —— 已補
+
+原稿的一鍵重開寫 `python scripts/qa/113-wide.py .`,但本輪 QA artifacts 在 `9f05f50`
+進 repo 之後自己也進了母體,照抄會跑出 202 / 1 / 334 / 7,不是表上的 187 / 1 / 323 / 6。
+已改成兩側都用 `git archive` 解到乾淨目錄,並實跑確認重現:
+
+```
+$ git archive b11c43c skills docs | tar -x -C <空目錄A>   # 187 / 2 / 324 / 7
+$ git archive 4dc10e4 skills docs | tar -x -C <空目錄B>   # 187 / 1 / 323 / 6
+```
+
+---
+
+## 結論
+
+**QA fail。blocking 1 條。**
+
+三條 finding 本身都真的改掉了,而且有第二把尺的機械證據。fail 出在本輪**自己新製造**的
+一條:`skills/build/SKILL.md:37` 的 `gh issue view #N --comments` 照字面貼上去跑不動,
+連帶讓「交付版走過 `/writing-for-agents`」這條驗收也不成立(交付版根本沒走過)。
+
+修法在下一輪 `/build`:把 `#N` 換回可代換的寫法,然後對**交付版**再走一次
+`/writing-for-agents`,兩件一起做完再重跑 `/qa #113`。
