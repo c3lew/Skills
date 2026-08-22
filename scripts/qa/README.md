@@ -11,8 +11,11 @@
 
 - `96-newrule-probe.py` —— 新規則的原型,`python scripts/qa/96-newrule-probe.py .`
   應該跟 `validate.py` 對同一份 repo 給一樣的答案。
-- `97-mutate.py` —— 新判準的 mutation 台,`python scripts/qa/97-mutate.py --run`
-  要整張表全部咬住(exit 0)。
+- `97-mutate.py` —— mutation 台,`python scripts/qa/97-mutate.py --run`
+  要整張表全部咬住(exit 0)。表上橫跨兩支檔:`scripts/validate.py`(UTF-8 pin
+  與分級行格式)與 `skills/build-batch/batch.py`(#118 分級被拒時整批照不照印)。
+  每個 knob 自己宣告要改哪一支,改壞之後跑的就是**那支檔自己的** `--self-check`
+  —— 拿其中一支量另一支,量到的是別的東西。
 - `107-mutate.py` —— 並行池與 judge 排序約束的 mutation 台,
   `python scripts/qa/107-mutate.py --run` 要整張表全部咬住(exit 0)。
 - `107-walkthrough.sh` —— #107 過關固化進 regression 的那支:

@@ -72,7 +72,7 @@ echo "==== AC1  每張票都標了快或慢加一句理由,整批一次列給我
 echo "==================================================================="
 
 echo "---- 1a  出貨的 skills/slice-tickets/SKILL.md §4 原文(下一個 agent 照著做的那份)"
-sed -n '30,62p' "$ROOT/$SLICE" | cat -n
+sed -n '30,64p' "$ROOT/$SLICE" | cat -n
 
 echo "---- 1b  照抄 §4 那個指令跑一次 —— placeholder 換成安裝根目錄,其餘一個字不改"
 sed -n '35,41p' "$ROOT/$SLICE" | sed 's#<build-batch skill dir>#skills/build-batch#' > "$QA/verbatim.sh"
@@ -113,7 +113,7 @@ for BAD in fast 快車道 Fast '快 ' ''; do
   echo "     override=[$BAD]"
   classify "$(printf '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"%s"}]}' "$BAD")"
   { [ "$CL_EXIT" != 0 ] && grep -q 'override 只能是' "$QA/out.txt" && ! grep -q '分級:' "$QA/out.txt"; }
-  ok $? "override=[$BAD] 當場停、沒有印出任何分級行"
+  ok $? "override=[$BAD] 當場停、沒有印出貼票的那一行"
 done
 
 echo "---- 1g  分級行格式三邊 byte 對齊:SKILL.md 示範 / batch.py 印的 / validate.py 咬的"
@@ -159,7 +159,7 @@ ok $? "沒有可看的行為也照樣慢"
 echo "---- 4b  硬規則蓋過 client 的 override:client 想改成快 → 當場停"
 classify '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"快"}],"titles":{"49":"算票"}}'
 { [ "$CL_EXIT" != 0 ] && grep -q '硬規則一律慢 —— 改不成快' "$QA/out.txt" && ! grep -q '分級:' "$QA/out.txt"; }
-ok $? "當場停、沒有靜靜忽略、沒有印出任何一行分級"
+ok $? "當場停、沒有靜靜忽略、沒有印出貼票的那一行"
 echo "     改成「慢」是同一個結果,不用停"
 classify '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"慢"}],"titles":{"49":"算票"}}'
 { [ "$CL_EXIT" = 0 ] && grep -q '^  #49  分級:慢' "$QA/out.txt"; }
@@ -207,7 +207,9 @@ for (cn, cv), (jn, jv), (on, ov) in itertools.product(
     try:
         grade, reason = m.classify_one(cv, jv, ov)
         tally[grade] += 1
-    except SystemExit:
+    except m.OverrideRejected:
+        # #118 之後單張這一層拒絕不再是 SystemExit —— 整批算完才由 main 停,
+        # 但「這條路不會落到快」是同一句話,掃法照舊
         tally["停"] += 1
         reason = "(當場停)"
     items = [c for c in cv if not m.NO_COVERAGE_RE.match(str(c).strip())]

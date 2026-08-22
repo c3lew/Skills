@@ -8,6 +8,10 @@
 `main_blocks` / `reads_stdin` 裡「拿掉就會漏掉一種形狀」的那一行。改壞之後
 `validate.py --self-check` 要轉紅;紅不了就表示那條判準沒有證據住在預設會跑的地方。
 
+表上不只一支檔(#118):每個 knob 自己宣告要改哪一支,而改壞之後跑的就是**那支檔
+自己的** `--self-check`。判準住在 `skills/build-batch/batch.py` 的那幾條(分級被拒
+時整批照不照印)拿 `validate.py --self-check` 量不到 —— 那是在量別支檔。
+
 用法:
     python scripts/qa/97-mutate.py --run          # 整張表跑完,每格報 exit code
     python scripts/qa/97-mutate.py --list
@@ -21,7 +25,10 @@ import subprocess
 import sys
 import tempfile
 
-KNOBS = {
+VALIDATE = "scripts/validate.py"
+BATCH = "skills/build-batch/batch.py"
+
+VALIDATE_KNOBS = {
     # 「第一層」放寬成「__main__ 裡面任何地方」—— #72 的死碼 pin 重新算數
     "pin_anywhere_in_main": (
         "            if all(any(ast.unparse(s) == pin for s in m.body) for m in mains):",
@@ -143,39 +150,102 @@ KNOBS = {
         "    for py in sorted(repo.rglob(\"*.py\")):"),
 }
 
+# ---- #118 分級被拒的那張:整批先算完再退出 -------------------------------
+# 判準住在 batch.py,所以證據也要在 `batch.py --self-check` 上轉紅 —— 拿
+# validate.py 的 self-check 當儀器量它,量的是別支檔。
+BATCH_KNOBS = {
+    # 退回「第一張被拒就把整批打死」—— #118 出廠時的形狀:client 一行分級都
+    # 看不到,連他同一輪改的那幾張也一起消失
+    "classify_batch_dies_on_first": (
+        "        except OverrideRejected as exc:\n"
+        "            rows.append((t[\"number\"], None, str(exc)))",
+        "        except OverrideRejected as exc:\n"
+        "            raise SystemExit(str(exc))"),
+    # 被拒的那張從 client 清單上消失 —— 其餘各張照印,但他不知道少了誰
+    "classify_rejected_row_hidden": (
+        "    lines += [f\"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}\"\n"
+        "              for n, grade, reason in rows] or [\"  (無)\"]",
+        "    lines += [f\"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}\"\n"
+        "              for n, grade, reason in rows if grade] or [\"  (無)\"]"),
+    # 有張被拒還是把貼票那段印出來 —— agent 會照著貼進一份 client 沒點過的清單
+    "classify_paste_anyway": (
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]\n"
+        "        return \"\\n\".join(lines)\n",
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]\n"),
+    # 退出碼變 0 —— 印歸印,但「當場停」沒了,靜靜往下走
+    "classify_reject_exit_zero": (
+        "        if rejected:\n            # 整批印完了才停",
+        "        if False and rejected:\n            # 整批印完了才停"),
+    # 訊息退回「這張」—— 停得對,但 client 手上沒有可以動作的票號(#118 第 2 條)
+    "classify_reject_unnamed": (
+        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected))",
+        "                + \"\\n\".join(f\"  這張 — {reason}\" for n, reason in rejected))"),
+    # 兩張同時被拒時只算第一張 —— 單張的批次上一格都看不出來(review WARN)
+    "classify_reject_count_hardcoded": (
+        "        head += f\",其中 {len(rejected)} 張改不了\"",
+        "        head += \",其中 1 張改不了\""),
+    "classify_reject_list_first_only": (
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]",
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected[:1]]"),
+    "classify_reject_only_first": (
+        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected))",
+        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected[:1]))"),
+    # 左欄補寬回退成不補 —— client 那份清單左欄歪掉
+    "classify_grade_cell_unpadded": (
+        "    return label + \"  \" * (width - len(label))",
+        "    return label"),
+}
+
+TARGETS = {VALIDATE: VALIDATE_KNOBS, BATCH: BATCH_KNOBS}
+# knob 名稱 -> (要改的檔, 舊字串, 新字串)。第一欄同時決定「改壞之後跑哪一支
+# `--self-check`」:判準住在哪支檔,證據就要在那支檔預設會跑的地方轉紅。
+KNOBS = {name: (target, old, new)
+         for target, table in TARGETS.items()
+         for name, (old, new) in table.items()}
+if len(KNOBS) != sum(len(t) for t in TARGETS.values()):
+    # 不寫 assert:`python -O` 下 assert 整條被剝掉,而撞名是靜的
+    raise SystemExit("兩張表的 knob 名字撞了 —— 後面那個會靜靜蓋掉前面那個")
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 def apply(repo, knob):
-    path = pathlib.Path(repo) / "scripts" / "validate.py"
+    target, old, new = KNOBS[knob]
+    path = pathlib.Path(repo) / target
     src = path.read_text(encoding="utf-8")
-    old, new = KNOBS[knob]
     assert old in src, f"mutation 目標不在 — 判準被改過了:{knob}"
     path.write_text(src.replace(old, new, 1), encoding="utf-8")
 
 
-def self_check(repo):
+def self_check(repo, target=VALIDATE):
     return subprocess.run(
-        [sys.executable, str(repo / "scripts" / "validate.py"), "--self-check"],
+        [sys.executable, str(pathlib.Path(repo) / target), "--self-check"],
         cwd=repo, capture_output=True)
 
 
 def run_table():
-    """每個 knob 套上去跑 `--self-check`,回傳 (knob, exit code)。非 0 才是要的。"""
+    """每個 knob 套上去跑 `--self-check`,回傳 (knob, exit code)。非 0 才是要的。
+
+    跑的是**那個 knob 自己那支檔**的 self-check:判準散在兩支檔上,拿其中一支
+    的 self-check 量另一支,量到的是別的東西。
+    """
     out = []
     with tempfile.TemporaryDirectory() as td:
         copy = pathlib.Path(td) / "repo"
         shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", "__pycache__"))
-        control = self_check(copy)
-        if control.returncode:
-            why = (control.stderr or control.stdout).decode("utf-8", "replace").strip()
-            raise RuntimeError("控制組未套 knob 就已經紅；儀器壞了，下面的 mutation 表不執行"
-                               + (f"\n{why}" if why else ""))
-        pristine = (copy / "scripts" / "validate.py").read_bytes()
+        for target in TARGETS:
+            control = self_check(copy, target)
+            if control.returncode:
+                why = (control.stderr or control.stdout).decode("utf-8", "replace").strip()
+                raise RuntimeError(f"控制組({target})未套 knob 就已經紅；儀器壞了，"
+                                   "下面的 mutation 表不執行"
+                                   + (f"\n{why}" if why else ""))
+        pristine = {t: (copy / t).read_bytes() for t in TARGETS}
         for knob in sorted(KNOBS):
-            (copy / "scripts" / "validate.py").write_bytes(pristine)
+            target = KNOBS[knob][0]
+            (copy / target).write_bytes(pristine[target])
             apply(copy, knob)
-            r = self_check(copy)
+            r = self_check(copy, target)
             out.append((knob, r.returncode))
     return out
 
@@ -193,7 +263,8 @@ if __name__ == "__main__":
             print(exc, file=sys.stderr)
             sys.exit(1)
         for knob, code in rows:
-            print(f"{'咬住' if code else '沒咬住'}  {knob:<22} self-check exit={code}")
+            print(f"{'咬住' if code else '沒咬住'}  {knob:<30} "
+                  f"{KNOBS[knob][0]} --self-check exit={code}")
         missed = [k for k, c in rows if c == 0]
         print(f"\n{len(rows) - len(missed)}/{len(rows)} 個 knob 被 self-check 咬住")
         if missed:
