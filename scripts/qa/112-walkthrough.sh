@@ -201,6 +201,38 @@ echo "---- 舊的假例子(client-demo / next)不能再被引"
 selfcheck_refute 'QA 第 6 輪 judge' "$ROOT/AGENTS.md"
 refute_grep 'client-demo' "$ROOT/scripts/validate.py" "validate.py 不再引假例子"
 refute_grep 'client-demo' "$ROOT/AGENTS.md" "AGENTS.md 不再引假例子"
+refute_grep '/next 的路由' "$ROOT/scripts/validate.py" "validate.py 不再引 /next 假例子"
+refute_grep '路由表的一列' "$ROOT/AGENTS.md" "AGENTS.md 不再引 /next 假例子"
+
+
+# show_mutation <pattern> <格子說明> —— 把改完的地方連行號印出來。judge 讀 transcript
+# 時要能分辨「這句被搬進 fence / comment」和「這句整句被刪掉」,兩者的守門訊息一樣。
+show_mutation() {
+  set +e
+  echo "---- 改完的樣子($2):"
+  grep -n -- "$1" "$QA/case/$QASKILL"
+  if grep -q -- "$1" "$QA/case/$QASKILL"; then
+    echo "RESULT PASS ($2 mutation 有生效):檔案裡看得到「$1」"
+  else
+    echo "RESULT FAIL ($2 mutation 沒生效):檔案裡找不到「$1」—— 這格測到的是別的東西"
+    FAILED=1
+  fi
+}
+
+# still_there <pattern> <格子說明> —— 那句話/那張表還在檔案裡,只是搬到讀不到的地方。
+# 沒有這條,「搬走」跟「刪掉」在 transcript 上長得一模一樣。
+still_there() {
+  set +e
+  local n
+  n="$(grep -c -- "$1" "$QA/case/$QASKILL")"
+  echo "---- 「$1」在檔案裡還有 $n 處($2)"
+  if [ "$n" -gt 0 ]; then
+    echo "RESULT PASS ($2 是搬走不是刪掉):「$1」還在檔案裡,只是搬到讀不到的地方"
+  else
+    echo "RESULT FAIL ($2):「$1」不在檔案裡 —— 這格變成「刪掉」,測不到繞過"
+    FAILED=1
+  fi
+}
 
 echo "==== QA 第 2 輪:五個繞過方向(code-review lane 打穿過出貨檔的形狀)===="
 echo "同一種病 —— 主張換一種寫法就繞過去。改壞的方向 A1–A4 在上面,這五格守的是繞過。"
@@ -241,6 +273,8 @@ new = t.replace(line, "```bash\n# " + line + "\n```", 1)
 assert new != t
 p.write_text(new, encoding="utf-8")
 PY_B2
+show_mutation '```bash' "B2"
+still_there 'walkthrough 之後' "B2"
 gate
 expect red "B2 排序約束只在 fence 裡"
 
@@ -255,6 +289,8 @@ new = t.replace(line, "<!-- " + line + " -->", 1)
 assert new != t
 p.write_text(new, encoding="utf-8")
 PY_B3
+show_mutation '<!--' "B3"
+still_there 'walkthrough 之後' "B3"
 gate
 expect red "B3 排序約束只在 HTML comment 裡"
 
@@ -271,6 +307,9 @@ new = new.replace(head, head.split(" ", 1)[1] + "\n---", 1)
 assert new != t
 p.write_text(new, encoding="utf-8")
 PY_B4
+echo "---- 改完的 §3 標題(setext:文字一行 + --- 一行)"
+grep -n -A 1 '獨立 judge(排在 walkthrough' "$QA/case/$QASKILL"
+still_there 'walkthrough 之後' "B4"
 gate
 expect red "B4 setext 標題"
 
@@ -286,15 +325,31 @@ new = new.replace(last, last + "\n```", 1)
 assert new != t
 p.write_text(new, encoding="utf-8")
 PY_B5
+show_mutation '```markdown' "B5"
+still_there '| lane | 做什麼' "B5"
+echo "---- 三支 lane 的資料列還在檔案裡(所以不是「表被刪掉」)"
+grep -c '^| \*\*' "$QA/case/$QASKILL"
 gate
 expect red "B5 lane 表包進 fence"
 expect_msg 'declares its lane table' 'lanes are' "B5 訊息指宣告不見"
+
+echo "==== 完工定義:四格斷言住在 --self-check 的 real-skill layer ===="
+echo "---- 出貨檔改壞的那幾格,連行號印出來(斷言不是散文宣稱的,是這幾行)"
+grep -n -e '# A1:' -e '# A2:' -e '# A3:' -e '# A4:' -e '# B1:' -e '# B2:' -e '# B3:' -e '# B4:' -e '# B5:' "$ROOT/scripts/validate.py"
+ASSERT_N="$(grep -c -e '# A[1-4]:' -e '# B[1-5]:' "$ROOT/scripts/validate.py")"
+echo "斷言格數: $ASSERT_N"
+if [ "$ASSERT_N" -ge 9 ]; then
+  echo "RESULT PASS (四格 + 五格斷言在 self-check 裡):$ASSERT_N 格"
+else
+  echo "RESULT FAIL (斷言格數不足):$ASSERT_N,預期 >= 9"
+  FAILED=1
+fi
 
 echo "==== 完工定義的四條指令 —— 證據跟驗收項放同一份 transcript ===="
 run_gate() {
   set +e
   echo "---- $*"
-  "$@" 2>&1 | tail -3
+  "$@" 2>&1 | tail -20
   local rc="${PIPESTATUS[0]}"
   echo "exit $rc"
   if [ "$rc" -eq 0 ]; then
