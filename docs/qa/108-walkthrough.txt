@@ -40,7 +40,7 @@
     29	
     30	`judgement` 是你讀 diff 的判斷結果,不是放行開關 —— 不要自己去改 `judgement` 旗標讓它過。為了讓 client 那句話成立而把 `true` 改成 `false`,拆掉的是這條線上唯一的一道防護,而拆掉的當下沒有任何東西會紅。
     31	
-    32	有一張改不了(撞硬規則、或 client 填的分級打錯字)的時候,`batch.py` 照樣把**整批**的分級印完,那張左欄標成「慢(改不了)」(撞硬規則 —— 車道算得出來就照印)或「改不了」(打錯字 —— 不猜他想打什麼),加理由,然後以非 0 退出、最後那段貼票的行不印。整批都不要貼 —— 先把那張解決(撞硬規則的回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去;打錯字的請 client 重講一次「快」或「慢」)再整批重跑一次。清單上還在的那幾張是這一輪的分級,不是可以先貼的一半。
+    32	有一張改不了(撞硬規則、或 client 填的分級打錯字)的時候,`batch.py` 照樣把**整批**的分級印完,那張左欄標成「慢(改不了)」或「快(改不了)」—— 車道照票的內容算完照印,後面掛「改不了」,加理由,然後以非 0 退出、最後那段貼票的行不印。整批都不要貼 —— 先把那張解決(撞硬規則的回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去;打錯字的請 client 重講一次「快」或「慢」)再整批重跑一次。清單上還在的那幾張是這一輪的分級,不是可以先貼的一半。
     33	
     34	清單最後那段(「點頭之後,每張票上會多這一行:」底下那幾行)就是要貼的東西 —— 點頭之後逐張貼進票 body 的「覆蓋驗收項」段下方,一張一行,長這樣:
     35	
@@ -55,7 +55,7 @@
 ---- 1b  照抄 §4 那個指令跑一次 —— placeholder 換成安裝根目錄,其餘一個字不改
 + sed -n 35,41p '/d/Self Project/Skills/.git/batch-worktrees/118/skills/slice-tickets/SKILL.md'
 + sed 's#<build-batch skill dir>#skills/build-batch#'
-+ cat /tmp/tmp.f1H06P8Quz/qa108/verbatim.sh
++ cat /tmp/tmp.0T8rmhaBkE/qa108/verbatim.sh
 python skills/build-batch/batch.py <<'JSON'
 {"mode": "classify",
  "tickets": [{"number": 47, "coverage": ["1. 切票的時候…"], "judgement": false},
@@ -64,9 +64,9 @@ python skills/build-batch/batch.py <<'JSON'
  "titles": {"47": "…", "48": "…", "49": "…"}}
 JSON
 + VERB_EXIT=0
-+ cat /tmp/tmp.f1H06P8Quz/qa108/verbatim.out
++ cat /tmp/tmp.0T8rmhaBkE/qa108/verbatim.out
 + cd '/d/Self Project/Skills/.git/batch-worktrees/118'
-+ bash /tmp/tmp.f1H06P8Quz/qa108/verbatim.sh
++ bash /tmp/tmp.0T8rmhaBkE/qa108/verbatim.sh
 分級(3 張)— 標「慢」的會演給你看,標「快」的不會:
   慢  #47 … — 覆蓋 1 條驗收項
   快  #48 … — 沒有覆蓋驗收項,不會有你看得到的行為
@@ -85,13 +85,13 @@ exit 0
 RESULT PASS (文件照抄跑得起來)
 + echo '---- 1c  每張都有分級 + 一句理由(不是只有快/慢)'
 ---- 1c  每張都有分級 + 一句理由(不是只有快/慢)
-+ grep -nE '^  (快|慢)  #[0-9]+' /tmp/tmp.f1H06P8Quz/qa108/verbatim.out
++ grep -nE '^  (快|慢)  #[0-9]+' /tmp/tmp.0T8rmhaBkE/qa108/verbatim.out
 4:  慢  #47 … — 覆蓋 1 條驗收項
 5:  快  #48 … — 沒有覆蓋驗收項,不會有你看得到的行為
 6:  慢  #49 … — 動到判斷邏輯或資料寫入,硬規則一律慢
-++ grep -cE '^  (快|慢)  #[0-9]+.* — .+$' /tmp/tmp.f1H06P8Quz/qa108/verbatim.out
+++ grep -cE '^  (快|慢)  #[0-9]+.* — .+$' /tmp/tmp.0T8rmhaBkE/qa108/verbatim.out
 + GRADED=3
-++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.f1H06P8Quz/qa108/verbatim.out
+++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.0T8rmhaBkE/qa108/verbatim.out
 + TICKETS=3
 + echo '有分級且有理由的行數: 3 / 票數: 3'
 有分級且有理由的行數: 3 / 票數: 3
@@ -103,12 +103,12 @@ RESULT PASS (文件照抄跑得起來)
 RESULT PASS (3 張票 3 行分級,每行都帶一句理由)
 + echo '---- 1d 「整批一次列給我看」:一次呼叫、一份清單、張數自己數出來'
 ---- 1d 「整批一次列給我看」:一次呼叫、一份清單、張數自己數出來
-+ grep -nE '^分級\([0-9]+ 張\)' /tmp/tmp.f1H06P8Quz/qa108/verbatim.out
++ grep -nE '^分級\([0-9]+ 張\)' /tmp/tmp.0T8rmhaBkE/qa108/verbatim.out
 3:分級(3 張)— 標「慢」的會演給你看,標「快」的不會:
-++ grep -cE '^分級\([0-9]+ 張\)' /tmp/tmp.f1H06P8Quz/qa108/verbatim.out
+++ grep -cE '^分級\([0-9]+ 張\)' /tmp/tmp.0T8rmhaBkE/qa108/verbatim.out
 + HEAD_N=1
 + '[' 1 = 1 ']'
-+ grep -q '^分級(3 張)' /tmp/tmp.f1H06P8Quz/qa108/verbatim.out
++ grep -q '^分級(3 張)' /tmp/tmp.0T8rmhaBkE/qa108/verbatim.out
 + ok 0 '一份清單、標題自己報 3 張'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (一份清單、標題自己報 3 張)'
@@ -121,7 +121,7 @@ RESULT PASS (一份清單、標題自己報 3 張)
 + printf %s '{"mode":"classify","tickets":[{"number":47,"coverage":["1. 切票的時候…"],"judgement":false},{"number":48,"coverage":[],"judgement":false}],"titles":{"47":"分級","48":"骨架"}}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=0
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
   慢  #47 分級 — 覆蓋 1 條驗收項
   快  #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
@@ -131,8 +131,8 @@ RESULT PASS (一份清單、標題自己報 3 張)
   #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
 + echo 'exit 0'
 exit 0
-+ grep '#47' /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ cat /tmp/tmp.f1H06P8Quz/qa108/before-47.txt
++ grep '#47' /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/before-47.txt
   慢  #47 分級 — 覆蓋 1 條驗收項
   #47  分級:慢 — 覆蓋 1 條驗收項
 + echo '     client 說:#47 改成快 —— 把 override 填進去重跑'
@@ -141,7 +141,7 @@ exit 0
 + printf %s '{"mode":"classify","tickets":[{"number":47,"coverage":["1. 切票的時候…"],"judgement":false,"override":"快"},{"number":48,"coverage":[],"judgement":false}],"titles":{"47":"分級","48":"骨架"}}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=0
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
   快  #47 分級 — 你當場改成「快」
   快  #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
@@ -151,12 +151,12 @@ exit 0
   #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
 + echo 'exit 0'
 exit 0
-+ grep '#47' /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ cat /tmp/tmp.f1H06P8Quz/qa108/after-47.txt
++ grep '#47' /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/after-47.txt
   快  #47 分級 — 你當場改成「快」
   #47  分級:快 — 你當場改成「快」
-+ grep -q '^  #47  分級:慢 — 覆蓋 1 條驗收項$' /tmp/tmp.f1H06P8Quz/qa108/before-47.txt
-+ grep -q '^  #47  分級:快 — 你當場改成「快」$' /tmp/tmp.f1H06P8Quz/qa108/after-47.txt
++ grep -q '^  #47  分級:慢 — 覆蓋 1 條驗收項$' /tmp/tmp.0T8rmhaBkE/qa108/before-47.txt
++ grep -q '^  #47  分級:快 — 你當場改成「快」$' /tmp/tmp.0T8rmhaBkE/qa108/after-47.txt
 + ok 0 '改後的那一行才是要寫進票的那個,理由也講明是 client 改的'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (改後的那一行才是要寫進票的那個,理由也講明是 client 改的)'
@@ -167,7 +167,7 @@ RESULT PASS (改後的那一行才是要寫進票的那個,理由也講明是 cl
 + printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"judgement":false,"override":"慢"}],"titles":{"48":"骨架"}}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=0
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
   慢  #48 骨架 — 你當場改成「慢」
 
@@ -175,7 +175,7 @@ RESULT PASS (改後的那一行才是要寫進票的那個,理由也講明是 cl
   #48  分級:慢 — 你當場改成「慢」
 + echo 'exit 0'
 exit 0
-+ grep -q '^  #48  分級:慢 — 你當場改成「慢」$' /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q '^  #48  分級:慢 — 你當場改成「慢」$' /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 反方向也改得動
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (反方向也改得動)'
@@ -190,9 +190,9 @@ RESULT PASS (反方向也改得動)
 + printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"fast"}]}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=1
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  改不了  #48 — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
+  快(改不了)  #48 — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #48
@@ -200,9 +200,9 @@ RESULT PASS (反方向也改得動)
 + echo 'exit 1'
 exit 1
 + '[' 1 '!=' 0 ']'
-+ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q override /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q 分級: /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q override /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 'override=[fast] 當場停、沒有印出貼票的那一行'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (override=[fast] 當場停、沒有印出貼票的那一行)'
@@ -215,9 +215,9 @@ RESULT PASS (override=[fast] 當場停、沒有印出貼票的那一行)
 + printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"快車道"}]}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=1
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  改不了  #48 — 你填的分級只能是「快」或「慢」,你打的是 '快車道' —— 改一下再重跑
+  快(改不了)  #48 — 你填的分級只能是「快」或「慢」,你打的是 '快車道' —— 改一下再重跑
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #48
@@ -225,9 +225,9 @@ RESULT PASS (override=[fast] 當場停、沒有印出貼票的那一行)
 + echo 'exit 1'
 exit 1
 + '[' 1 '!=' 0 ']'
-+ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q override /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q 分級: /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q override /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 'override=[快車道] 當場停、沒有印出貼票的那一行'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (override=[快車道] 當場停、沒有印出貼票的那一行)'
@@ -240,9 +240,9 @@ RESULT PASS (override=[快車道] 當場停、沒有印出貼票的那一行)
 + printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"Fast"}]}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=1
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  改不了  #48 — 你填的分級只能是「快」或「慢」,你打的是 'Fast' —— 改一下再重跑
+  快(改不了)  #48 — 你填的分級只能是「快」或「慢」,你打的是 'Fast' —— 改一下再重跑
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #48
@@ -250,9 +250,9 @@ RESULT PASS (override=[快車道] 當場停、沒有印出貼票的那一行)
 + echo 'exit 1'
 exit 1
 + '[' 1 '!=' 0 ']'
-+ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q override /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q 分級: /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q override /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 'override=[Fast] 當場停、沒有印出貼票的那一行'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (override=[Fast] 當場停、沒有印出貼票的那一行)'
@@ -265,9 +265,9 @@ RESULT PASS (override=[Fast] 當場停、沒有印出貼票的那一行)
 + printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"快 "}]}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=1
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  改不了  #48 — 你填的分級只能是「快」或「慢」,你打的是 '快 ' —— 改一下再重跑
+  快(改不了)  #48 — 你填的分級只能是「快」或「慢」,你打的是 '快 ' —— 改一下再重跑
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #48
@@ -275,9 +275,9 @@ RESULT PASS (override=[Fast] 當場停、沒有印出貼票的那一行)
 + echo 'exit 1'
 exit 1
 + '[' 1 '!=' 0 ']'
-+ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q override /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q 分級: /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q override /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 'override=[快 ] 當場停、沒有印出貼票的那一行'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (override=[快 ] 當場停、沒有印出貼票的那一行)'
@@ -290,9 +290,9 @@ RESULT PASS (override=[快 ] 當場停、沒有印出貼票的那一行)
 + printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":""}]}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=1
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  改不了  #48 — 你填的分級只能是「快」或「慢」,你打的是 '' —— 改一下再重跑
+  快(改不了)  #48 — 你填的分級只能是「快」或「慢」,你打的是 '' —— 改一下再重跑
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #48
@@ -300,9 +300,9 @@ RESULT PASS (override=[快 ] 當場停、沒有印出貼票的那一行)
 + echo 'exit 1'
 exit 1
 + '[' 1 '!=' 0 ']'
-+ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q override /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q 分級: /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q override /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 'override=[] 當場停、沒有印出貼票的那一行'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (override=[] 當場停、沒有印出貼票的那一行)'
@@ -333,7 +333,7 @@ RESULT PASS (SKILL.md 示範 = batch.py 印出來 = validate.py 咬的,byte 對�
 + printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true}],"titles":{"49":"算票"}}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=0
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
   慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
 
@@ -342,7 +342,7 @@ RESULT PASS (SKILL.md 示範 = batch.py 印出來 = validate.py 咬的,byte 對�
 + echo 'exit 0'
 exit 0
 + '[' 0 = 0 ']'
-+ grep -q '^  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢$' /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q '^  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢$' /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 沒有可看的行為也照樣慢
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (沒有可看的行為也照樣慢)'
@@ -353,7 +353,7 @@ RESULT PASS (沒有可看的行為也照樣慢)
 + printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"快"}],"titles":{"49":"算票"}}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=1
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
   慢(改不了)  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
 
@@ -363,8 +363,8 @@ RESULT PASS (沒有可看的行為也照樣慢)
 + echo 'exit 1'
 exit 1
 + '[' 1 '!=' 0 ']'
-+ grep -q '硬規則一律慢 —— 改不成快' /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q 分級: /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q '硬規則一律慢 —— 改不成快' /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 當場停、沒有靜靜忽略、沒有印出貼票的那一行
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (當場停、沒有靜靜忽略、沒有印出貼票的那一行)'
@@ -375,7 +375,7 @@ RESULT PASS (當場停、沒有靜靜忽略、沒有印出貼票的那一行)
 + printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"慢"}],"titles":{"49":"算票"}}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=0
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
   慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
 
@@ -384,7 +384,7 @@ RESULT PASS (當場停、沒有靜靜忽略、沒有印出貼票的那一行)
 + echo 'exit 0'
 exit 0
 + '[' 0 = 0 ']'
-+ grep -q '^  #49  分級:慢' /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q '^  #49  分級:慢' /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 '同向的 override 不擋'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (同向的 override 不擋)'
@@ -397,9 +397,9 @@ RESULT PASS (同向的 override 不擋)
 + printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"fast"}]}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=1
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  改不了  #49 — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
+  慢(改不了)  #49 — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #49
@@ -407,8 +407,8 @@ RESULT PASS (同向的 override 不擋)
 + echo 'exit 1'
 exit 1
 + '[' 1 '!=' 0 ']'
-+ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q override /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q override /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 'judgement=true + override=[fast] 也停在 override 那關'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (judgement=true + override=[fast] 也停在 override 那關)'
@@ -419,9 +419,9 @@ RESULT PASS (judgement=true + override=[fast] 也停在 override 那關)
 + printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":""}]}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=1
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  改不了  #49 — 你填的分級只能是「快」或「慢」,你打的是 '' —— 改一下再重跑
+  慢(改不了)  #49 — 你填的分級只能是「快」或「慢」,你打的是 '' —— 改一下再重跑
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #49
@@ -429,8 +429,8 @@ RESULT PASS (judgement=true + override=[fast] 也停在 override 那關)
 + echo 'exit 1'
 exit 1
 + '[' 1 '!=' 0 ']'
-+ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.f1H06P8Quz/qa108/out.txt
-+ grep -q override /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q 你填的分級只能是「快」或「慢」 /tmp/tmp.0T8rmhaBkE/qa108/out.txt
++ grep -q override /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + ok 0 'judgement=true + override=[] 也停在 override 那關'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (judgement=true + override=[] 也停在 override 那關)'
@@ -957,7 +957,7 @@ RESULT PASS (classify_one 全分支掃過,沒有一條靜靜落到「快」)
 + printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgment":true}],"titles":{"49":"算票"}}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=0
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
   快  #49 算票 — 沒有覆蓋驗收項,不會有你看得到的行為
 
@@ -966,7 +966,7 @@ RESULT PASS (classify_one 全分支掃過,沒有一條靜靜落到「快」)
 + echo 'exit 0'
 exit 0
 + '[' 0 = 0 ']'
-+ grep -q '^  #49  分級:快' /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q '^  #49  分級:快' /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + '[' 0 = 0 ']'
 + echo 'RESULT KNOWN (judgement key 打錯):現況 = exit 0 且判快 —— 值打錯會停,key 打錯不會'
 RESULT KNOWN (judgement key 打錯):現況 = exit 0 且判快 —— 值打錯會停,key 打錯不會
@@ -976,7 +976,7 @@ RESULT KNOWN (judgement key 打錯):現況 = exit 0 且判快 —— 值打錯�
 + printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"overide":"慢"}],"titles":{"48":"骨架"}}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=0
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
   快  #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
 
@@ -985,7 +985,7 @@ RESULT KNOWN (judgement key 打錯):現況 = exit 0 且判快 —— 值打錯�
 + echo 'exit 0'
 exit 0
 + '[' 0 = 0 ']'
-+ grep -q '^  #48  分級:快' /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ grep -q '^  #48  分級:快' /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 + '[' 0 = 0 ']'
 + echo 'RESULT KNOWN (override key 打錯):現況 = exit 0 且判快'
 RESULT KNOWN (override key 打錯):現況 = exit 0 且判快
@@ -995,12 +995,12 @@ RESULT KNOWN (override key 打錯):現況 = exit 0 且判快
 + printf %s '{"tickets":[{"number":47,"coverage":["1. a"]}]}'
 + python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
 + CL_EXIT=1
-+ cat /tmp/tmp.f1H06P8Quz/qa108/out.txt
++ cat /tmp/tmp.0T8rmhaBkE/qa108/out.txt
 Traceback (most recent call last):
-  File "D:\Self Project\Skills\.git\batch-worktrees\118\skills\build-batch\batch.py", line 1830, in <module>
+  File "D:\Self Project\Skills\.git\batch-worktrees\118\skills\build-batch\batch.py", line 1849, in <module>
     main()
     ~~~~^^
-  File "D:\Self Project\Skills\.git\batch-worktrees\118\skills\build-batch\batch.py", line 678, in main
+  File "D:\Self Project\Skills\.git\batch-worktrees\118\skills\build-batch\batch.py", line 693, in main
     print(format_plan(plan_batch(data["tickets"]), titles))
                       ~~~~~~~~~~^^^^^^^^^^^^^^^^^
   File "D:\Self Project\Skills\.git\batch-worktrees\118\skills\build-batch\batch.py", line 93, in plan_batch
@@ -1038,22 +1038,22 @@ RESULT PASS (mode 漏掉當場炸,不會靜靜印出別的東西)
 + echo '     5c-0  原封不動 → 該綠'
      5c-0  原封不動 → 該綠
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=0
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=0
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 OK validate green
 + echo 'exit 0'
 exit 0
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
 OK batch self-check green
 + echo 'exit 0'
 exit 0
@@ -1070,23 +1070,23 @@ RESULT PASS (pristine):預期守門綠、實際綠
 + echo '     5c-1  拿掉「batch.py 不在 → 整批判慢」的退路 → 該紅'
      5c-1  拿掉「batch.py 不在 → 整批判慢」的退路 → 該紅
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
-+ python - /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
++ python - /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=0
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 OK validate green
 + echo 'exit 0'
 exit 0
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
     assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: slice-tickets SKILL.md: batch.py 不在時的退路那句不見了 —— 借來的判斷本來就可能沒裝,而現場重寫一份比沒有更糟(兩份會各說各話)
@@ -1101,28 +1101,28 @@ exit 1
 + '[' 1 = 1 ']'
 + echo 'RESULT PASS (退路那句不見):預期守門紅、實際紅(validate=0 batch=1)'
 RESULT PASS (退路那句不見):預期守門紅、實際紅(validate=0 batch=1)
-+ grep -m1 退路 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ grep -m1 退路 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
 AssertionError: slice-tickets SKILL.md: batch.py 不在時的退路那句不見了 —— 借來的判斷本來就可能沒裝,而現場重寫一份比沒有更糟(兩份會各說各話)
 + echo '     5c-2  拿掉判準天花板(judgement 判錯必然會發生)→ 該紅'
      5c-2  拿掉判準天花板(judgement 判錯必然會發生)→ 該紅
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
-+ python - /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
++ python - /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=0
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 OK validate green
 + echo 'exit 0'
 exit 0
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
     assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: slice-tickets SKILL.md: 這條判準的天花板那句不見了 —— judgement 是 agent 讀diff 判的,不明講就變成隱含假設,下一個人會去加規則而不是把它當宣告過的邊界
@@ -1137,28 +1137,28 @@ exit 1
 + '[' 1 = 1 ']'
 + echo 'RESULT PASS (天花板那句不見):預期守門紅、實際紅(validate=0 batch=1)'
 RESULT PASS (天花板那句不見):預期守門紅、實際紅(validate=0 batch=1)
-+ grep -m1 天花板 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ grep -m1 天花板 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
 AssertionError: slice-tickets SKILL.md: 這條判準的天花板那句不見了 —— judgement 是 agent 讀diff 判的,不明講就變成隱含假設,下一個人會去加規則而不是把它當宣告過的邊界
 + echo '     5c-3  拿掉「有要改的嗎?」那一問(否決權)→ 該紅'
      5c-3  拿掉「有要改的嗎?」那一問(否決權)→ 該紅
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
-+ python - /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
++ python - /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=0
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 OK validate green
 + echo 'exit 0'
 exit 0
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
     assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: slice-tickets SKILL.md: 印完分級清單問 client 點頭的那句不見了 —— 沒有那一問就沒有否決權,而驗收清單第 1 條要的就是否決權
@@ -1173,28 +1173,28 @@ exit 1
 + '[' 1 = 1 ']'
 + echo 'RESULT PASS (點頭那一問不見):預期守門紅、實際紅(validate=0 batch=1)'
 RESULT PASS (點頭那一問不見):預期守門紅、實際紅(validate=0 batch=1)
-+ grep -m1 否決權 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ grep -m1 否決權 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
 AssertionError: slice-tickets SKILL.md: 印完分級清單問 client 點頭的那句不見了 —— 沒有那一問就沒有否決權,而驗收清單第 1 條要的就是否決權
 + echo '     5c-4  拿掉「改完的才是寫進票裡的那個」→ 該紅'
      5c-4  拿掉「改完的才是寫進票裡的那個」→ 該紅
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
-+ python - /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
++ python - /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=0
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 OK validate green
 + echo 'exit 0'
 exit 0
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
     assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: slice-tickets SKILL.md: client 改完之後以他改的為準那句不見了 —— 少了它,agent 會問完點頭卻照自己原本判的寫進票
@@ -1212,23 +1212,23 @@ RESULT PASS (以 client 改的為準那句不見):預期守門紅、實際紅(va
 + echo '     5c-4b 拿掉硬規則被 client 頂著時的處置(#120)→ 該紅'
      5c-4b 拿掉硬規則被 client 頂著時的處置(#120)→ 該紅
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
-+ python - /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
++ python - /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=0
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 OK validate green
 + echo 'exit 0'
 exit 0
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
     assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: slice-tickets SKILL.md: 硬規則被 client 頂著時的處置那句不見了 —— 沒有它,agent 會把 judgement 改成 false 重跑,而拆掉的當下沒有任何東西會紅
@@ -1243,7 +1243,7 @@ exit 1
 + '[' 1 = 1 ']'
 + echo 'RESULT PASS (硬規則遇到 client 想改快的處置不見):預期守門紅、實際紅(validate=0 batch=1)'
 RESULT PASS (硬規則遇到 client 想改快的處置不見):預期守門紅、實際紅(validate=0 batch=1)
-+ grep -q '硬規則被 client 頂著' /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ grep -q '硬規則被 client 頂著' /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
 + ok 0 '紅在對的地方(batch 的散文 pin,不是別條順便)'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (紅在對的地方(batch 的散文 pin,不是別條順便))'
@@ -1251,23 +1251,23 @@ RESULT PASS (紅在對的地方(batch 的散文 pin,不是別條順便))
 + echo '     5c-4c 天花板退回「降級回路全部關住」的過度宣稱(#120)→ 該紅'
      5c-4c 天花板退回「降級回路全部關住」的過度宣稱(#120)→ 該紅
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
-+ python - /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
++ python - /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=0
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 OK validate green
 + echo 'exit 0'
 exit 0
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
     assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: slice-tickets SKILL.md: 降級回路只接得住一半那句不見了 —— 少了它天花板就回到「關住」那個過度宣稱,而 coverage 是空的那半根本不會觸發降級回路
@@ -1282,7 +1282,7 @@ exit 1
 + '[' 1 = 1 ']'
 + echo 'RESULT PASS (降級回路只接得住一半那句不見):預期守門紅、實際紅(validate=0 batch=1)'
 RESULT PASS (降級回路只接得住一半那句不見):預期守門紅、實際紅(validate=0 batch=1)
-+ grep -q 只接得住一半 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ grep -q 只接得住一半 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
 + ok 0 '紅在對的地方(天花板那條 pin)'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (紅在對的地方(天花板那條 pin))'
@@ -1290,26 +1290,26 @@ RESULT PASS (紅在對的地方(天花板那條 pin))
 + echo '     5c-5  分級行示範改壞(全形冒號那一族:改成「中」)→ 該紅'
      5c-5  分級行示範改壞(全形冒號那一族:改成「中」)→ 該紅
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
-+ python - /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
++ python - /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=1
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 FAIL skills/slice-tickets/SKILL.md: 分級行格式不對:'分級:中 — 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
 + echo 'exit 1'
 exit 1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
     assert format_grade_line(GRADE_SLOW, "覆蓋 2 條驗收項") in slicing, sibling
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: C:\Users\user\AppData\Local\Temp\tmp.f1H06P8Quz\qa108\case\skills\slice-tickets\SKILL.md
+AssertionError: C:\Users\user\AppData\Local\Temp\tmp.0T8rmhaBkE\qa108\case\skills\slice-tickets\SKILL.md
 + echo 'exit 1'
 exit 1
 + '[' 1 -ne 0 ']'
@@ -1320,31 +1320,31 @@ exit 1
 + '[' 1 = 1 ']'
 + echo 'RESULT PASS (分級行示範寫歪):預期守門紅、實際紅(validate=1 batch=1)'
 RESULT PASS (分級行示範寫歪):預期守門紅、實際紅(validate=1 batch=1)
-+ grep -m1 分級行格式不對 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ grep -m1 分級行格式不對 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 FAIL skills/slice-tickets/SKILL.md: 分級行格式不對:'分級:中 — 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
 + echo '     5c-6  分級行示範整行拿掉(呼叫了 classify 卻沒示範)→ 該紅'
      5c-6  分級行示範整行拿掉(呼叫了 classify 卻沒示範)→ 該紅
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
-+ python - /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
++ python - /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=1
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 FAIL skills/slice-tickets/SKILL.md: 呼叫 batch.py 的 classify 卻沒有示範過一行分級行 — 貼上票的那一行會由 agent 現場發明,發明出來的跟 batch.py 印的不會一樣
 + echo 'exit 1'
 exit 1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
     assert format_grade_line(GRADE_SLOW, "覆蓋 2 條驗收項") in slicing, sibling
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: C:\Users\user\AppData\Local\Temp\tmp.f1H06P8Quz\qa108\case\skills\slice-tickets\SKILL.md
+AssertionError: C:\Users\user\AppData\Local\Temp\tmp.0T8rmhaBkE\qa108\case\skills\slice-tickets\SKILL.md
 + echo 'exit 1'
 exit 1
 + '[' 1 -ne 0 ']'
@@ -1355,28 +1355,28 @@ exit 1
 + '[' 1 = 1 ']'
 + echo 'RESULT PASS (呼叫 classify 卻沒示範分級行):預期守門紅、實際紅(validate=1 batch=1)'
 RESULT PASS (呼叫 classify 卻沒示範分級行):預期守門紅、實際紅(validate=1 batch=1)
-+ grep -m1 發明 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ grep -m1 發明 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 FAIL skills/slice-tickets/SKILL.md: 呼叫 batch.py 的 classify 卻沒有示範過一行分級行 — 貼上票的那一行會由 agent 現場發明,發明出來的跟 batch.py 印的不會一樣
 + echo '     5c-7  指令那段不再把 JSON 餵進 batch.py → 該紅(#58 的形狀)'
      5c-7  指令那段不再把 JSON 餵進 batch.py → 該紅(#58 的形狀)
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
-+ python - /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
++ python - /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=0
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 OK validate green
 + echo 'exit 0'
 exit 0
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
     assert classify_command_issue(slicing) is None, classify_command_issue(slicing)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: slice-tickets SKILL.md: no bash block feeds the ticket JSON into batch.py with "mode": "classify" — 分級清單印在沒有測試、沒有 UTF-8 pin 碰得到的地方(#58 的形狀)
@@ -1396,25 +1396,25 @@ RESULT PASS (分級清單走不進 batch.py):預期守門紅、實際紅(validat
 + echo '            (slice-tickets 自己裝起來的時候身邊沒有 batch.py,這行照抄跑不動)'
             (slice-tickets 自己裝起來的時候身邊沒有 batch.py,這行照抄跑不動)
 + fresh
-+ rm -rf /tmp/tmp.f1H06P8Quz/qa108/case
-+ cp -r /tmp/tmp.f1H06P8Quz/qa108/pristine /tmp/tmp.f1H06P8Quz/qa108/case
-+ python - /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
-+ grep -n 'python batch.py' /tmp/tmp.f1H06P8Quz/qa108/case/skills/slice-tickets/SKILL.md
++ rm -rf /tmp/tmp.0T8rmhaBkE/qa108/case
++ cp -r /tmp/tmp.0T8rmhaBkE/qa108/pristine /tmp/tmp.0T8rmhaBkE/qa108/case
++ python - /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
++ grep -n 'python batch.py' /tmp/tmp.0T8rmhaBkE/qa108/case/skills/slice-tickets/SKILL.md
 35:python batch.py <<'JSON'
 + gate
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/scripts/validate.py
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/scripts/validate.py
 + G_VALIDATE=0
-+ python /tmp/tmp.f1H06P8Quz/qa108/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.0T8rmhaBkE/qa108/case/skills/build-batch/batch.py --self-check
 + G_BATCH=0
 + echo '--- scripts/validate.py'
 --- scripts/validate.py
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-validate.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-validate.txt
 OK validate green
 + echo 'exit 0'
 exit 0
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.f1H06P8Quz/qa108/g-batch.txt
++ tail -3 /tmp/tmp.0T8rmhaBkE/qa108/g-batch.txt
 OK batch self-check green
 + echo 'exit 0'
 exit 0
@@ -1456,13 +1456,17 @@ RESULT KNOWN (安裝根目錄寫法沒被守著):兩支守門都綠 —— 這�
 + echo '---- 5d  改壞的都只在副本上,repo 本體乾淨'
 ---- 5d  改壞的都只在副本上,repo 本體乾淨
 + git -C '/d/Self Project/Skills/.git/batch-worktrees/118' status --porcelain -- skills scripts/validate.py
+ M skills/build-batch/batch.py
+ M skills/slice-tickets/SKILL.md
 ++ git -C '/d/Self Project/Skills/.git/batch-worktrees/118' status --porcelain -- skills scripts/validate.py
-+ '[' -z '' ']'
-+ ok 0 'skills/ 與 scripts/validate.py 一個字都沒動'
-+ '[' 0 = 0 ']'
-+ echo 'RESULT PASS (skills/ 與 scripts/validate.py 一個字都沒動)'
-RESULT PASS (skills/ 與 scripts/validate.py 一個字都沒動)
++ '[' -z ' M skills/build-batch/batch.py
+ M skills/slice-tickets/SKILL.md' ']'
++ ok 1 'skills/ 與 scripts/validate.py 一個字都沒動'
++ '[' 1 = 0 ']'
++ echo 'RESULT FAIL (skills/ 與 scripts/validate.py 一個字都沒動)'
+RESULT FAIL (skills/ 與 scripts/validate.py 一個字都沒動)
++ FAILED=1
 + set +x
 
 ==== walkthrough 走完 ====
-所有格子符合預期(RESULT KNOWN 是本輪記錄下來的已知洞,不算不合預期)
+有格子不合預期 —— 見上面的 RESULT FAIL

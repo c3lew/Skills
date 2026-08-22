@@ -238,15 +238,13 @@ KNOBS = {
     # 被拒那張退回「沒有車道」的第三種標籤 —— 原句是「每張票都標了快或慢」,
     # 而硬規則那條路系統自己算得出是慢,吞掉就是 #121 那格
     "classify_rejected_lane_dropped": (
-        'GRADE_REJECTED_SLOW = f"{GRADE_SLOW}(改不了)"',
-        'GRADE_REJECTED_SLOW = GRADE_REJECTED',
+        '    return f"{lane}({GRADE_REJECTED})"',
+        "    return GRADE_REJECTED",
         BATCH),
     # 打錯字那張反過來被猜了一個車道 —— #108「不猜」那條
-    "classify_typo_lane_guessed": (
-        '            f"你填的分級只能是「快」或「慢」,你打的是 {override!r} —— 改一下再重跑",\n'
-        '            GRADE_REJECTED)',
-        '            f"你填的分級只能是「快」或「慢」,你打的是 {override!r} —— 改一下再重跑",\n'
-        '            GRADE_REJECTED_SLOW)',
+    "classify_typo_lane_hardcoded": (
+        "            _rejected_cell(lane))",
+        "            _rejected_cell(GRADE_SLOW))",
         BATCH),
     # 左欄補寬回退成不補 —— client 那份清單左欄歪掉
     "classify_grade_cell_unpadded": (

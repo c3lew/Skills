@@ -506,11 +506,22 @@ def format_batch_summary(spec, numbers, titles, coverage, fixing=()):
 
 GRADE_FAST, GRADE_SLOW = "快", "慢"
 GRADES = (GRADE_FAST, GRADE_SLOW)
-# 被規則擋下的那張在 client 清單上佔的位子。原句是「每張票都標了快或慢」,所以
-# 車道知道的時候就要印出來:硬規則那條路系統自己算得出是慢,只是 client 改不動它
-# (#121)。打錯字那條路沒有車道可印 —— 猜他想打什麼就是 #108 要擋的那件事。
+# 掛在車道後面的那三個字,給被規則擋下的那張用。
 GRADE_REJECTED = "改不了"
-GRADE_REJECTED_SLOW = f"{GRADE_SLOW}(改不了)"
+
+
+def _rejected_cell(lane):
+    """被擋下來那張在 client 清單左欄佔的格子 —— 車道照印,後面掛「改不了」。
+
+    原句是「每張票都標了快或慢」,所以**兩條**被擋的路都要標得出車道:硬規則
+    那條算得出是慢,打錯字那條也算得出來(車道由票的內容決定,跟他填錯的那個
+    字無關)。這不是猜他想填什麼 —— 猜的是「把 'fast' 當成快收下來」,那件事
+    照樣不做(#108「不猜」那條);這裡印的是系統自己本來就算出來的那個車道。
+
+    兩條路長得不一樣的話,client 掃過去分不出差別在哪 —— 同一份清單上兩種被擋
+    的票給他兩種長相,是 #121 獨立 judge 點名的那一格。
+    """
+    return f"{lane}({GRADE_REJECTED})"
 
 
 class OverrideRejected(Exception):
@@ -559,12 +570,16 @@ def classify_one(coverage, judgement=False, override=None):
     天花板,不是這裡要補的規則。
     """
     items = [c for c in coverage if not NO_COVERAGE_RE.match(str(c).strip())]
+    # 這張票自己落在哪個車道 —— 只看票的內容,不看 override。override 是 client
+    # 的意見,可能不成立(打錯字、或撞上硬規則),但車道照樣算得出來,而清單上
+    # 那一格要印的就是它(見 `_rejected_cell`)。
+    lane = GRADE_SLOW if judgement or items else GRADE_FAST
     # 認不得的 override 先擋 —— 擺在硬規則前面,因為硬規則那條路的結果剛好也是慢:
     # 打錯字被靜靜吃掉跟 client 根本沒改長得一模一樣,他下次還是會那樣打。
     if override is not None and override not in (GRADE_FAST, GRADE_SLOW):
         raise OverrideRejected(
             f"你填的分級只能是「快」或「慢」,你打的是 {override!r} —— 改一下再重跑",
-            GRADE_REJECTED)
+            _rejected_cell(lane))
     if judgement:
         if override == GRADE_FAST:
             raise OverrideRejected(
@@ -572,7 +587,7 @@ def classify_one(coverage, judgement=False, override=None):
                 "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"
                 "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"
                 "票的內容沒變就是慢,你說了也一樣",
-                GRADE_REJECTED_SLOW)
+                _rejected_cell(GRADE_SLOW))
         return GRADE_SLOW, "動到判斷邏輯或資料寫入,硬規則一律慢"
     if override is not None:
         return override, f"你當場改成「{override}」"
@@ -1596,7 +1611,7 @@ JSON''')
         assert "judgement" not in str(e), e
         # #121:印給 client 的話裡不准出現他不是說話對象的第三人稱
         assert "client" not in str(e), e
-        assert e.cell == GRADE_REJECTED_SLOW, e.cell
+        assert e.cell == "慢(改不了)", e.cell
         # #121 AC3 要的是「咬新的措辭」。上面那幾條是關鍵字,擋得住方向卻擋不住
         # 措辭漂移 —— 把「你說了也一樣」改回「client 說了也一樣」它們全都照樣綠。
         assert str(e) == (
@@ -1619,7 +1634,11 @@ JSON''')
                 # 放寬成關鍵字 —— 放寬的話換回英文詞也照樣綠。
                 assert str(e) == (f"你填的分級只能是「快」或「慢」,你打的是 {bad!r}"
                                   " —— 改一下再重跑"), e
-                assert e.cell == GRADE_REJECTED, e.cell
+                # 打錯字那張的車道照印,而且跟著票的內容跑:coverage 是空的
+                # -> 快,judgement 是 true -> 慢。不是把他打錯的那個字收下來,
+                # 也不是寫死一個。
+                assert e.cell == ("慢(改不了)" if judgement
+                                  else "快(改不了)"), (e.cell, judgement)
             else:
                 raise AssertionError(f"bad override swallowed: {bad!r} "
                                      f"(judgement={judgement})")
@@ -1644,13 +1663,13 @@ JSON''')
     assert mixed[0][:2] == (47, GRADE_SLOW), mixed
     assert mixed[1] == (48, GRADE_SLOW, "你當場改成「慢」"), mixed
     # 被拒的那張:車道算得出來就印出來(硬規則 -> 慢),理由留在同一列
-    assert mixed[2][0] == 49 and mixed[2][1] == GRADE_REJECTED_SLOW, mixed
+    assert mixed[2][0] == 49 and mixed[2][1] == "慢(改不了)", mixed
     assert "硬規則" in mixed[2][2], mixed
     # 認不得的 override 走同一條路 —— 也是一列,不是整批陪葬
     typo = classify_tickets([{"number": 47, "coverage": []},
                              {"number": 48, "coverage": [], "override": "fast"}])
-    assert typo[0][1] == GRADE_FAST and typo[1][1] == GRADE_REJECTED, typo
-    # 打錯字那張的車道不猜:清單上那格就是「改不了」,不是替他填一個快/慢
+    assert typo[0][1] == GRADE_FAST and typo[1][1] == "快(改不了)", typo
+    # 打錯字那張的車道照印(票的內容算的),但他填的那個字沒被收下來
     assert "你填的分級只能是" in typo[1][2], typo
 
     # client 那份清單:三張全印,被拒的那張標出來是哪一張、為什麼
@@ -1659,7 +1678,7 @@ JSON''')
         assert want in shown, (want, shown)
     # 左欄真的對齊:三列在 `#` 之前佔的欄數必須相同。數空白會漏掉半形括號那一格
     # —— 它字數多、欄數少,補白剛好差兩欄(QA code-review C-1)。
-    # 被拒那張的車道要真的印在紙上。這條刻意咬字面而不是 `GRADE_REJECTED_SLOW`:
+    # 被拒那張的車道要真的印在紙上。這條刻意咬字面而不是 `_rejected_cell()`:
     # 用常數比對的話,常數被改回「改不了」它照樣綠 —— 而那正是 mutation knob
     # `classify_rejected_lane_dropped` 打的那一格。
     assert "  慢(改不了)  #49 c — " in shown, shown
@@ -1714,8 +1733,8 @@ JSON''')
         {"number": 47, "coverage": [], "judgement": True, "override": "快"},
         {"number": 48, "coverage": ["1. x"]},
         {"number": 49, "coverage": [], "override": "fast"}])
-    assert [g for _, g, _ in two] == [GRADE_REJECTED_SLOW, GRADE_SLOW,
-                                      GRADE_REJECTED], two
+    assert [g for _, g, _ in two] == ["慢(改不了)", GRADE_SLOW,
+                                      "快(改不了)"], two
     both = format_classify(two, {47: "a", 48: "b", 49: "c"})
     assert "其中 2 張改不了" in both, both
     assert both.rstrip().endswith("\n  #47 a\n  #49 c"), both
@@ -1724,9 +1743,9 @@ JSON''')
             and ln.startswith("  ") and " — " in ln]
     assert len(wide) == 3, wide
     assert len({_cols(c) for c in wide}) == 1, [(c, _cols(c)) for c in wide]
-    assert wide[0].strip() == GRADE_REJECTED_SLOW, wide
+    assert wide[0].strip() == "慢(改不了)", wide
     assert wide[1].strip() == GRADE_SLOW, wide
-    assert wide[2].strip() == GRADE_REJECTED, wide
+    assert wide[2].strip() == "快(改不了)", wide
     # 沒有被拒的那批左欄一個字都沒動 —— #108 凍結的那份格式原樣
     assert "  慢  #47 分級 — 覆蓋 2 條驗收項" in listed, listed
 
