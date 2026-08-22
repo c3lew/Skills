@@ -1,6 +1,6 @@
 ---
 name: build
-description: 當 ticket 指路「/build #N」、或 ready-for-agent 的切片/bug 票要開工時使用。薄層 wrap 原件 /implement,只補 code-review 的並行位置、收尾交棒、書面證據三個 delta;push 綠了才把產出寫回票並交棒 /qa。
+description: 薄層 wrap /implement:tdd、typecheck、測試、commit 全依原件,只補 code-review 並行位置、收尾、書面證據三個 delta — push 後產出寫回票 + 固定留「下一步:`/qa #N`(Codex: `$qa #N`)」交棒 comment。當 ticket 指路「/build #N」、或 ready-for-agent 的切片/bug 票要開工時使用。
 ---
 
 # build
@@ -34,7 +34,7 @@ commit 裡有什麼,順序反過來就變成「先送出去再說」。tdd 的 r
 
 順序是硬要求:push 沒綠不准貼 commit link — comment 一貼出去,link 就得當場點得開。
 
-完成標準:未 push 的 commit 數是 `0`,`gh issue view <N> --comments` 兩則 comment(產出、交棒)都看得到,且 §4 適用時交付物的散文照它走過一次,才結束 session。
+完成標準:未 push 的 commit 數是 `0`,`gh issue view #N --comments` 兩則 comment(產出、交棒)都看得到,且 §4 適用時交付物的散文照它走過一次,才結束 session。
 
 ## 4. 書面證據(delta)
 
