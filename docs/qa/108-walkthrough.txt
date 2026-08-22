@@ -1,0 +1,1331 @@
++ echo ===================================================================
+===================================================================
++ echo '==== AC1  每張票都標了快或慢加一句理由,整批一次列給我看,我可以當場改任何一張'
+==== AC1  每張票都標了快或慢加一句理由,整批一次列給我看,我可以當場改任何一張
++ echo ===================================================================
+===================================================================
++ echo '---- 1a  出貨的 skills/slice-tickets/SKILL.md §4 原文(下一個 agent 照著做的那份)'
+---- 1a  出貨的 skills/slice-tickets/SKILL.md §4 原文(下一個 agent 照著做的那份)
++ sed -n 30,62p '/d/Self Project/Skills/skills/slice-tickets/SKILL.md'
++ cat -n
+     1	## 4. Delta:快/慢分級
+     2	
+     3	每張票填完「覆蓋驗收項」之後,整批一起判快慢。判準是可計算的,所以由 `build-batch` skill 目錄底下的 `batch.py` 算與印 —— 不要自己判、也不要自己排版那份清單,client 是照那份清單點頭的:
+     4	
+     5	```bash
+     6	python <build-batch skill dir>/batch.py <<'JSON'
+     7	{"mode": "classify",
+     8	 "tickets": [{"number": 47, "coverage": ["1. 切票的時候…"], "judgement": false},
+     9	             {"number": 48, "coverage": [], "judgement": false},
+    10	             {"number": 49, "coverage": [], "judgement": true}],
+    11	 "titles": {"47": "…", "48": "…", "49": "…"}}
+    12	JSON
+    13	```
+    14	
+    15	每張票餵三樣純資料:
+    16	
+    17	- `coverage` —— §3 那段列出來的驗收項。寫「無 — 由後續票的驗收項間接驗證」的那種餵 `[]`。
+    18	- `judgement` —— 這張票會不會動到判斷邏輯、篩選條件、分類判準、或任何資料寫入。會就是 `true`,它是硬規則:一律慢,不看 `coverage` 寫什麼。
+    19	- `override` —— client 當場改的那個字(`"快"` / `"慢"`),沒改就不寫。
+    20	
+    21	`batch.py` 不在 → 這批整批判慢車道,不要自己重寫一份判斷。保守方向不會漏掉 demo,兩份各說各話會。
+    22	
+    23	印出來的清單直接給 client 看,然後問:**這批的快慢分級,有要改的嗎?** 要改就照他說的改 —— 把那張的 `override` 填進去重跑一次,照你說的改,改完的才是寫進票裡的那個。點頭之前不要寫進票,也不要發佈。
+    24	
+    25	點頭之後,把清單最後那段逐張貼進票 body 的「覆蓋驗收項」段下方,一張一行 —— 長這樣:
+    26	
+    27	```markdown
+    28	分級:慢 — 覆蓋 2 條驗收項
+    29	```
+    30	
+    31	格式固定是「分級:<快或慢> — 一句理由」。它由 `batch.py` 印出來、守門釘著,不要自己改寫措辭 —— 下游要拿這一行認車道,漂掉就認不出來。
+    32	
+    33	**這條判準的天花板**:`coverage` 是照抄的、判得準,但 `judgement` 是 agent 讀 diff 自己判的,判錯必然會發生 —— 這關只保證你有否決權,判錯的代價由降級回路關住(標「快」的票對驗收清單有任何一條沒過就當場降級)。不要為了把它判準而加規則。
++ echo '---- 1b  照抄 §4 那個指令跑一次 —— placeholder 換成安裝根目錄,其餘一個字不改'
+---- 1b  照抄 §4 那個指令跑一次 —— placeholder 換成安裝根目錄,其餘一個字不改
++ sed -n 35,41p '/d/Self Project/Skills/skills/slice-tickets/SKILL.md'
++ sed 's#<build-batch skill dir>#skills/build-batch#'
++ cat /tmp/tmp.0EjoMgiNaH/qa108/verbatim.sh
+python skills/build-batch/batch.py <<'JSON'
+{"mode": "classify",
+ "tickets": [{"number": 47, "coverage": ["1. 切票的時候…"], "judgement": false},
+             {"number": 48, "coverage": [], "judgement": false},
+             {"number": 49, "coverage": [], "judgement": true}],
+ "titles": {"47": "…", "48": "…", "49": "…"}}
+JSON
++ VERB_EXIT=0
++ cat /tmp/tmp.0EjoMgiNaH/qa108/verbatim.out
++ cd '/d/Self Project/Skills'
++ bash /tmp/tmp.0EjoMgiNaH/qa108/verbatim.sh
+分級(3 張)— 標「慢」的會演給你看,標「快」的不會:
+  慢  #47 … — 覆蓋 1 條驗收項
+  快  #48 … — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #49 … — 動到判斷邏輯或資料寫入,硬規則一律慢
+
+點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:
+  #47  分級:慢 — 覆蓋 1 條驗收項
+  #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
++ echo 'exit 0'
+exit 0
++ '[' 0 = 0 ']'
++ ok 0 文件照抄跑得起來
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (文件照抄跑得起來)'
+RESULT PASS (文件照抄跑得起來)
++ echo '---- 1c  每張都有分級 + 一句理由(不是只有快/慢)'
+---- 1c  每張都有分級 + 一句理由(不是只有快/慢)
++ grep -nE '^  (快|慢)  #[0-9]+' /tmp/tmp.0EjoMgiNaH/qa108/verbatim.out
+4:  慢  #47 … — 覆蓋 1 條驗收項
+5:  快  #48 … — 沒有覆蓋驗收項,不會有你看得到的行為
+6:  慢  #49 … — 動到判斷邏輯或資料寫入,硬規則一律慢
+++ grep -cE '^  (快|慢)  #[0-9]+.* — .+$' /tmp/tmp.0EjoMgiNaH/qa108/verbatim.out
++ GRADED=3
+++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.0EjoMgiNaH/qa108/verbatim.out
++ TICKETS=3
++ echo '有分級且有理由的行數: 3 / 票數: 3'
+有分級且有理由的行數: 3 / 票數: 3
++ '[' 3 = 3 ']'
++ '[' 3 = 3 ']'
++ ok 0 '3 張票 3 行分級,每行都帶一句理由'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (3 張票 3 行分級,每行都帶一句理由)'
+RESULT PASS (3 張票 3 行分級,每行都帶一句理由)
++ echo '---- 1d 「整批一次列給我看」:一次呼叫、一份清單、張數自己數出來'
+---- 1d 「整批一次列給我看」:一次呼叫、一份清單、張數自己數出來
++ grep -nE '^分級\([0-9]+ 張\)' /tmp/tmp.0EjoMgiNaH/qa108/verbatim.out
+3:分級(3 張)— 標「慢」的會演給你看,標「快」的不會:
+++ grep -cE '^分級\([0-9]+ 張\)' /tmp/tmp.0EjoMgiNaH/qa108/verbatim.out
++ HEAD_N=1
++ '[' 1 = 1 ']'
++ grep -q '^分級(3 張)' /tmp/tmp.0EjoMgiNaH/qa108/verbatim.out
++ ok 0 '一份清單、標題自己報 3 張'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (一份清單、標題自己報 3 張)'
+RESULT PASS (一份清單、標題自己報 3 張)
++ echo '---- 1e  client 當場改任何一張:#47 由「慢」改成「快」,override 餵進去重跑'
+---- 1e  client 當場改任何一張:#47 由「慢」改成「快」,override 餵進去重跑
++ echo '     改之前(同一批,沒有 override):'
+     改之前(同一批,沒有 override):
++ classify '{"mode":"classify","tickets":[{"number":47,"coverage":["1. 切票的時候…"],"judgement":false},{"number":48,"coverage":[],"judgement":false}],"titles":{"47":"分級","48":"骨架"}}'
++ printf %s '{"mode":"classify","tickets":[{"number":47,"coverage":["1. 切票的時候…"],"judgement":false},{"number":48,"coverage":[],"judgement":false}],"titles":{"47":"分級","48":"骨架"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=0
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
+  慢  #47 分級 — 覆蓋 1 條驗收項
+  快  #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+
+點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:
+  #47  分級:慢 — 覆蓋 1 條驗收項
+  #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
++ echo 'exit 0'
+exit 0
++ grep '#47' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ cat /tmp/tmp.0EjoMgiNaH/qa108/before-47.txt
+  慢  #47 分級 — 覆蓋 1 條驗收項
+  #47  分級:慢 — 覆蓋 1 條驗收項
++ echo '     client 說:#47 改成快 —— 把 override 填進去重跑'
+     client 說:#47 改成快 —— 把 override 填進去重跑
++ classify '{"mode":"classify","tickets":[{"number":47,"coverage":["1. 切票的時候…"],"judgement":false,"override":"快"},{"number":48,"coverage":[],"judgement":false}],"titles":{"47":"分級","48":"骨架"}}'
++ printf %s '{"mode":"classify","tickets":[{"number":47,"coverage":["1. 切票的時候…"],"judgement":false,"override":"快"},{"number":48,"coverage":[],"judgement":false}],"titles":{"47":"分級","48":"骨架"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=0
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 分級 — 你當場改成「快」
+  快  #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+
+點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:
+  #47  分級:快 — 你當場改成「快」
+  #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
++ echo 'exit 0'
+exit 0
++ grep '#47' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ cat /tmp/tmp.0EjoMgiNaH/qa108/after-47.txt
+  快  #47 分級 — 你當場改成「快」
+  #47  分級:快 — 你當場改成「快」
++ grep -q '^  #47  分級:慢 — 覆蓋 1 條驗收項$' /tmp/tmp.0EjoMgiNaH/qa108/before-47.txt
++ grep -q '^  #47  分級:快 — 你當場改成「快」$' /tmp/tmp.0EjoMgiNaH/qa108/after-47.txt
++ ok 0 '改後的那一行才是要寫進票的那個,理由也講明是 client 改的'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (改後的那一行才是要寫進票的那個,理由也講明是 client 改的)'
+RESULT PASS (改後的那一行才是要寫進票的那個,理由也講明是 client 改的)
++ echo '     另一個方向:#48 由「快」改成「慢」'
+     另一個方向:#48 由「快」改成「慢」
++ classify '{"mode":"classify","tickets":[{"number":48,"coverage":[],"judgement":false,"override":"慢"}],"titles":{"48":"骨架"}}'
++ printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"judgement":false,"override":"慢"}],"titles":{"48":"骨架"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=0
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
+  慢  #48 骨架 — 你當場改成「慢」
+
+點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:
+  #48  分級:慢 — 你當場改成「慢」
++ echo 'exit 0'
+exit 0
++ grep -q '^  #48  分級:慢 — 你當場改成「慢」$' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 反方向也改得動
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (反方向也改得動)'
+RESULT PASS (反方向也改得動)
++ echo '---- 1f 「改了但沒生效」不會靜靜發生:認不得的 override 當場停'
+---- 1f 「改了但沒生效」不會靜靜發生:認不得的 override 當場停
++ for BAD in fast 快車道 Fast '快 ' ''
++ echo '     override=[fast]'
+     override=[fast]
+++ printf '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"%s"}]}' fast
++ classify '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"fast"}]}'
++ printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"fast"}]}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+override 只能是「快」或「慢」,拿到 'fast' —— 打錯一個字就靜靜照原判寫進票,不猜
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q 'override 只能是' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 'override=[fast] 當場停、沒有印出任何分級行'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (override=[fast] 當場停、沒有印出任何分級行)'
+RESULT PASS (override=[fast] 當場停、沒有印出任何分級行)
++ for BAD in fast 快車道 Fast '快 ' ''
++ echo '     override=[快車道]'
+     override=[快車道]
+++ printf '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"%s"}]}' 快車道
++ classify '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"快車道"}]}'
++ printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"快車道"}]}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+override 只能是「快」或「慢」,拿到 '快車道' —— 打錯一個字就靜靜照原判寫進票,不猜
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q 'override 只能是' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 'override=[快車道] 當場停、沒有印出任何分級行'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (override=[快車道] 當場停、沒有印出任何分級行)'
+RESULT PASS (override=[快車道] 當場停、沒有印出任何分級行)
++ for BAD in fast 快車道 Fast '快 ' ''
++ echo '     override=[Fast]'
+     override=[Fast]
+++ printf '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"%s"}]}' Fast
++ classify '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"Fast"}]}'
++ printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"Fast"}]}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+override 只能是「快」或「慢」,拿到 'Fast' —— 打錯一個字就靜靜照原判寫進票,不猜
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q 'override 只能是' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 'override=[Fast] 當場停、沒有印出任何分級行'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (override=[Fast] 當場停、沒有印出任何分級行)'
+RESULT PASS (override=[Fast] 當場停、沒有印出任何分級行)
++ for BAD in fast 快車道 Fast '快 ' ''
++ echo '     override=[快 ]'
+     override=[快 ]
+++ printf '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"%s"}]}' '快 '
++ classify '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"快 "}]}'
++ printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"快 "}]}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+override 只能是「快」或「慢」,拿到 '快 ' —— 打錯一個字就靜靜照原判寫進票,不猜
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q 'override 只能是' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 'override=[快 ] 當場停、沒有印出任何分級行'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (override=[快 ] 當場停、沒有印出任何分級行)'
+RESULT PASS (override=[快 ] 當場停、沒有印出任何分級行)
++ for BAD in fast 快車道 Fast '快 ' ''
++ echo '     override=[]'
+     override=[]
+++ printf '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"%s"}]}' ''
++ classify '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":""}]}'
++ printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":""}]}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+override 只能是「快」或「慢」,拿到 '' —— 打錯一個字就靜靜照原判寫進票,不猜
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q 'override 只能是' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 'override=[] 當場停、沒有印出任何分級行'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (override=[] 當場停、沒有印出任何分級行)'
+RESULT PASS (override=[] 當場停、沒有印出任何分級行)
++ echo '---- 1g  分級行格式三邊 byte 對齊:SKILL.md 示範 / batch.py 印的 / validate.py 咬的'
+---- 1g  分級行格式三邊 byte 對齊:SKILL.md 示範 / batch.py 印的 / validate.py 咬的
++ python - '/d/Self Project/Skills'
+batch.py 印的       : '分級:慢 — 覆蓋 2 條驗收項'
+bytes               : e5 88 86 e7 b4 9a 3a e6 85 a2 20 e2 80 94 20 e8 a6 86 e8 93 8b 20 32 20 e6 a2 9d e9 a9 97 e6 94 b6 e9 a0 85
+SKILL.md 示範的行號  : [57]
+validate 掃到的分級行 : ['分級:慢 — 覆蓋 2 條驗收項']
+validate 判格式 OK   : True
+validate 對出貨檔的抱怨: []
+三邊對齊 OK
++ ok 0 'SKILL.md 示範 = batch.py 印出來 = validate.py 咬的,byte 對齊'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (SKILL.md 示範 = batch.py 印出來 = validate.py 咬的,byte 對齊)'
+RESULT PASS (SKILL.md 示範 = batch.py 印出來 = validate.py 咬的,byte 對齊)
++ echo ===================================================================
+===================================================================
++ echo '==== AC4  動到判斷邏輯/篩選條件/資料寫入的票,即使沒有可看的行為也一定被標成「慢」'
+==== AC4  動到判斷邏輯/篩選條件/資料寫入的票,即使沒有可看的行為也一定被標成「慢」
++ echo ===================================================================
+===================================================================
++ echo '---- 4a  judgement=true 而 coverage=[](沒有可看的行為)→ 慢'
+---- 4a  judgement=true 而 coverage=[](沒有可看的行為)→ 慢
++ classify '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true}],"titles":{"49":"算票"}}'
++ printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true}],"titles":{"49":"算票"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=0
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+
+點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
++ echo 'exit 0'
+exit 0
++ '[' 0 = 0 ']'
++ grep -q '^  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢$' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 沒有可看的行為也照樣慢
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (沒有可看的行為也照樣慢)'
+RESULT PASS (沒有可看的行為也照樣慢)
++ echo '---- 4b  硬規則蓋過 client 的 override:client 想改成快 → 當場停'
+---- 4b  硬規則蓋過 client 的 override:client 想改成快 → 當場停
++ classify '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"快"}],"titles":{"49":"算票"}}'
++ printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"快"}],"titles":{"49":"算票"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它,要改請先改 judgement 旗標
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q '硬規則一律慢 —— 改不成快' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ grep -q 分級: /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 當場停、沒有靜靜忽略、沒有印出任何一行分級
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (當場停、沒有靜靜忽略、沒有印出任何一行分級)'
+RESULT PASS (當場停、沒有靜靜忽略、沒有印出任何一行分級)
++ echo '     改成「慢」是同一個結果,不用停'
+     改成「慢」是同一個結果,不用停
++ classify '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"慢"}],"titles":{"49":"算票"}}'
++ printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"慢"}],"titles":{"49":"算票"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=0
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+
+點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
++ echo 'exit 0'
+exit 0
++ '[' 0 = 0 ']'
++ grep -q '^  #49  分級:慢' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 '同向的 override 不擋'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (同向的 override 不擋)'
+RESULT PASS (同向的 override 不擋)
++ echo '---- 4c  硬規則票遇到認不得的 override 一樣當場停(那條路的結果剛好也是慢)'
+---- 4c  硬規則票遇到認不得的 override 一樣當場停(那條路的結果剛好也是慢)
++ for BAD in fast ''
+++ printf '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"%s"}]}' fast
++ classify '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"fast"}]}'
++ printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"fast"}]}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+override 只能是「快」或「慢」,拿到 'fast' —— 打錯一個字就靜靜照原判寫進票,不猜
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q 'override 只能是' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 'judgement=true + override=[fast] 也停在 override 那關'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (judgement=true + override=[fast] 也停在 override 那關)'
+RESULT PASS (judgement=true + override=[fast] 也停在 override 那關)
++ for BAD in fast ''
+++ printf '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"%s"}]}' ''
++ classify '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":""}]}'
++ printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":""}]}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+override 只能是「快」或「慢」,拿到 '' —— 打錯一個字就靜靜照原判寫進票,不猜
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q 'override 只能是' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ ok 0 'judgement=true + override=[] 也停在 override 那關'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (judgement=true + override=[] 也停在 override 那關)'
+RESULT PASS (judgement=true + override=[] 也停在 override 那關)
++ echo '---- 4d  拿「沒有任何路徑會靜靜落到快」當尺,掃過 classify_one 的所有分支'
+---- 4d  拿「沒有任何路徑會靜靜落到快」當尺,掃過 classify_one 的所有分支
++ python - '/d/Self Project/Skills/skills/build-batch/batch.py'
+  coverage=[]                       judgement=False    override=None      -> 快
+  coverage=[]                       judgement=False    override='快'       -> 快
+  coverage=[]                       judgement=False    override='慢'       -> 慢
+  coverage=[]                       judgement=False    override='fast'    -> 停
+  coverage=[]                       judgement=False    override=''        -> 停
+  coverage=[]                       judgement=False    override='快 '      -> 停
+  coverage=[]                       judgement=False    override='快車道'     -> 停
+  coverage=[]                       judgement=False    override='Fast'    -> 停
+  coverage=[]                       judgement=True     override=None      -> 慢
+  coverage=[]                       judgement=True     override='快'       -> 停
+  coverage=[]                       judgement=True     override='慢'       -> 慢
+  coverage=[]                       judgement=True     override='fast'    -> 停
+  coverage=[]                       judgement=True     override=''        -> 停
+  coverage=[]                       judgement=True     override='快 '      -> 停
+  coverage=[]                       judgement=True     override='快車道'     -> 停
+  coverage=[]                       judgement=True     override='Fast'    -> 停
+  coverage=[]                       judgement=0        override=None      -> 快
+  coverage=[]                       judgement=0        override='快'       -> 快
+  coverage=[]                       judgement=0        override='慢'       -> 慢
+  coverage=[]                       judgement=0        override='fast'    -> 停
+  coverage=[]                       judgement=0        override=''        -> 停
+  coverage=[]                       judgement=0        override='快 '      -> 停
+  coverage=[]                       judgement=0        override='快車道'     -> 停
+  coverage=[]                       judgement=0        override='Fast'    -> 停
+  coverage=[]                       judgement=1        override=None      -> 慢
+  coverage=[]                       judgement=1        override='快'       -> 停
+  coverage=[]                       judgement=1        override='慢'       -> 慢
+  coverage=[]                       judgement=1        override='fast'    -> 停
+  coverage=[]                       judgement=1        override=''        -> 停
+  coverage=[]                       judgement=1        override='快 '      -> 停
+  coverage=[]                       judgement=1        override='快車道'     -> 停
+  coverage=[]                       judgement=1        override='Fast'    -> 停
+  coverage=[]                       judgement=None     override=None      -> 快
+  coverage=[]                       judgement=None     override='快'       -> 快
+  coverage=[]                       judgement=None     override='慢'       -> 慢
+  coverage=[]                       judgement=None     override='fast'    -> 停
+  coverage=[]                       judgement=None     override=''        -> 停
+  coverage=[]                       judgement=None     override='快 '      -> 停
+  coverage=[]                       judgement=None     override='快車道'     -> 停
+  coverage=[]                       judgement=None     override='Fast'    -> 停
+  coverage=[]                       judgement='false'  override=None      -> 慢
+  coverage=[]                       judgement='false'  override='快'       -> 停
+  coverage=[]                       judgement='false'  override='慢'       -> 慢
+  coverage=[]                       judgement='false'  override='fast'    -> 停
+  coverage=[]                       judgement='false'  override=''        -> 停
+  coverage=[]                       judgement='false'  override='快 '      -> 停
+  coverage=[]                       judgement='false'  override='快車道'     -> 停
+  coverage=[]                       judgement='false'  override='Fast'    -> 停
+  coverage=[]                       judgement=''       override=None      -> 快
+  coverage=[]                       judgement=''       override='快'       -> 快
+  coverage=[]                       judgement=''       override='慢'       -> 慢
+  coverage=[]                       judgement=''       override='fast'    -> 停
+  coverage=[]                       judgement=''       override=''        -> 停
+  coverage=[]                       judgement=''       override='快 '      -> 停
+  coverage=[]                       judgement=''       override='快車道'     -> 停
+  coverage=[]                       judgement=''       override='Fast'    -> 停
+  coverage=['1. 登入頁']               judgement=False    override=None      -> 慢
+  coverage=['1. 登入頁']               judgement=False    override='快'       -> 快
+  coverage=['1. 登入頁']               judgement=False    override='慢'       -> 慢
+  coverage=['1. 登入頁']               judgement=False    override='fast'    -> 停
+  coverage=['1. 登入頁']               judgement=False    override=''        -> 停
+  coverage=['1. 登入頁']               judgement=False    override='快 '      -> 停
+  coverage=['1. 登入頁']               judgement=False    override='快車道'     -> 停
+  coverage=['1. 登入頁']               judgement=False    override='Fast'    -> 停
+  coverage=['1. 登入頁']               judgement=True     override=None      -> 慢
+  coverage=['1. 登入頁']               judgement=True     override='快'       -> 停
+  coverage=['1. 登入頁']               judgement=True     override='慢'       -> 慢
+  coverage=['1. 登入頁']               judgement=True     override='fast'    -> 停
+  coverage=['1. 登入頁']               judgement=True     override=''        -> 停
+  coverage=['1. 登入頁']               judgement=True     override='快 '      -> 停
+  coverage=['1. 登入頁']               judgement=True     override='快車道'     -> 停
+  coverage=['1. 登入頁']               judgement=True     override='Fast'    -> 停
+  coverage=['1. 登入頁']               judgement=0        override=None      -> 慢
+  coverage=['1. 登入頁']               judgement=0        override='快'       -> 快
+  coverage=['1. 登入頁']               judgement=0        override='慢'       -> 慢
+  coverage=['1. 登入頁']               judgement=0        override='fast'    -> 停
+  coverage=['1. 登入頁']               judgement=0        override=''        -> 停
+  coverage=['1. 登入頁']               judgement=0        override='快 '      -> 停
+  coverage=['1. 登入頁']               judgement=0        override='快車道'     -> 停
+  coverage=['1. 登入頁']               judgement=0        override='Fast'    -> 停
+  coverage=['1. 登入頁']               judgement=1        override=None      -> 慢
+  coverage=['1. 登入頁']               judgement=1        override='快'       -> 停
+  coverage=['1. 登入頁']               judgement=1        override='慢'       -> 慢
+  coverage=['1. 登入頁']               judgement=1        override='fast'    -> 停
+  coverage=['1. 登入頁']               judgement=1        override=''        -> 停
+  coverage=['1. 登入頁']               judgement=1        override='快 '      -> 停
+  coverage=['1. 登入頁']               judgement=1        override='快車道'     -> 停
+  coverage=['1. 登入頁']               judgement=1        override='Fast'    -> 停
+  coverage=['1. 登入頁']               judgement=None     override=None      -> 慢
+  coverage=['1. 登入頁']               judgement=None     override='快'       -> 快
+  coverage=['1. 登入頁']               judgement=None     override='慢'       -> 慢
+  coverage=['1. 登入頁']               judgement=None     override='fast'    -> 停
+  coverage=['1. 登入頁']               judgement=None     override=''        -> 停
+  coverage=['1. 登入頁']               judgement=None     override='快 '      -> 停
+  coverage=['1. 登入頁']               judgement=None     override='快車道'     -> 停
+  coverage=['1. 登入頁']               judgement=None     override='Fast'    -> 停
+  coverage=['1. 登入頁']               judgement='false'  override=None      -> 慢
+  coverage=['1. 登入頁']               judgement='false'  override='快'       -> 停
+  coverage=['1. 登入頁']               judgement='false'  override='慢'       -> 慢
+  coverage=['1. 登入頁']               judgement='false'  override='fast'    -> 停
+  coverage=['1. 登入頁']               judgement='false'  override=''        -> 停
+  coverage=['1. 登入頁']               judgement='false'  override='快 '      -> 停
+  coverage=['1. 登入頁']               judgement='false'  override='快車道'     -> 停
+  coverage=['1. 登入頁']               judgement='false'  override='Fast'    -> 停
+  coverage=['1. 登入頁']               judgement=''       override=None      -> 慢
+  coverage=['1. 登入頁']               judgement=''       override='快'       -> 快
+  coverage=['1. 登入頁']               judgement=''       override='慢'       -> 慢
+  coverage=['1. 登入頁']               judgement=''       override='fast'    -> 停
+  coverage=['1. 登入頁']               judgement=''       override=''        -> 停
+  coverage=['1. 登入頁']               judgement=''       override='快 '      -> 停
+  coverage=['1. 登入頁']               judgement=''       override='快車道'     -> 停
+  coverage=['1. 登入頁']               judgement=''       override='Fast'    -> 停
+  coverage=['1. a','2. b']          judgement=False    override=None      -> 慢
+  coverage=['1. a','2. b']          judgement=False    override='快'       -> 快
+  coverage=['1. a','2. b']          judgement=False    override='慢'       -> 慢
+  coverage=['1. a','2. b']          judgement=False    override='fast'    -> 停
+  coverage=['1. a','2. b']          judgement=False    override=''        -> 停
+  coverage=['1. a','2. b']          judgement=False    override='快 '      -> 停
+  coverage=['1. a','2. b']          judgement=False    override='快車道'     -> 停
+  coverage=['1. a','2. b']          judgement=False    override='Fast'    -> 停
+  coverage=['1. a','2. b']          judgement=True     override=None      -> 慢
+  coverage=['1. a','2. b']          judgement=True     override='快'       -> 停
+  coverage=['1. a','2. b']          judgement=True     override='慢'       -> 慢
+  coverage=['1. a','2. b']          judgement=True     override='fast'    -> 停
+  coverage=['1. a','2. b']          judgement=True     override=''        -> 停
+  coverage=['1. a','2. b']          judgement=True     override='快 '      -> 停
+  coverage=['1. a','2. b']          judgement=True     override='快車道'     -> 停
+  coverage=['1. a','2. b']          judgement=True     override='Fast'    -> 停
+  coverage=['1. a','2. b']          judgement=0        override=None      -> 慢
+  coverage=['1. a','2. b']          judgement=0        override='快'       -> 快
+  coverage=['1. a','2. b']          judgement=0        override='慢'       -> 慢
+  coverage=['1. a','2. b']          judgement=0        override='fast'    -> 停
+  coverage=['1. a','2. b']          judgement=0        override=''        -> 停
+  coverage=['1. a','2. b']          judgement=0        override='快 '      -> 停
+  coverage=['1. a','2. b']          judgement=0        override='快車道'     -> 停
+  coverage=['1. a','2. b']          judgement=0        override='Fast'    -> 停
+  coverage=['1. a','2. b']          judgement=1        override=None      -> 慢
+  coverage=['1. a','2. b']          judgement=1        override='快'       -> 停
+  coverage=['1. a','2. b']          judgement=1        override='慢'       -> 慢
+  coverage=['1. a','2. b']          judgement=1        override='fast'    -> 停
+  coverage=['1. a','2. b']          judgement=1        override=''        -> 停
+  coverage=['1. a','2. b']          judgement=1        override='快 '      -> 停
+  coverage=['1. a','2. b']          judgement=1        override='快車道'     -> 停
+  coverage=['1. a','2. b']          judgement=1        override='Fast'    -> 停
+  coverage=['1. a','2. b']          judgement=None     override=None      -> 慢
+  coverage=['1. a','2. b']          judgement=None     override='快'       -> 快
+  coverage=['1. a','2. b']          judgement=None     override='慢'       -> 慢
+  coverage=['1. a','2. b']          judgement=None     override='fast'    -> 停
+  coverage=['1. a','2. b']          judgement=None     override=''        -> 停
+  coverage=['1. a','2. b']          judgement=None     override='快 '      -> 停
+  coverage=['1. a','2. b']          judgement=None     override='快車道'     -> 停
+  coverage=['1. a','2. b']          judgement=None     override='Fast'    -> 停
+  coverage=['1. a','2. b']          judgement='false'  override=None      -> 慢
+  coverage=['1. a','2. b']          judgement='false'  override='快'       -> 停
+  coverage=['1. a','2. b']          judgement='false'  override='慢'       -> 慢
+  coverage=['1. a','2. b']          judgement='false'  override='fast'    -> 停
+  coverage=['1. a','2. b']          judgement='false'  override=''        -> 停
+  coverage=['1. a','2. b']          judgement='false'  override='快 '      -> 停
+  coverage=['1. a','2. b']          judgement='false'  override='快車道'     -> 停
+  coverage=['1. a','2. b']          judgement='false'  override='Fast'    -> 停
+  coverage=['1. a','2. b']          judgement=''       override=None      -> 慢
+  coverage=['1. a','2. b']          judgement=''       override='快'       -> 快
+  coverage=['1. a','2. b']          judgement=''       override='慢'       -> 慢
+  coverage=['1. a','2. b']          judgement=''       override='fast'    -> 停
+  coverage=['1. a','2. b']          judgement=''       override=''        -> 停
+  coverage=['1. a','2. b']          judgement=''       override='快 '      -> 停
+  coverage=['1. a','2. b']          judgement=''       override='快車道'     -> 停
+  coverage=['1. a','2. b']          judgement=''       override='Fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=False    override=None      -> 快
+  coverage=['無 — 由後續票…']            judgement=False    override='快'       -> 快
+  coverage=['無 — 由後續票…']            judgement=False    override='慢'       -> 慢
+  coverage=['無 — 由後續票…']            judgement=False    override='fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=False    override=''        -> 停
+  coverage=['無 — 由後續票…']            judgement=False    override='快 '      -> 停
+  coverage=['無 — 由後續票…']            judgement=False    override='快車道'     -> 停
+  coverage=['無 — 由後續票…']            judgement=False    override='Fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=True     override=None      -> 慢
+  coverage=['無 — 由後續票…']            judgement=True     override='快'       -> 停
+  coverage=['無 — 由後續票…']            judgement=True     override='慢'       -> 慢
+  coverage=['無 — 由後續票…']            judgement=True     override='fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=True     override=''        -> 停
+  coverage=['無 — 由後續票…']            judgement=True     override='快 '      -> 停
+  coverage=['無 — 由後續票…']            judgement=True     override='快車道'     -> 停
+  coverage=['無 — 由後續票…']            judgement=True     override='Fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=0        override=None      -> 快
+  coverage=['無 — 由後續票…']            judgement=0        override='快'       -> 快
+  coverage=['無 — 由後續票…']            judgement=0        override='慢'       -> 慢
+  coverage=['無 — 由後續票…']            judgement=0        override='fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=0        override=''        -> 停
+  coverage=['無 — 由後續票…']            judgement=0        override='快 '      -> 停
+  coverage=['無 — 由後續票…']            judgement=0        override='快車道'     -> 停
+  coverage=['無 — 由後續票…']            judgement=0        override='Fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=1        override=None      -> 慢
+  coverage=['無 — 由後續票…']            judgement=1        override='快'       -> 停
+  coverage=['無 — 由後續票…']            judgement=1        override='慢'       -> 慢
+  coverage=['無 — 由後續票…']            judgement=1        override='fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=1        override=''        -> 停
+  coverage=['無 — 由後續票…']            judgement=1        override='快 '      -> 停
+  coverage=['無 — 由後續票…']            judgement=1        override='快車道'     -> 停
+  coverage=['無 — 由後續票…']            judgement=1        override='Fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=None     override=None      -> 快
+  coverage=['無 — 由後續票…']            judgement=None     override='快'       -> 快
+  coverage=['無 — 由後續票…']            judgement=None     override='慢'       -> 慢
+  coverage=['無 — 由後續票…']            judgement=None     override='fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=None     override=''        -> 停
+  coverage=['無 — 由後續票…']            judgement=None     override='快 '      -> 停
+  coverage=['無 — 由後續票…']            judgement=None     override='快車道'     -> 停
+  coverage=['無 — 由後續票…']            judgement=None     override='Fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement='false'  override=None      -> 慢
+  coverage=['無 — 由後續票…']            judgement='false'  override='快'       -> 停
+  coverage=['無 — 由後續票…']            judgement='false'  override='慢'       -> 慢
+  coverage=['無 — 由後續票…']            judgement='false'  override='fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement='false'  override=''        -> 停
+  coverage=['無 — 由後續票…']            judgement='false'  override='快 '      -> 停
+  coverage=['無 — 由後續票…']            judgement='false'  override='快車道'     -> 停
+  coverage=['無 — 由後續票…']            judgement='false'  override='Fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=''       override=None      -> 快
+  coverage=['無 — 由後續票…']            judgement=''       override='快'       -> 快
+  coverage=['無 — 由後續票…']            judgement=''       override='慢'       -> 慢
+  coverage=['無 — 由後續票…']            judgement=''       override='fast'    -> 停
+  coverage=['無 — 由後續票…']            judgement=''       override=''        -> 停
+  coverage=['無 — 由後續票…']            judgement=''       override='快 '      -> 停
+  coverage=['無 — 由後續票…']            judgement=''       override='快車道'     -> 停
+  coverage=['無 — 由後續票…']            judgement=''       override='Fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=False    override=None      -> 快
+  coverage=['無 - 由後續票…']            judgement=False    override='快'       -> 快
+  coverage=['無 - 由後續票…']            judgement=False    override='慢'       -> 慢
+  coverage=['無 - 由後續票…']            judgement=False    override='fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=False    override=''        -> 停
+  coverage=['無 - 由後續票…']            judgement=False    override='快 '      -> 停
+  coverage=['無 - 由後續票…']            judgement=False    override='快車道'     -> 停
+  coverage=['無 - 由後續票…']            judgement=False    override='Fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=True     override=None      -> 慢
+  coverage=['無 - 由後續票…']            judgement=True     override='快'       -> 停
+  coverage=['無 - 由後續票…']            judgement=True     override='慢'       -> 慢
+  coverage=['無 - 由後續票…']            judgement=True     override='fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=True     override=''        -> 停
+  coverage=['無 - 由後續票…']            judgement=True     override='快 '      -> 停
+  coverage=['無 - 由後續票…']            judgement=True     override='快車道'     -> 停
+  coverage=['無 - 由後續票…']            judgement=True     override='Fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=0        override=None      -> 快
+  coverage=['無 - 由後續票…']            judgement=0        override='快'       -> 快
+  coverage=['無 - 由後續票…']            judgement=0        override='慢'       -> 慢
+  coverage=['無 - 由後續票…']            judgement=0        override='fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=0        override=''        -> 停
+  coverage=['無 - 由後續票…']            judgement=0        override='快 '      -> 停
+  coverage=['無 - 由後續票…']            judgement=0        override='快車道'     -> 停
+  coverage=['無 - 由後續票…']            judgement=0        override='Fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=1        override=None      -> 慢
+  coverage=['無 - 由後續票…']            judgement=1        override='快'       -> 停
+  coverage=['無 - 由後續票…']            judgement=1        override='慢'       -> 慢
+  coverage=['無 - 由後續票…']            judgement=1        override='fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=1        override=''        -> 停
+  coverage=['無 - 由後續票…']            judgement=1        override='快 '      -> 停
+  coverage=['無 - 由後續票…']            judgement=1        override='快車道'     -> 停
+  coverage=['無 - 由後續票…']            judgement=1        override='Fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=None     override=None      -> 快
+  coverage=['無 - 由後續票…']            judgement=None     override='快'       -> 快
+  coverage=['無 - 由後續票…']            judgement=None     override='慢'       -> 慢
+  coverage=['無 - 由後續票…']            judgement=None     override='fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=None     override=''        -> 停
+  coverage=['無 - 由後續票…']            judgement=None     override='快 '      -> 停
+  coverage=['無 - 由後續票…']            judgement=None     override='快車道'     -> 停
+  coverage=['無 - 由後續票…']            judgement=None     override='Fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement='false'  override=None      -> 慢
+  coverage=['無 - 由後續票…']            judgement='false'  override='快'       -> 停
+  coverage=['無 - 由後續票…']            judgement='false'  override='慢'       -> 慢
+  coverage=['無 - 由後續票…']            judgement='false'  override='fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement='false'  override=''        -> 停
+  coverage=['無 - 由後續票…']            judgement='false'  override='快 '      -> 停
+  coverage=['無 - 由後續票…']            judgement='false'  override='快車道'     -> 停
+  coverage=['無 - 由後續票…']            judgement='false'  override='Fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=''       override=None      -> 快
+  coverage=['無 - 由後續票…']            judgement=''       override='快'       -> 快
+  coverage=['無 - 由後續票…']            judgement=''       override='慢'       -> 慢
+  coverage=['無 - 由後續票…']            judgement=''       override='fast'    -> 停
+  coverage=['無 - 由後續票…']            judgement=''       override=''        -> 停
+  coverage=['無 - 由後續票…']            judgement=''       override='快 '      -> 停
+  coverage=['無 - 由後續票…']            judgement=''       override='快車道'     -> 停
+  coverage=['無 - 由後續票…']            judgement=''       override='Fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=False    override=None      -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=False    override='快'       -> 快
+  coverage=['無障礙:鍵盤走得完']            judgement=False    override='慢'       -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=False    override='fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=False    override=''        -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=False    override='快 '      -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=False    override='快車道'     -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=False    override='Fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=True     override=None      -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=True     override='快'       -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=True     override='慢'       -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=True     override='fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=True     override=''        -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=True     override='快 '      -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=True     override='快車道'     -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=True     override='Fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=0        override=None      -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=0        override='快'       -> 快
+  coverage=['無障礙:鍵盤走得完']            judgement=0        override='慢'       -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=0        override='fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=0        override=''        -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=0        override='快 '      -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=0        override='快車道'     -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=0        override='Fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=1        override=None      -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=1        override='快'       -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=1        override='慢'       -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=1        override='fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=1        override=''        -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=1        override='快 '      -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=1        override='快車道'     -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=1        override='Fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=None     override=None      -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=None     override='快'       -> 快
+  coverage=['無障礙:鍵盤走得完']            judgement=None     override='慢'       -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=None     override='fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=None     override=''        -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=None     override='快 '      -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=None     override='快車道'     -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=None     override='Fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement='false'  override=None      -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement='false'  override='快'       -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement='false'  override='慢'       -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement='false'  override='fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement='false'  override=''        -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement='false'  override='快 '      -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement='false'  override='快車道'     -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement='false'  override='Fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=''       override=None      -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=''       override='快'       -> 快
+  coverage=['無障礙:鍵盤走得完']            judgement=''       override='慢'       -> 慢
+  coverage=['無障礙:鍵盤走得完']            judgement=''       override='fast'    -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=''       override=''        -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=''       override='快 '      -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=''       override='快車道'     -> 停
+  coverage=['無障礙:鍵盤走得完']            judgement=''       override='Fast'    -> 停
+  coverage=['']                     judgement=False    override=None      -> 慢
+  coverage=['']                     judgement=False    override='快'       -> 快
+  coverage=['']                     judgement=False    override='慢'       -> 慢
+  coverage=['']                     judgement=False    override='fast'    -> 停
+  coverage=['']                     judgement=False    override=''        -> 停
+  coverage=['']                     judgement=False    override='快 '      -> 停
+  coverage=['']                     judgement=False    override='快車道'     -> 停
+  coverage=['']                     judgement=False    override='Fast'    -> 停
+  coverage=['']                     judgement=True     override=None      -> 慢
+  coverage=['']                     judgement=True     override='快'       -> 停
+  coverage=['']                     judgement=True     override='慢'       -> 慢
+  coverage=['']                     judgement=True     override='fast'    -> 停
+  coverage=['']                     judgement=True     override=''        -> 停
+  coverage=['']                     judgement=True     override='快 '      -> 停
+  coverage=['']                     judgement=True     override='快車道'     -> 停
+  coverage=['']                     judgement=True     override='Fast'    -> 停
+  coverage=['']                     judgement=0        override=None      -> 慢
+  coverage=['']                     judgement=0        override='快'       -> 快
+  coverage=['']                     judgement=0        override='慢'       -> 慢
+  coverage=['']                     judgement=0        override='fast'    -> 停
+  coverage=['']                     judgement=0        override=''        -> 停
+  coverage=['']                     judgement=0        override='快 '      -> 停
+  coverage=['']                     judgement=0        override='快車道'     -> 停
+  coverage=['']                     judgement=0        override='Fast'    -> 停
+  coverage=['']                     judgement=1        override=None      -> 慢
+  coverage=['']                     judgement=1        override='快'       -> 停
+  coverage=['']                     judgement=1        override='慢'       -> 慢
+  coverage=['']                     judgement=1        override='fast'    -> 停
+  coverage=['']                     judgement=1        override=''        -> 停
+  coverage=['']                     judgement=1        override='快 '      -> 停
+  coverage=['']                     judgement=1        override='快車道'     -> 停
+  coverage=['']                     judgement=1        override='Fast'    -> 停
+  coverage=['']                     judgement=None     override=None      -> 慢
+  coverage=['']                     judgement=None     override='快'       -> 快
+  coverage=['']                     judgement=None     override='慢'       -> 慢
+  coverage=['']                     judgement=None     override='fast'    -> 停
+  coverage=['']                     judgement=None     override=''        -> 停
+  coverage=['']                     judgement=None     override='快 '      -> 停
+  coverage=['']                     judgement=None     override='快車道'     -> 停
+  coverage=['']                     judgement=None     override='Fast'    -> 停
+  coverage=['']                     judgement='false'  override=None      -> 慢
+  coverage=['']                     judgement='false'  override='快'       -> 停
+  coverage=['']                     judgement='false'  override='慢'       -> 慢
+  coverage=['']                     judgement='false'  override='fast'    -> 停
+  coverage=['']                     judgement='false'  override=''        -> 停
+  coverage=['']                     judgement='false'  override='快 '      -> 停
+  coverage=['']                     judgement='false'  override='快車道'     -> 停
+  coverage=['']                     judgement='false'  override='Fast'    -> 停
+  coverage=['']                     judgement=''       override=None      -> 慢
+  coverage=['']                     judgement=''       override='快'       -> 快
+  coverage=['']                     judgement=''       override='慢'       -> 慢
+  coverage=['']                     judgement=''       override='fast'    -> 停
+  coverage=['']                     judgement=''       override=''        -> 停
+  coverage=['']                     judgement=''       override='快 '      -> 停
+  coverage=['']                     judgement=''       override='快車道'     -> 停
+  coverage=['']                     judgement=''       override='Fast'    -> 停
+  coverage=''                       judgement=False    override=None      -> 快
+  coverage=''                       judgement=False    override='快'       -> 快
+  coverage=''                       judgement=False    override='慢'       -> 慢
+  coverage=''                       judgement=False    override='fast'    -> 停
+  coverage=''                       judgement=False    override=''        -> 停
+  coverage=''                       judgement=False    override='快 '      -> 停
+  coverage=''                       judgement=False    override='快車道'     -> 停
+  coverage=''                       judgement=False    override='Fast'    -> 停
+  coverage=''                       judgement=True     override=None      -> 慢
+  coverage=''                       judgement=True     override='快'       -> 停
+  coverage=''                       judgement=True     override='慢'       -> 慢
+  coverage=''                       judgement=True     override='fast'    -> 停
+  coverage=''                       judgement=True     override=''        -> 停
+  coverage=''                       judgement=True     override='快 '      -> 停
+  coverage=''                       judgement=True     override='快車道'     -> 停
+  coverage=''                       judgement=True     override='Fast'    -> 停
+  coverage=''                       judgement=0        override=None      -> 快
+  coverage=''                       judgement=0        override='快'       -> 快
+  coverage=''                       judgement=0        override='慢'       -> 慢
+  coverage=''                       judgement=0        override='fast'    -> 停
+  coverage=''                       judgement=0        override=''        -> 停
+  coverage=''                       judgement=0        override='快 '      -> 停
+  coverage=''                       judgement=0        override='快車道'     -> 停
+  coverage=''                       judgement=0        override='Fast'    -> 停
+  coverage=''                       judgement=1        override=None      -> 慢
+  coverage=''                       judgement=1        override='快'       -> 停
+  coverage=''                       judgement=1        override='慢'       -> 慢
+  coverage=''                       judgement=1        override='fast'    -> 停
+  coverage=''                       judgement=1        override=''        -> 停
+  coverage=''                       judgement=1        override='快 '      -> 停
+  coverage=''                       judgement=1        override='快車道'     -> 停
+  coverage=''                       judgement=1        override='Fast'    -> 停
+  coverage=''                       judgement=None     override=None      -> 快
+  coverage=''                       judgement=None     override='快'       -> 快
+  coverage=''                       judgement=None     override='慢'       -> 慢
+  coverage=''                       judgement=None     override='fast'    -> 停
+  coverage=''                       judgement=None     override=''        -> 停
+  coverage=''                       judgement=None     override='快 '      -> 停
+  coverage=''                       judgement=None     override='快車道'     -> 停
+  coverage=''                       judgement=None     override='Fast'    -> 停
+  coverage=''                       judgement='false'  override=None      -> 慢
+  coverage=''                       judgement='false'  override='快'       -> 停
+  coverage=''                       judgement='false'  override='慢'       -> 慢
+  coverage=''                       judgement='false'  override='fast'    -> 停
+  coverage=''                       judgement='false'  override=''        -> 停
+  coverage=''                       judgement='false'  override='快 '      -> 停
+  coverage=''                       judgement='false'  override='快車道'     -> 停
+  coverage=''                       judgement='false'  override='Fast'    -> 停
+  coverage=''                       judgement=''       override=None      -> 快
+  coverage=''                       judgement=''       override='快'       -> 快
+  coverage=''                       judgement=''       override='慢'       -> 慢
+  coverage=''                       judgement=''       override='fast'    -> 停
+  coverage=''                       judgement=''       override=''        -> 停
+  coverage=''                       judgement=''       override='快 '      -> 停
+  coverage=''                       judgement=''       override='快車道'     -> 停
+  coverage=''                       judgement=''       override='Fast'    -> 停
+  coverage='1. 登入頁'                 judgement=False    override=None      -> 慢
+  coverage='1. 登入頁'                 judgement=False    override='快'       -> 快
+  coverage='1. 登入頁'                 judgement=False    override='慢'       -> 慢
+  coverage='1. 登入頁'                 judgement=False    override='fast'    -> 停
+  coverage='1. 登入頁'                 judgement=False    override=''        -> 停
+  coverage='1. 登入頁'                 judgement=False    override='快 '      -> 停
+  coverage='1. 登入頁'                 judgement=False    override='快車道'     -> 停
+  coverage='1. 登入頁'                 judgement=False    override='Fast'    -> 停
+  coverage='1. 登入頁'                 judgement=True     override=None      -> 慢
+  coverage='1. 登入頁'                 judgement=True     override='快'       -> 停
+  coverage='1. 登入頁'                 judgement=True     override='慢'       -> 慢
+  coverage='1. 登入頁'                 judgement=True     override='fast'    -> 停
+  coverage='1. 登入頁'                 judgement=True     override=''        -> 停
+  coverage='1. 登入頁'                 judgement=True     override='快 '      -> 停
+  coverage='1. 登入頁'                 judgement=True     override='快車道'     -> 停
+  coverage='1. 登入頁'                 judgement=True     override='Fast'    -> 停
+  coverage='1. 登入頁'                 judgement=0        override=None      -> 慢
+  coverage='1. 登入頁'                 judgement=0        override='快'       -> 快
+  coverage='1. 登入頁'                 judgement=0        override='慢'       -> 慢
+  coverage='1. 登入頁'                 judgement=0        override='fast'    -> 停
+  coverage='1. 登入頁'                 judgement=0        override=''        -> 停
+  coverage='1. 登入頁'                 judgement=0        override='快 '      -> 停
+  coverage='1. 登入頁'                 judgement=0        override='快車道'     -> 停
+  coverage='1. 登入頁'                 judgement=0        override='Fast'    -> 停
+  coverage='1. 登入頁'                 judgement=1        override=None      -> 慢
+  coverage='1. 登入頁'                 judgement=1        override='快'       -> 停
+  coverage='1. 登入頁'                 judgement=1        override='慢'       -> 慢
+  coverage='1. 登入頁'                 judgement=1        override='fast'    -> 停
+  coverage='1. 登入頁'                 judgement=1        override=''        -> 停
+  coverage='1. 登入頁'                 judgement=1        override='快 '      -> 停
+  coverage='1. 登入頁'                 judgement=1        override='快車道'     -> 停
+  coverage='1. 登入頁'                 judgement=1        override='Fast'    -> 停
+  coverage='1. 登入頁'                 judgement=None     override=None      -> 慢
+  coverage='1. 登入頁'                 judgement=None     override='快'       -> 快
+  coverage='1. 登入頁'                 judgement=None     override='慢'       -> 慢
+  coverage='1. 登入頁'                 judgement=None     override='fast'    -> 停
+  coverage='1. 登入頁'                 judgement=None     override=''        -> 停
+  coverage='1. 登入頁'                 judgement=None     override='快 '      -> 停
+  coverage='1. 登入頁'                 judgement=None     override='快車道'     -> 停
+  coverage='1. 登入頁'                 judgement=None     override='Fast'    -> 停
+  coverage='1. 登入頁'                 judgement='false'  override=None      -> 慢
+  coverage='1. 登入頁'                 judgement='false'  override='快'       -> 停
+  coverage='1. 登入頁'                 judgement='false'  override='慢'       -> 慢
+  coverage='1. 登入頁'                 judgement='false'  override='fast'    -> 停
+  coverage='1. 登入頁'                 judgement='false'  override=''        -> 停
+  coverage='1. 登入頁'                 judgement='false'  override='快 '      -> 停
+  coverage='1. 登入頁'                 judgement='false'  override='快車道'     -> 停
+  coverage='1. 登入頁'                 judgement='false'  override='Fast'    -> 停
+  coverage='1. 登入頁'                 judgement=''       override=None      -> 慢
+  coverage='1. 登入頁'                 judgement=''       override='快'       -> 快
+  coverage='1. 登入頁'                 judgement=''       override='慢'       -> 慢
+  coverage='1. 登入頁'                 judgement=''       override='fast'    -> 停
+  coverage='1. 登入頁'                 judgement=''       override=''        -> 停
+  coverage='1. 登入頁'                 judgement=''       override='快 '      -> 停
+  coverage='1. 登入頁'                 judgement=''       override='快車道'     -> 停
+  coverage='1. 登入頁'                 judgement=''       override='Fast'    -> 停
+
+掃過 504 條路:快 52 / 慢 110 / 當場停 342
+靜靜落到「快」而散文沒授權的:0
++ ok 0 'classify_one 全分支掃過,沒有一條靜靜落到「快」'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (classify_one 全分支掃過,沒有一條靜靜落到「快」)'
+RESULT PASS (classify_one 全分支掃過,沒有一條靜靜落到「快」)
++ echo '---- 4e  已知洞(不影響 AC 判定,固定住現況當回歸見證):JSON key 打錯是靜的'
+---- 4e  已知洞(不影響 AC 判定,固定住現況當回歸見證):JSON key 打錯是靜的
++ echo '     judgement 打成 judgment(少一個 e),coverage=[] → 靜靜落到「快」'
+     judgement 打成 judgment(少一個 e),coverage=[] → 靜靜落到「快」
++ classify '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgment":true}],"titles":{"49":"算票"}}'
++ printf %s '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgment":true}],"titles":{"49":"算票"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=0
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #49 算票 — 沒有覆蓋驗收項,不會有你看得到的行為
+
+點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:
+  #49  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
++ echo 'exit 0'
+exit 0
++ '[' 0 = 0 ']'
++ grep -q '^  #49  分級:快' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ '[' 0 = 0 ']'
++ echo 'RESULT KNOWN (judgement key 打錯):現況 = exit 0 且判快 —— 值打錯會停,key 打錯不會'
+RESULT KNOWN (judgement key 打錯):現況 = exit 0 且判快 —— 值打錯會停,key 打錯不會
++ echo '     override 打成 overide → client 改的那個字靜靜消失,畫面跟「沒改」一模一樣'
+     override 打成 overide → client 改的那個字靜靜消失,畫面跟「沒改」一模一樣
++ classify '{"mode":"classify","tickets":[{"number":48,"coverage":[],"overide":"慢"}],"titles":{"48":"骨架"}}'
++ printf %s '{"mode":"classify","tickets":[{"number":48,"coverage":[],"overide":"慢"}],"titles":{"48":"骨架"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=0
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+
+點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:
+  #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
++ echo 'exit 0'
+exit 0
++ '[' 0 = 0 ']'
++ grep -q '^  #48  分級:快' /tmp/tmp.0EjoMgiNaH/qa108/out.txt
++ '[' 0 = 0 ']'
++ echo 'RESULT KNOWN (override key 打錯):現況 = exit 0 且判快'
+RESULT KNOWN (override key 打錯):現況 = exit 0 且判快
++ echo '     對照組:整個 mode 漏掉會不會靜靜變成別的 mode'
+     對照組:整個 mode 漏掉會不會靜靜變成別的 mode
++ classify '{"tickets":[{"number":47,"coverage":["1. a"]}]}'
++ printf %s '{"tickets":[{"number":47,"coverage":["1. a"]}]}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ cat /tmp/tmp.0EjoMgiNaH/qa108/out.txt
+Traceback (most recent call last):
+  File "D:\Self Project\Skills\skills\build-batch\batch.py", line 1584, in <module>
+    main()
+    ~~~~^^
+  File "D:\Self Project\Skills\skills\build-batch\batch.py", line 597, in main
+    print(format_plan(plan_batch(data["tickets"]), titles))
+                      ~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\Self Project\Skills\skills\build-batch\batch.py", line 92, in plan_batch
+    still_open = {t["number"] for t in tickets if t["state"] == "open"}
+                                                  ~^^^^^^^^^
+KeyError: 'state'
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ ok 0 'mode 漏掉當場炸,不會靜靜印出別的東西'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (mode 漏掉當場炸,不會靜靜印出別的東西)'
+RESULT PASS (mode 漏掉當場炸,不會靜靜印出別的東西)
++ echo ===================================================================
+===================================================================
++ echo '==== SKILL.md 那半:下一個 agent 照著讀,做不做得對(§4 三段 + 守門)'
+==== SKILL.md 那半:下一個 agent 照著讀,做不做得對(§4 三段 + 守門)
++ echo ===================================================================
+===================================================================
++ echo '---- 5a  三段都在,附行號'
+---- 5a  三段都在,附行號
++ grep -n -e 'skill 目錄底下的 `batch.py`' -e '<build-batch skill dir>/batch.py' -e '不在 → 這批整批判慢車道' -e 判錯必然會發生 '/d/Self Project/Skills/skills/slice-tickets/SKILL.md'
+32:每張票填完「覆蓋驗收項」之後,整批一起判快慢。判準是可計算的,所以由 `build-batch` skill 目錄底下的 `batch.py` 算與印 —— 不要自己判、也不要自己排版那份清單,client 是照那份清單點頭的:
+35:python <build-batch skill dir>/batch.py <<'JSON'
+50:`batch.py` 不在 → 這批整批判慢車道,不要自己重寫一份判斷。保守方向不會漏掉 demo,兩份各說各話會。
+62:**這條判準的天花板**:`coverage` 是照抄的、判得準,但 `judgement` 是 agent 讀 diff 自己判的,判錯必然會發生 —— 這關只保證你有否決權,判錯的代價由降級回路關住(標「快」的票對驗收清單有任何一條沒過就當場降級)。不要為了把它判準而加規則。
++ echo '---- 5b  點頭那兩句(否決權怎麼兌現)也在'
+---- 5b  點頭那兩句(否決權怎麼兌現)也在
++ grep -n -e '這批的快慢分級,有要改的嗎?' -e 照你說的改,改完的才是寫進票裡的那個 '/d/Self Project/Skills/skills/slice-tickets/SKILL.md'
+52:印出來的清單直接給 client 看,然後問:**這批的快慢分級,有要改的嗎?** 要改就照他說的改 —— 把那張的 `override` 填進去重跑一次,照你說的改,改完的才是寫進票裡的那個。點頭之前不要寫進票,也不要發佈。
++ echo '---- 5c  對真檔改壞、跑守門、還原 —— 全部在副本上做'
+---- 5c  對真檔改壞、跑守門、還原 —— 全部在副本上做
++ echo '     5c-0  原封不動 → 該綠'
+     5c-0  原封不動 → 該綠
++ fresh
++ rm -rf /tmp/tmp.0EjoMgiNaH/qa108/case
++ cp -r /tmp/tmp.0EjoMgiNaH/qa108/pristine /tmp/tmp.0EjoMgiNaH/qa108/case
++ gate
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/scripts/validate.py
++ G_VALIDATE=0
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/skills/build-batch/batch.py --self-check
++ G_BATCH=0
++ echo '--- scripts/validate.py'
+--- scripts/validate.py
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+OK validate green
++ echo 'exit 0'
+exit 0
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+OK batch self-check green
++ echo 'exit 0'
+exit 0
++ '[' 0 -ne 0 ']'
++ '[' 0 -ne 0 ']'
++ GATE_RED=0
++ expect_gate green pristine
++ local want=green what=pristine
++ '[' green = red ']'
++ '[' green = green ']'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (pristine):預期守門綠、實際綠'
+RESULT PASS (pristine):預期守門綠、實際綠
++ echo '     5c-1  拿掉「batch.py 不在 → 整批判慢」的退路 → 該紅'
+     5c-1  拿掉「batch.py 不在 → 整批判慢」的退路 → 該紅
++ fresh
++ rm -rf /tmp/tmp.0EjoMgiNaH/qa108/case
++ cp -r /tmp/tmp.0EjoMgiNaH/qa108/pristine /tmp/tmp.0EjoMgiNaH/qa108/case
++ python - /tmp/tmp.0EjoMgiNaH/qa108/case/skills/slice-tickets/SKILL.md
++ gate
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/scripts/validate.py
++ G_VALIDATE=0
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/skills/build-batch/batch.py --self-check
++ G_BATCH=1
++ echo '--- scripts/validate.py'
+--- scripts/validate.py
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+OK validate green
++ echo 'exit 0'
+exit 0
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+    assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: slice-tickets SKILL.md: batch.py 不在時的退路那句不見了 —— 借來的判斷本來就可能沒裝,而現場重寫一份比沒有更糟(兩份會各說各話)
++ echo 'exit 1'
+exit 1
++ '[' 0 -ne 0 ']'
++ '[' 1 -ne 0 ']'
++ GATE_RED=1
++ expect_gate red 退路那句不見
++ local want=red what=退路那句不見
++ '[' red = red ']'
++ '[' 1 = 1 ']'
++ echo 'RESULT PASS (退路那句不見):預期守門紅、實際紅(validate=0 batch=1)'
+RESULT PASS (退路那句不見):預期守門紅、實際紅(validate=0 batch=1)
++ grep -m1 退路 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+AssertionError: slice-tickets SKILL.md: batch.py 不在時的退路那句不見了 —— 借來的判斷本來就可能沒裝,而現場重寫一份比沒有更糟(兩份會各說各話)
++ echo '     5c-2  拿掉判準天花板(judgement 判錯必然會發生)→ 該紅'
+     5c-2  拿掉判準天花板(judgement 判錯必然會發生)→ 該紅
++ fresh
++ rm -rf /tmp/tmp.0EjoMgiNaH/qa108/case
++ cp -r /tmp/tmp.0EjoMgiNaH/qa108/pristine /tmp/tmp.0EjoMgiNaH/qa108/case
++ python - /tmp/tmp.0EjoMgiNaH/qa108/case/skills/slice-tickets/SKILL.md
++ gate
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/scripts/validate.py
++ G_VALIDATE=0
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/skills/build-batch/batch.py --self-check
++ G_BATCH=1
++ echo '--- scripts/validate.py'
+--- scripts/validate.py
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+OK validate green
++ echo 'exit 0'
+exit 0
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+    assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: slice-tickets SKILL.md: 這條判準的天花板那句不見了 —— judgement 是 agent 讀diff 判的,不明講就變成隱含假設,下一個人會去加規則而不是靠降級回路兜底
++ echo 'exit 1'
+exit 1
++ '[' 0 -ne 0 ']'
++ '[' 1 -ne 0 ']'
++ GATE_RED=1
++ expect_gate red 天花板那句不見
++ local want=red what=天花板那句不見
++ '[' red = red ']'
++ '[' 1 = 1 ']'
++ echo 'RESULT PASS (天花板那句不見):預期守門紅、實際紅(validate=0 batch=1)'
+RESULT PASS (天花板那句不見):預期守門紅、實際紅(validate=0 batch=1)
++ grep -m1 天花板 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+AssertionError: slice-tickets SKILL.md: 這條判準的天花板那句不見了 —— judgement 是 agent 讀diff 判的,不明講就變成隱含假設,下一個人會去加規則而不是靠降級回路兜底
++ echo '     5c-3  拿掉「有要改的嗎?」那一問(否決權)→ 該紅'
+     5c-3  拿掉「有要改的嗎?」那一問(否決權)→ 該紅
++ fresh
++ rm -rf /tmp/tmp.0EjoMgiNaH/qa108/case
++ cp -r /tmp/tmp.0EjoMgiNaH/qa108/pristine /tmp/tmp.0EjoMgiNaH/qa108/case
++ python - /tmp/tmp.0EjoMgiNaH/qa108/case/skills/slice-tickets/SKILL.md
++ gate
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/scripts/validate.py
++ G_VALIDATE=0
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/skills/build-batch/batch.py --self-check
++ G_BATCH=1
++ echo '--- scripts/validate.py'
+--- scripts/validate.py
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+OK validate green
++ echo 'exit 0'
+exit 0
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+    assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: slice-tickets SKILL.md: 印完分級清單問 client 點頭的那句不見了 —— 沒有那一問就沒有否決權,而驗收清單第 1 條要的就是否決權
++ echo 'exit 1'
+exit 1
++ '[' 0 -ne 0 ']'
++ '[' 1 -ne 0 ']'
++ GATE_RED=1
++ expect_gate red 點頭那一問不見
++ local want=red what=點頭那一問不見
++ '[' red = red ']'
++ '[' 1 = 1 ']'
++ echo 'RESULT PASS (點頭那一問不見):預期守門紅、實際紅(validate=0 batch=1)'
+RESULT PASS (點頭那一問不見):預期守門紅、實際紅(validate=0 batch=1)
++ grep -m1 否決權 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+AssertionError: slice-tickets SKILL.md: 印完分級清單問 client 點頭的那句不見了 —— 沒有那一問就沒有否決權,而驗收清單第 1 條要的就是否決權
++ echo '     5c-4  拿掉「改完的才是寫進票裡的那個」→ 該紅'
+     5c-4  拿掉「改完的才是寫進票裡的那個」→ 該紅
++ fresh
++ rm -rf /tmp/tmp.0EjoMgiNaH/qa108/case
++ cp -r /tmp/tmp.0EjoMgiNaH/qa108/pristine /tmp/tmp.0EjoMgiNaH/qa108/case
++ python - /tmp/tmp.0EjoMgiNaH/qa108/case/skills/slice-tickets/SKILL.md
++ gate
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/scripts/validate.py
++ G_VALIDATE=0
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/skills/build-batch/batch.py --self-check
++ G_BATCH=1
++ echo '--- scripts/validate.py'
+--- scripts/validate.py
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+OK validate green
++ echo 'exit 0'
+exit 0
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+    assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: slice-tickets SKILL.md: client 改完之後以他改的為準那句不見了 —— 少了它,agent 會問完點頭卻照自己原本判的寫進票
++ echo 'exit 1'
+exit 1
++ '[' 0 -ne 0 ']'
++ '[' 1 -ne 0 ']'
++ GATE_RED=1
++ expect_gate red '以 client 改的為準那句不見'
++ local want=red 'what=以 client 改的為準那句不見'
++ '[' red = red ']'
++ '[' 1 = 1 ']'
++ echo 'RESULT PASS (以 client 改的為準那句不見):預期守門紅、實際紅(validate=0 batch=1)'
+RESULT PASS (以 client 改的為準那句不見):預期守門紅、實際紅(validate=0 batch=1)
++ echo '     5c-5  分級行示範改壞(全形冒號那一族:改成「中」)→ 該紅'
+     5c-5  分級行示範改壞(全形冒號那一族:改成「中」)→ 該紅
++ fresh
++ rm -rf /tmp/tmp.0EjoMgiNaH/qa108/case
++ cp -r /tmp/tmp.0EjoMgiNaH/qa108/pristine /tmp/tmp.0EjoMgiNaH/qa108/case
++ python - /tmp/tmp.0EjoMgiNaH/qa108/case/skills/slice-tickets/SKILL.md
++ gate
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/scripts/validate.py
++ G_VALIDATE=1
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/skills/build-batch/batch.py --self-check
++ G_BATCH=1
++ echo '--- scripts/validate.py'
+--- scripts/validate.py
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+FAIL skills/slice-tickets/SKILL.md: 分級行格式不對:'分級:中 — 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
++ echo 'exit 1'
+exit 1
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+    assert format_grade_line(GRADE_SLOW, "覆蓋 2 條驗收項") in slicing, sibling
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: C:\Users\user\AppData\Local\Temp\tmp.0EjoMgiNaH\qa108\case\skills\slice-tickets\SKILL.md
++ echo 'exit 1'
+exit 1
++ '[' 1 -ne 0 ']'
++ GATE_RED=1
++ expect_gate red 分級行示範寫歪
++ local want=red what=分級行示範寫歪
++ '[' red = red ']'
++ '[' 1 = 1 ']'
++ echo 'RESULT PASS (分級行示範寫歪):預期守門紅、實際紅(validate=1 batch=1)'
+RESULT PASS (分級行示範寫歪):預期守門紅、實際紅(validate=1 batch=1)
++ grep -m1 分級行格式不對 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+FAIL skills/slice-tickets/SKILL.md: 分級行格式不對:'分級:中 — 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
++ echo '     5c-6  分級行示範整行拿掉(呼叫了 classify 卻沒示範)→ 該紅'
+     5c-6  分級行示範整行拿掉(呼叫了 classify 卻沒示範)→ 該紅
++ fresh
++ rm -rf /tmp/tmp.0EjoMgiNaH/qa108/case
++ cp -r /tmp/tmp.0EjoMgiNaH/qa108/pristine /tmp/tmp.0EjoMgiNaH/qa108/case
++ python - /tmp/tmp.0EjoMgiNaH/qa108/case/skills/slice-tickets/SKILL.md
++ gate
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/scripts/validate.py
++ G_VALIDATE=1
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/skills/build-batch/batch.py --self-check
++ G_BATCH=1
++ echo '--- scripts/validate.py'
+--- scripts/validate.py
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+FAIL skills/slice-tickets/SKILL.md: 呼叫 batch.py 的 classify 卻沒有示範過一行分級行 — 貼上票的那一行會由 agent 現場發明,發明出來的跟 batch.py 印的不會一樣
++ echo 'exit 1'
+exit 1
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+    assert format_grade_line(GRADE_SLOW, "覆蓋 2 條驗收項") in slicing, sibling
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: C:\Users\user\AppData\Local\Temp\tmp.0EjoMgiNaH\qa108\case\skills\slice-tickets\SKILL.md
++ echo 'exit 1'
+exit 1
++ '[' 1 -ne 0 ']'
++ GATE_RED=1
++ expect_gate red '呼叫 classify 卻沒示範分級行'
++ local want=red 'what=呼叫 classify 卻沒示範分級行'
++ '[' red = red ']'
++ '[' 1 = 1 ']'
++ echo 'RESULT PASS (呼叫 classify 卻沒示範分級行):預期守門紅、實際紅(validate=1 batch=1)'
+RESULT PASS (呼叫 classify 卻沒示範分級行):預期守門紅、實際紅(validate=1 batch=1)
++ grep -m1 發明 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+FAIL skills/slice-tickets/SKILL.md: 呼叫 batch.py 的 classify 卻沒有示範過一行分級行 — 貼上票的那一行會由 agent 現場發明,發明出來的跟 batch.py 印的不會一樣
++ echo '     5c-7  指令那段不再把 JSON 餵進 batch.py → 該紅(#58 的形狀)'
+     5c-7  指令那段不再把 JSON 餵進 batch.py → 該紅(#58 的形狀)
++ fresh
++ rm -rf /tmp/tmp.0EjoMgiNaH/qa108/case
++ cp -r /tmp/tmp.0EjoMgiNaH/qa108/pristine /tmp/tmp.0EjoMgiNaH/qa108/case
++ python - /tmp/tmp.0EjoMgiNaH/qa108/case/skills/slice-tickets/SKILL.md
++ gate
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/scripts/validate.py
++ G_VALIDATE=0
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/skills/build-batch/batch.py --self-check
++ G_BATCH=1
++ echo '--- scripts/validate.py'
+--- scripts/validate.py
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+OK validate green
++ echo 'exit 0'
+exit 0
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+    assert classify_command_issue(slicing) is None, classify_command_issue(slicing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: slice-tickets SKILL.md: no bash block feeds the ticket JSON into batch.py with "mode": "classify" — 分級清單印在沒有測試、沒有 UTF-8 pin 碰得到的地方(#58 的形狀)
++ echo 'exit 1'
+exit 1
++ '[' 0 -ne 0 ']'
++ '[' 1 -ne 0 ']'
++ GATE_RED=1
++ expect_gate red '分級清單走不進 batch.py'
++ local want=red 'what=分級清單走不進 batch.py'
++ '[' red = red ']'
++ '[' 1 = 1 ']'
++ echo 'RESULT PASS (分級清單走不進 batch.py):預期守門紅、實際紅(validate=0 batch=1)'
+RESULT PASS (分級清單走不進 batch.py):預期守門紅、實際紅(validate=0 batch=1)
++ echo '     5c-8  安裝根目錄寫法改壞:<build-batch skill dir>/ → 裸 batch.py'
+     5c-8  安裝根目錄寫法改壞:<build-batch skill dir>/ → 裸 batch.py
++ echo '            (slice-tickets 自己裝起來的時候身邊沒有 batch.py,這行照抄跑不動)'
+            (slice-tickets 自己裝起來的時候身邊沒有 batch.py,這行照抄跑不動)
++ fresh
++ rm -rf /tmp/tmp.0EjoMgiNaH/qa108/case
++ cp -r /tmp/tmp.0EjoMgiNaH/qa108/pristine /tmp/tmp.0EjoMgiNaH/qa108/case
++ python - /tmp/tmp.0EjoMgiNaH/qa108/case/skills/slice-tickets/SKILL.md
++ grep -n 'python batch.py' /tmp/tmp.0EjoMgiNaH/qa108/case/skills/slice-tickets/SKILL.md
+35:python batch.py <<'JSON'
++ gate
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/scripts/validate.py
++ G_VALIDATE=0
++ python /tmp/tmp.0EjoMgiNaH/qa108/case/skills/build-batch/batch.py --self-check
++ G_BATCH=0
++ echo '--- scripts/validate.py'
+--- scripts/validate.py
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-validate.txt
+OK validate green
++ echo 'exit 0'
+exit 0
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.0EjoMgiNaH/qa108/g-batch.txt
+OK batch self-check green
++ echo 'exit 0'
+exit 0
++ '[' 0 -ne 0 ']'
++ '[' 0 -ne 0 ']'
++ GATE_RED=0
++ '[' 0 = 1 ']'
++ echo 'RESULT KNOWN (安裝根目錄寫法沒被守著):兩支守門都綠 —— 這行漂掉沒有任何東西會當場紅'
+RESULT KNOWN (安裝根目錄寫法沒被守著):兩支守門都綠 —— 這行漂掉沒有任何東西會當場紅
++ echo '     5c-9  同型全掃:repo 裡所有 <… skill dir>/ 的寫法,有沒有任何一條被守著'
+     5c-9  同型全掃:repo 裡所有 <… skill dir>/ 的寫法,有沒有任何一條被守著
++ grep -rno '<[^>]*skill dir>/[a-z_.]*' '/d/Self Project/Skills/skills' '--include=*.md'
++ sed 's/^.*skills\///'
++ sort
++ uniq -c
++ sort -rn
+      1 slice-tickets/SKILL.md:35:<build-batch skill dir>/batch.py
+      1 next/SKILL.md:45:<build-batch skill dir>/batch.py
+      1 build-batch/SKILL.md:98:<skill dir>/batch.py
+      1 build-batch/SKILL.md:82:<skill dir>/batch.py
+      1 build-batch/SKILL.md:343:<skill dir>/batch.py
+      1 build-batch/SKILL.md:332:<skill dir>/batch.py
+      1 build-batch/SKILL.md:31:<skill dir>/batch.py
+      1 build-batch/SKILL.md:304:<skill dir>/batch.py
+      1 build-batch/SKILL.md:283:<skill dir>/batch.py
+      1 build-batch/SKILL.md:256:<skill dir>/batch.py
+      1 build-batch/SKILL.md:188:<skill dir>/batch.py
+      1 build-batch/SKILL.md:170:<skill dir>/batch.py
+      1 build-batch/SKILL.md:169:<skill dir>/batch.py
+      1 build-batch/SKILL.md:144:<skill dir>/batch.py
+      1 build-batch/SKILL.md:134:<skill dir>/batch.py
+      1 build-batch/SKILL.md:133:<skill dir>/batch.py
+      1 build-batch/SKILL.md:124:<skill dir>/batch.py
++ echo '     守門那兩支檔裡有沒有任何一條規則提到 skill dir 的路徑寫法:'
+     守門那兩支檔裡有沒有任何一條規則提到 skill dir 的路徑寫法:
++ grep -c 'skill dir' '/d/Self Project/Skills/scripts/validate.py' '/d/Self Project/Skills/skills/build-batch/batch.py'
+/d/Self Project/Skills/scripts/validate.py:15
+/d/Self Project/Skills/skills/build-batch/batch.py:3
++ echo '---- 5d  改壞的都只在副本上,repo 本體乾淨'
+---- 5d  改壞的都只在副本上,repo 本體乾淨
++ git -C '/d/Self Project/Skills' status --porcelain -- skills scripts/validate.py
+++ git -C '/d/Self Project/Skills' status --porcelain -- skills scripts/validate.py
++ '[' -z '' ']'
++ ok 0 'skills/ 與 scripts/validate.py 一個字都沒動'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (skills/ 與 scripts/validate.py 一個字都沒動)'
+RESULT PASS (skills/ 與 scripts/validate.py 一個字都沒動)
++ set +x
+
+==== walkthrough 走完 ====
+所有格子符合預期(RESULT KNOWN 是本輪記錄下來的已知洞,不算不合預期)

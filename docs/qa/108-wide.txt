@@ -1,0 +1,29 @@
+母體:D:\Self Project\Skills/skills/**/*.md,共 28 份
+受測物黑箱:python scripts/validate.py → exit 0
+  它印的:OK validate green
+
+==== 寬尺撈到的「分級:…」形狀的行 ====
+2 份檔、3 行
+  [形狀 OK ] skills/slice-tickets/SKILL.md:57: 分級:慢 — 覆蓋 2 條驗收項
+  [形狀可疑] skills/slice-tickets/SKILL.md:60: 格式固定是「分級:<快或慢> — 一句理由」。它由 `batch.py` 印出來、守門釘著,不要自己改寫措辭 —— 下游要拿這一行認車道,漂掉就認不出來。
+  [形狀可疑] skills/ui-mockup/SKILL.md:17: 呼叫 `/prototype` 走 UI branch 出可點 prototype,commit 到 `prototype/<name>` branch,資產放 docs/prototypes/(沿 tracking-viz 慣例)。份量按 variant 分級:
+
+==== 寬尺撈到的「宣稱要呼叫 classify」的行 ====
+1 份檔、3 行
+  skills/slice-tickets/SKILL.md:32: 每張票填完「覆蓋驗收項」之後,整批一起判快慢。判準是可計算的,所以由 `build-batch` skill 目錄底下的 `batch.py` 算與印 —— 不要自己判、也不要自己排版那份清單,client 是照那份清單點頭的:
+  skills/slice-tickets/SKILL.md:36: {"mode": "classify",
+  skills/slice-tickets/SKILL.md:52: 印出來的清單直接給 client 看,然後問:**這批的快慢分級,有要改的嗎?** 要改就照他說的改 —— 把那張的 `override` 填進去重跑一次,照你說的改,改完的才是寫進票裡的那個。點頭之前不要寫進票,也不要發佈。
+
+==== 寬尺自己的判定(不看受測物)====
+  [寬] skills/slice-tickets/SKILL.md :60 分級行形狀可疑 — 格式固定是「分級:<快或慢> — 一句理由」。它由 `batch.py` 印出來、守門釘著,不要自己改寫措辭 —— 下游要拿這一行認車道,漂掉就認不出來。
+  [寬] skills/ui-mockup/SKILL.md :17 分級行形狀可疑 — 呼叫 `/prototype` 走 UI branch 出可點 prototype,commit 到 `prototype/<name>` branch,資產放 docs/prototypes/(沿 tracking-viz 慣例)。份量按 variant 分級:
+
+==== 差額:寬尺撈到、受測物放行的(逐筆判讀)====
+受測物現在對這份母體的 FAIL:0 條
+
+寬尺多撈 2 筆 —— 每一筆都要在報告裡判讀:
+  [多撈] skills/slice-tickets/SKILL.md :60 分級行形狀可疑 — 格式固定是「分級:<快或慢> — 一句理由」。它由 `batch.py` 印出來、守門釘著,不要自己改寫措辭 —— 下游要拿這一行認車道,漂掉就認不出來。
+  [多撈] skills/ui-mockup/SKILL.md :17 分級行形狀可疑 — 呼叫 `/prototype` 走 UI branch 出可點 prototype,commit 到 `prototype/<name>` branch,資產放 docs/prototypes/(沿 tracking-viz 慣例)。份量按 variant 分級:
+
+==== 差額:受測物咬到、寬尺沒撈到的 ====
+  (無)

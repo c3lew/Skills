@@ -1,0 +1,3325 @@
+=== $ python scripts/validate.py ===
+OK validate green
+--- exit=0 ---
+=== $ python scripts/validate.py --self-check ===
+OK validate self-check green
+--- exit=0 ---
+=== $ python skills/build-batch/batch.py --self-check ===
+OK batch self-check green
+--- exit=0 ---
+=== $ python scripts/qa/96-newrule-probe.py . ===
+OK 新規則下全綠
+
+不合 0
+--- exit=0 ---
+=== $ python scripts/qa/97-mutate.py --run ===
+咬住  buffer_exempt          self-check exit=1
+咬住  decode_error_uncaught  self-check exit=1
+咬住  filter_off             self-check exit=1
+咬住  first_main_only        self-check exit=1
+咬住  grade_colon_any        self-check exit=1
+咬住  grade_guard_off        self-check exit=1
+咬住  grade_no_example_ok    self-check exit=1
+咬住  grade_not_wired        self-check exit=1
+咬住  grade_reason_optional  self-check exit=1
+咬住  grade_scan_narrow      self-check exit=1
+咬住  grade_word_any         self-check exit=1
+咬住  guard_off              self-check exit=1
+咬住  main_body_only         self-check exit=1
+咬住  no_norm                self-check exit=1
+咬住  pin_anywhere_in_file   self-check exit=1
+咬住  pin_anywhere_in_main   self-check exit=1
+咬住  print_exempt           self-check exit=1
+咬住  stdin_always           self-check exit=1
+咬住  stdin_by_text          self-check exit=1
+咬住  stdin_never            self-check exit=1
+咬住  underscore_filter      self-check exit=1
+咬住  unreadable_skip        self-check exit=1
+
+22/22 個 knob 被 self-check 咬住
+--- exit=0 ---
+=== $ python scripts/qa/107-mutate.py --run ===
+咬住  extra_lane_ok          self-check exit=1
+咬住  lane_cell_any_bold     self-check exit=1
+咬住  lane_cell_requires_bold self-check exit=1
+咬住  missing_lane_ok        self-check exit=1
+咬住  ordering_by_keyword    self-check exit=1
+咬住  ordering_never_checked self-check exit=1
+咬住  ordering_scans_headings self-check exit=1
+咬住  pool_declared_by_heading self-check exit=1
+咬住  pool_section_optional  self-check exit=1
+咬住  pool_table_any_header  self-check exit=1
+咬住  read_fenced_examples   self-check exit=1
+咬住  read_html_comments     self-check exit=1
+咬住  setext_not_a_heading   self-check exit=1
+咬住  table_rows_no_indent   self-check exit=1
+咬住  trigger_by_mention     self-check exit=1
+咬住  trigger_off            self-check exit=1
+
+16/16 個 knob 被 self-check 咬住
+--- exit=0 ---
+=== $ bash scripts/qa/107-walkthrough.sh /tmp/tmp.GB9qzbJd9K/qa107 ===
++ echo '==== AC1  regression / walkthrough / code-review 三者同時開始,不互相等待 ===='
+==== AC1  regression / walkthrough / code-review 三者同時開始,不互相等待 ====
++ echo '---- 1a  出貨的 skills/qa/SKILL.md §2 原文(下一個 agent 照著做的那份)'
+---- 1a  出貨的 skills/qa/SKILL.md §2 原文(下一個 agent 照著做的那份)
++ sed -n 24,47p '/d/Self Project/Skills/skills/qa/SKILL.md'
++ cat -n
+     1	## 2. 並行池:三線同時開
+     2	
+     3	這三件事之間沒有資料依賴 — regression 不吃 walkthrough 的結果,walkthrough 也不吃 regression 的結果,
+     4	code-review 讀的是 diff。三支各開一個 sub-agent,**同時開始**,不排隊:
+     5	
+     6	| lane | 做什麼 | 產出 |
+     7	| --- | --- | --- |
+     8	| **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
+     9	| **walkthrough** | 照驗收原句實測切片 | 每條驗收項一份 a11y snapshot + demo 實錄 |
+    10	| **code-review** | 對本票的最終 diff 跑 `/code-review` | findings 清單與處置 |
+    11	
+    12	**這張表就是池的宣告**:表頭第一欄寫 `lane`,底下每一列的第一欄就是一支 lane 的名字。
+    13	粗體只是排版,不是宣告 —— 加不加都算數。要增減 lane 就改這張表,別在散文裡多寫一支。
+    14	守門讀的就是這張表:表頭那個字被改掉、或表整張不見,它會當成池沒被宣告而紅。
+    15	
+    16	**同時開始 = 三個 sub-agent 在同一則訊息裡一次發出去**。一支一支發,讀起來每支都是
+    17	sub-agent,實際還是排隊,而且報告長得跟真的並行一模一樣。
+    18	
+    19	**lane 之間不共用資源**:各自的 port、暫存目錄、QA artifacts 子目錄分開;真的共用
+    20	(同一個 dev server、同一份 fixture DB)就把撞到的那兩支序列化,寧可慢也不要搶。
+    21	搶資源的失敗會長得像 flaky,查起來比省下的時間貴。
+    22	
+    23	三支都回來才收斂成一份報告 — 有一支先紅也照樣等完另外兩支,一次跑完、一份完整報告。
+    24	
++ echo '---- 1b  三支 lane 的宣告(表格第一欄)'
+---- 1b  三支 lane 的宣告(表格第一欄)
++ grep -n '^| \*\*' '/d/Self Project/Skills/skills/qa/SKILL.md'
+31:| **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
+32:| **walkthrough** | 照驗收原句實測切片 | 每條驗收項一份 a11y snapshot + demo 實錄 |
+33:| **code-review** | 對本票的最終 diff 跑 `/code-review` | findings 清單與處置 |
++ echo '---- 1c 「同一則訊息一次發出去」有沒有寫下來'
+---- 1c 「同一則訊息一次發出去」有沒有寫下來
++ grep -n 同一則訊息 '/d/Self Project/Skills/skills/qa/SKILL.md' '/d/Self Project/Skills/skills/build/SKILL.md'
+/d/Self Project/Skills/skills/qa/SKILL.md:39:**同時開始 = 三個 sub-agent 在同一則訊息裡一次發出去**。一支一支發,讀起來每支都是
++ echo '---- 1d  §2 有沒有殘留序列語(「跑完才」「先跑」「再走」)'
+---- 1d  §2 有沒有殘留序列語(「跑完才」「先跑」「再走」)
++ set +e
++ grep -n -e 先跑 -e 跑完才 -e 再走 '/d/Self Project/Skills/skills/qa/SKILL.md'
++ echo '序列語命中數: 1(1 = 一條都沒有)'
+序列語命中數: 1(1 = 一條都沒有)
++ echo '---- 1e  /build §2 的 code-review 並行位置,以及兩份文件的母體有沒有互相矛盾'
+---- 1e  /build §2 的 code-review 並行位置,以及兩份文件的母體有沒有互相矛盾
++ sed -n 14,26p '/d/Self Project/Skills/skills/build/SKILL.md'
++ cat -n
+     1	## 2. code-review 的並行位置(delta)
+     2	
+     3	原件把 `/code-review` 寫成 commit 前的那一步(`Once done, use /code-review` → `Commit your work`)。它跟**跑 regression suite**(原件的 full test
+     4	suite)之間沒有資料依賴 — review 讀的是 diff,suite 讀的是跑起來的行為。兩支在同一則
+     5	訊息裡一次發出去,兩邊都回來才進 commit;任一支紅要指名道姓寫進 §3 的 comment,另一支綠蓋不過它。
+     6	
+     7	**排序約束**:code-review 的 findings 在 commit **之前**處置完 — review 的結果決定
+     8	commit 裡有什麼,順序反過來就變成「先送出去再說」。tdd 的 red-green 循環同理,照原件
+     9	序列跑,不進並行池。
+    10	
+    11	本關這支 code-review 吃的是 commit 前的工作區;`/qa` 那一關另有一支吃已經推上去的
+    12	最終 diff,兩支各看各的一段。
+    13	
++ grep -n -e 'commit 前的工作區' -e '最終 diff' '/d/Self Project/Skills/skills/qa/SKILL.md' '/d/Self Project/Skills/skills/build/SKILL.md'
+/d/Self Project/Skills/skills/qa/SKILL.md:33:| **code-review** | 對本票的最終 diff 跑 `/code-review` | findings 清單與處置 |
+/d/Self Project/Skills/skills/qa/SKILL.md:74:對本票**已經推上去的最終 diff** 跑 `/code-review`,findings 逐條處置後寫進報告。母體是
+/d/Self Project/Skills/skills/qa/SKILL.md:75:最終 diff — `/build` 那關那支吃的是 commit 前的工作區,兩支各看各的一段。
+/d/Self Project/Skills/skills/build/SKILL.md:24:本關這支 code-review 吃的是 commit 前的工作區;`/qa` 那一關另有一支吃已經推上去的
+/d/Self Project/Skills/skills/build/SKILL.md:25:最終 diff,兩支各看各的一段。
++ echo '==== AC2(a) 散文面:排序約束與它的理由 ===='
+==== AC2(a) 散文面:排序約束與它的理由 ====
++ sed -n 73,81p '/d/Self Project/Skills/skills/qa/SKILL.md'
++ cat -n
+     1	
+     2	對本票**已經推上去的最終 diff** 跑 `/code-review`,findings 逐條處置後寫進報告。母體是
+     3	最終 diff — `/build` 那關那支吃的是 commit 前的工作區,兩支各看各的一段。
+     4	
+     5	## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+     6	
+     7	**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。
+     8	
+     9	理由:judge 的證據來源就是 walkthrough 產出的 a11y snapshot。提早開,它拿到空證據,然後把每一條
++ echo '==== AC2(b) 可執行面:六格 mutation,拿真的 skills/qa/SKILL.md 改壞 ===='
+==== AC2(b) 可執行面:六格 mutation,拿真的 skills/qa/SKILL.md 改壞 ====
++ echo '---- 2b-1  把 | **judge** | 判定 | 插進並行池 lane 表 → 該紅'
+---- 2b-1  把 | **judge** | 判定 | 插進並行池 lane 表 → 該紅
++ fresh
++ rm -rf /tmp/tmp.GB9qzbJd9K/qa107/case
++ cp -r /tmp/tmp.GB9qzbJd9K/qa107/pristine /tmp/tmp.GB9qzbJd9K/qa107/case
++ python - /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
++ grep -n '^| \*\*' /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
+31:| **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
+32:| **walkthrough** | 照驗收原句實測切片 | 每條驗收項一份 a11y snapshot + demo 實錄 |
+33:| **code-review** | 對本票的最終 diff 跑 `/code-review` | findings 清單與處置 |
+34:| **judge** | 判定 pass / fail | 逐條判定 |
++ gate
++ set +e
++ python /tmp/tmp.GB9qzbJd9K/qa107/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.GB9qzbJd9K/qa107/out.txt
+FAIL skills/qa/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.GB9qzbJd9K/qa107/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'judge 混進並行池'
++ local want=red 'what=judge 混進並行池'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (judge 混進並行池):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (judge 混進並行池):預期紅、實際紅,且錯誤指名 judge/並行池
++ echo '---- 2b-2  刪掉 | **code-review** … 那列 → 該紅'
+---- 2b-2  刪掉 | **code-review** … 那列 → 該紅
++ fresh
++ rm -rf /tmp/tmp.GB9qzbJd9K/qa107/case
++ cp -r /tmp/tmp.GB9qzbJd9K/qa107/pristine /tmp/tmp.GB9qzbJd9K/qa107/case
++ python - /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
++ grep -n '^| \*\*' /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
+31:| **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
+32:| **walkthrough** | 照驗收原句實測切片 | 每條驗收項一份 a11y snapshot + demo 實錄 |
++ gate
++ set +e
++ python /tmp/tmp.GB9qzbJd9K/qa107/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.GB9qzbJd9K/qa107/out.txt
+FAIL skills/qa/SKILL.md: 並行池 lanes are ['regression', 'walkthrough'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.GB9qzbJd9K/qa107/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red '少一支 lane'
++ local want=red 'what=少一支 lane'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (少一支 lane):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (少一支 lane):預期紅、實際紅,且錯誤指名 judge/並行池
++ echo '---- 2b-3  lane 表三列上下順序對調 → 該綠(順序自由,主張是同時開始)'
+---- 2b-3  lane 表三列上下順序對調 → 該綠(順序自由,主張是同時開始)
++ fresh
++ rm -rf /tmp/tmp.GB9qzbJd9K/qa107/case
++ cp -r /tmp/tmp.GB9qzbJd9K/qa107/pristine /tmp/tmp.GB9qzbJd9K/qa107/case
++ python - /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
++ grep -n '^| \*\*' /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
+31:| **code-review** | 對本票的最終 diff 跑 `/code-review` | findings 清單與處置 |
+32:| **walkthrough** | 照驗收原句實測切片 | 每條驗收項一份 a11y snapshot + demo 實錄 |
+33:| **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
++ gate
++ set +e
++ python /tmp/tmp.GB9qzbJd9K/qa107/case/scripts/validate.py
++ GATE_EXIT=0
++ cat /tmp/tmp.GB9qzbJd9K/qa107/out.txt
+OK validate green
++ echo 'exit 0'
+exit 0
+++ grep -c -e judge -e 並行池 /tmp/tmp.GB9qzbJd9K/qa107/out.txt
+++ true
++ GATE_JUDGE=0
++ echo 'judge/並行池 錯誤行數: 0'
+judge/並行池 錯誤行數: 0
++ expect green 'lane 順序對調'
++ local want=green 'what=lane 順序對調'
++ '[' green = red ']'
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (lane 順序對調):預期綠、實際綠'
+RESULT PASS (lane 順序對調):預期綠、實際綠
++ echo '---- 2b-4 「排在 walkthrough 之後」改寫成「之前」→ 該紅'
+---- 2b-4 「排在 walkthrough 之後」改寫成「之前」→ 該紅
++ fresh
++ rm -rf /tmp/tmp.GB9qzbJd9K/qa107/case
++ cp -r /tmp/tmp.GB9qzbJd9K/qa107/pristine /tmp/tmp.GB9qzbJd9K/qa107/case
++ python - /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
++ grep -n 'walkthrough 之前' /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
+77:## 3. 獨立 judge(排在 walkthrough 之前,不進並行池)
+79:**排序約束**:獨立 judge 排在 walkthrough 之前才開,不進 §2 的並行池。
++ gate
++ set +e
++ python /tmp/tmp.GB9qzbJd9K/qa107/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.GB9qzbJd9K/qa107/out.txt
+FAIL skills/qa/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.GB9qzbJd9K/qa107/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 排序反過來
++ local want=red what=排序反過來
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (排序反過來):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (排序反過來):預期紅、實際紅,且錯誤指名 judge/並行池
++ echo '---- 2b-5  整段 ## 2. 並行池… 拿掉 → 該紅'
+---- 2b-5  整段 ## 2. 並行池… 拿掉 → 該紅
++ fresh
++ rm -rf /tmp/tmp.GB9qzbJd9K/qa107/case
++ cp -r /tmp/tmp.GB9qzbJd9K/qa107/pristine /tmp/tmp.GB9qzbJd9K/qa107/case
++ python - /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
++ set +e
++ grep -n 並行池 /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
+24:## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+26:**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。
++ set -e
++ gate
++ set +e
++ python /tmp/tmp.GB9qzbJd9K/qa107/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.GB9qzbJd9K/qa107/out.txt
+FAIL skills/qa/SKILL.md: runs an 獨立 judge but no 並行池 section declares its lane table — the three lanes have to be written down in a table under a 「並行池」 heading, its first header column literally `lane`, where the next agent reads them
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.GB9qzbJd9K/qa107/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 並行池整段消失
++ local want=red what=並行池整段消失
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (並行池整段消失):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (並行池整段消失):預期紅、實際紅,且錯誤指名 judge/並行池
++ echo '---- 2b-6  原封不動 → 該綠'
+---- 2b-6  原封不動 → 該綠
++ fresh
++ rm -rf /tmp/tmp.GB9qzbJd9K/qa107/case
++ cp -r /tmp/tmp.GB9qzbJd9K/qa107/pristine /tmp/tmp.GB9qzbJd9K/qa107/case
++ gate
++ set +e
++ python /tmp/tmp.GB9qzbJd9K/qa107/case/scripts/validate.py
++ GATE_EXIT=0
++ cat /tmp/tmp.GB9qzbJd9K/qa107/out.txt
+OK validate green
++ echo 'exit 0'
+exit 0
+++ grep -c -e judge -e 並行池 /tmp/tmp.GB9qzbJd9K/qa107/out.txt
+++ true
++ GATE_JUDGE=0
++ echo 'judge/並行池 錯誤行數: 0'
+judge/並行池 錯誤行數: 0
++ expect green pristine
++ local want=green what=pristine
++ '[' green = red ']'
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (pristine):預期綠、實際綠'
+RESULT PASS (pristine):預期綠、實際綠
++ echo '==== AC3  並行不搶資源 ===='
+==== AC3  並行不搶資源 ====
++ echo '---- 3a  散文面:lane 之間不共用資源 + 撞到就序列化'
+---- 3a  散文面:lane 之間不共用資源 + 撞到就序列化
++ grep -n -e 不共用資源 -e 序列化 -e 暫存目錄 '/d/Self Project/Skills/skills/qa/SKILL.md'
+42:**lane 之間不共用資源**:各自的 port、暫存目錄、QA artifacts 子目錄分開;真的共用
+43:(同一個 dev server、同一份 fixture DB)就把撞到的那兩支序列化,寧可慢也不要搶。
++ echo '---- 3b  實測:同時起兩個 validate.py --self-check,看會不會互相干擾'
+---- 3b  實測:同時起兩個 validate.py --self-check,看會不會互相干擾
++ set +e
++ PA=1844349
++ python '/d/Self Project/Skills/scripts/validate.py' --self-check
++ PB=1844350
++ wait 1844349
++ python '/d/Self Project/Skills/scripts/validate.py' --self-check
++ echo 0
++ echo 0
++ wait 1844350
++ echo '--- lane A'
+--- lane A
++ cat /tmp/tmp.GB9qzbJd9K/qa107/sc-A.txt
+OK validate self-check green
+++ cat /tmp/tmp.GB9qzbJd9K/qa107/sc-A.rc
++ echo 'exit 0'
+exit 0
++ echo '--- lane B'
+--- lane B
++ cat /tmp/tmp.GB9qzbJd9K/qa107/sc-B.txt
+OK validate self-check green
+++ cat /tmp/tmp.GB9qzbJd9K/qa107/sc-B.rc
++ echo 'exit 0'
+exit 0
+++ cat /tmp/tmp.GB9qzbJd9K/qa107/sc-A.rc
++ '[' 0 = 0 ']'
+++ cat /tmp/tmp.GB9qzbJd9K/qa107/sc-B.rc
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (並行 self-check):兩支同時跑都綠,沒有互相干擾'
+RESULT PASS (並行 self-check):兩支同時跑都綠,沒有互相干擾
++ echo '==== AC4  任一支 lane 紅,報告要指名道姓,不被其他支綠蓋過 ===='
+==== AC4  任一支 lane 紅,報告要指名道姓,不被其他支綠蓋過 ====
++ echo '---- 4a  散文面:指名道姓 / AND 不是多數決 / lane 自己爆掉同級'
+---- 4a  散文面:指名道姓 / AND 不是多數決 / lane 自己爆掉同級
++ grep -n -e 指名道姓 -e 多數決 -e 爆掉 -e 三線各自的結果 '/d/Self Project/Skills/skills/qa/SKILL.md'
+48:**任一支失敗要指名道姓**:報告寫明是哪一支 lane 失敗、失敗內容是什麼,其他兩支綠不能
+49:蓋過它 — 三支的判定是 AND,不是多數決。lane 自己爆掉(sub-agent 掛了、環境起不來)跟
+100:QA 報告寫回本 ticket:白話摘要 + **三線各自的結果**(哪一支綠、哪一支紅、紅在哪)+ blocking / known issues 清單 + 未涵蓋範圍(如 Tauri 原生殼)+ **demo 實錄清單**(每條驗收項對一段,附路徑)+ **一鍵重開指令**(client-demo 直接抄)。
++ echo '---- 4b  演練:三支 lane 同時跑,其中 regression 這支必定紅(排序句被改壞)'
+---- 4b  演練:三支 lane 同時跑,其中 regression 這支必定紅(排序句被改壞)
++ fresh
++ rm -rf /tmp/tmp.GB9qzbJd9K/qa107/case
++ cp -r /tmp/tmp.GB9qzbJd9K/qa107/pristine /tmp/tmp.GB9qzbJd9K/qa107/case
++ python - /tmp/tmp.GB9qzbJd9K/qa107/case/skills/qa/SKILL.md
++ set +e
++ python /tmp/tmp.GB9qzbJd9K/qa107/case/scripts/validate.py
++ L1=1844408
++ L2=1844410
++ python '/d/Self Project/Skills/scripts/qa/107-mutate.py' --list
++ L3=1844411
++ wait 1844408
++ git -C '/d/Self Project/Skills' diff --stat 84ab07d..HEAD -- skills/
++ echo 1
++ wait 1844410
++ echo 0
++ echo 0
++ wait 1844411
++ for lane in regression walkthrough codereview
+++ cat /tmp/tmp.GB9qzbJd9K/qa107/lane-regression.rc
++ echo '--- lane regression  exit 1'
+--- lane regression  exit 1
++ cat /tmp/tmp.GB9qzbJd9K/qa107/lane-regression.txt
+FAIL skills/qa/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
++ for lane in regression walkthrough codereview
+++ cat /tmp/tmp.GB9qzbJd9K/qa107/lane-walkthrough.rc
++ echo '--- lane walkthrough  exit 0'
+--- lane walkthrough  exit 0
++ cat /tmp/tmp.GB9qzbJd9K/qa107/lane-walkthrough.txt
+extra_lane_ok
+lane_cell_any_bold
+lane_cell_requires_bold
+missing_lane_ok
+ordering_by_keyword
+ordering_never_checked
+ordering_scans_headings
+pool_declared_by_heading
+pool_section_optional
+pool_table_any_header
+read_fenced_examples
+read_html_comments
+setext_not_a_heading
+table_rows_no_indent
+trigger_by_mention
+trigger_off
++ for lane in regression walkthrough codereview
+++ cat /tmp/tmp.GB9qzbJd9K/qa107/lane-codereview.rc
++ echo '--- lane codereview  exit 0'
+--- lane codereview  exit 0
++ cat /tmp/tmp.GB9qzbJd9K/qa107/lane-codereview.txt
+ skills/build-batch/batch.py   | 238 +++++++++++++++++++++++++++++++++++++++++-
+ skills/build/SKILL.md         |  27 +++--
+ skills/qa/SKILL.md            |  57 ++++++++--
+ skills/slice-tickets/SKILL.md |  46 ++++++--
+ 4 files changed, 345 insertions(+), 23 deletions(-)
++ echo '---- 4c  收斂:三支是 AND,不是多數決'
+---- 4c  收斂:三支是 AND,不是多數決
++ AND_RC=0
++ REDS=
++ for lane in regression walkthrough codereview
+++ cat /tmp/tmp.GB9qzbJd9K/qa107/lane-regression.rc
++ rc=1
++ '[' 1 '!=' 0 ']'
++ AND_RC=1
++ REDS=' regression'
++ for lane in regression walkthrough codereview
+++ cat /tmp/tmp.GB9qzbJd9K/qa107/lane-walkthrough.rc
++ rc=0
++ '[' 0 '!=' 0 ']'
++ for lane in regression walkthrough codereview
+++ cat /tmp/tmp.GB9qzbJd9K/qa107/lane-codereview.rc
++ rc=0
++ '[' 0 '!=' 0 ']'
++ echo '紅的 lane: regression'
+紅的 lane: regression
++ echo '彙總 exit(AND):1'
+彙總 exit(AND):1
++ '[' 1 = 1 ']'
++ '[' ' regression' = ' regression' ']'
++ grep -q -e judge -e 並行池 /tmp/tmp.GB9qzbJd9K/qa107/lane-regression.txt
++ echo 'RESULT PASS (失敗指名道姓):只有 regression 紅,兩支綠沒有蓋過它,錯誤原文指得出是哪一條判準'
+RESULT PASS (失敗指名道姓):只有 regression 紅,兩支綠沒有蓋過它,錯誤原文指得出是哪一條判準
++ echo '==== AC5  本輪改動到的 SKILL.md 段落(交給 /writing-for-agents 判準逐條審)===='
+==== AC5  本輪改動到的 SKILL.md 段落(交給 /writing-for-agents 判準逐條審)====
++ git -C '/d/Self Project/Skills' diff --stat 84ab07d..HEAD -- skills/
+ skills/build-batch/batch.py   | 238 +++++++++++++++++++++++++++++++++++++++++-
+ skills/build/SKILL.md         |  27 +++--
+ skills/qa/SKILL.md            |  57 ++++++++--
+ skills/slice-tickets/SKILL.md |  46 ++++++--
+ 4 files changed, 345 insertions(+), 23 deletions(-)
++ wc -l '/d/Self Project/Skills/skills/qa/SKILL.md' '/d/Self Project/Skills/skills/build/SKILL.md'
+  107 /d/Self Project/Skills/skills/qa/SKILL.md
+   43 /d/Self Project/Skills/skills/build/SKILL.md
+  150 total
++ grep -c . '/d/Self Project/Skills/skills/qa/SKILL.md'
+69
++ set +x
+
+==== walkthrough 走完 ====
+所有格子符合預期
+--- exit=0 ---
+
+=== $ python scripts/qa/87-oracle.py . ===
+DEFERRED / 綁著沒呼叫 `f = lambda: dump()`                                                     fixture 期望 RED   真跑 RED    ok
+DEFERRED / list 裡的 lambda 沒呼叫 `xs = [lambda: dump()]`                                     fixture 期望 RED   真跑 RED    ok
+DEFERRED / dict 裡的 lambda 沒呼叫 `d = {"k": lambda: dump()}`                                 fixture 期望 RED   真跑 RED    ok
+DEFERRED / 裸 lambda literal 在 live 位置沒呼叫 `(lambda: dump())`                               fixture 期望 RED   真跑 RED    ok
+DEFERRED / comprehension 裡的 lambda 沒呼叫 `[lambda: dump() for _ in []]`                     fixture 期望 RED   真跑 RED    ok
+DEFERRED / 三元裡的 lambda 沒呼叫 `None if xs else (lambda: dump())`                             fixture 期望 RED   真跑 RED    ok (跑爆)
+DEFERRED / 天花板(#84 留,仍是誤放):def 內就地呼叫但結果丟掉 `return (lambda: dump)()` 配 `get()`             fixture 期望 RED   真跑 RED    ok
+DEFERRED / 對照:`return (lambda: dump())()` 配 `get()` —— lambda 就地被呼叫、dump 真的跑(不得誤紅)        fixture 期望 GREEN 真跑 GREEN  ok
+DEFERRED / 對照:`def g(cb=lambda: dump())` 預設引數,g 沒被呼叫(現在就是 RED,不得放掉)                       fixture 期望 RED   真跑 RED    ok
+DEFERRED / 對照:`f = lambda: dump()` 且真的 `f()`(不得誤紅)                                        fixture 期望 GREEN 真跑 GREEN  ok
+DEFERRED / 對照:`(lambda: dump())()` 就地呼叫(不得誤紅)                                             fixture 期望 GREEN 真跑 GREEN  ok
+GENERATOR / genexp 綁著沒消費 `g = (dump() for _ in [1])`                                      fixture 期望 RED   真跑 RED    ok
+GENERATOR / 裸 genexp 在 live 語句 `(dump() for _ in [1])`                                    fixture 期望 RED   真跑 RED    ok
+GENERATOR / genexp 進容器沒消費 `xs = [(dump() for _ in [1])]`                                  fixture 期望 RED   真跑 RED    ok
+GENERATOR / genexp 交給不消費的 def `keep(dump() for _ in [1])`                                 fixture 期望 RED   真跑 RED    ok
+GENERATOR / generator function 呼叫了但沒 iterate `gen()`                                      fixture 期望 RED   真跑 RED    ok
+GENERATOR / bypass 直接寫在沒人消費的 genexp body 裡                                                fixture 期望 RED   真跑 RED    ok
+GENERATOR / 對照:generator function 綁著沒呼叫(現在就是 RED,不得放掉)                                    fixture 期望 RED   真跑 RED    ok
+GENERATOR / 對照:`sum(1 for _ in (dump() for _ in [1]))` 真的消費(不得誤紅)                         fixture 期望 GREEN 真跑 GREEN  ok
+GENERATOR / 對照:`g = (dump() for _ in [1])` 之後 `list(g)`(不得誤紅)                             fixture 期望 GREEN 真跑 GREEN  ok
+GENERATOR / 對照:`for _ in gen(): pass` 真的 iterate(不得誤紅)                                    fixture 期望 GREEN 真跑 GREEN  ok
+GENERATOR / 對照:listcomp 不是 deferred,真的跑 `[dump() for _ in [1]]`(不得誤紅)                     fixture 期望 GREEN 真跑 GREEN  ok
+GENERATOR / 對照:bypass 寫在真的被消費的 genexp body(不得誤紅)                                          fixture 期望 GREEN 真跑 GREEN  ok
+ASYNC_DEFER / coroutine 綁著沒 await `c = adump()`                                           fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / 裸 coroutine 在 live 語句 `adump()`                                             fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / coroutine 進容器沒 await `xs = [adump()]`                                       fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / coroutine 交給不 await 的 def `keep(adump())`                                   fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / bypass 直接寫在呼叫了但沒 await 的 async def body 裡                                   fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / 對照:async def 綁著沒呼叫(現在就是 RED,不得放掉)                                           fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / 對照:async generator 呼叫了沒 iterate `agen()`(現在就是 RED,不得放掉)                     fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / 對照:`await adump()` 只在沒人跑的 outer 裡(現在就是 RED,不得放掉)                            fixture 期望 RED   真跑 RED    ok
+ASYNC_DEFER / 對照:`asyncio.run(adump())` 真的跑(不得誤紅)                                         fixture 期望 GREEN 真跑 GREEN  ok
+ASYNC_DEFER / 對照:`await adump()` 在被 `asyncio.run` 的 outer 裡(不得誤紅)                         fixture 期望 GREEN 真跑 GREEN  ok
+ASYNC_DEFER / 對照:bypass 寫在真的被 run 的 coroutine body(不得誤紅)                                  fixture 期望 GREEN 真跑 GREEN  ok
+ASYNC_DEFER / 對照:`async for _ in agen()` 真的 iterate(不得誤紅)                                 fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / 別的 def 裡的 local 叫 list `def u(): list = 1`                                 fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / 別的 def 的 parameter 叫 list `def u(list)`                                    fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / comprehension target 叫 list `[list for list in []]`                        fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / `with … as list` 在別的 def 裡                                                 fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / `except … as list` 在別的 def 裡                                               fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / class body 裡的 attribute 叫 list `class W: list = 1`                         fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / import alias 叫 list `from collections import deque as list`                fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / 巢狀 def 叫 list `def u(): def list(): …`                                     fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / 連死碼分支裡的 for target 都算 `if False: for list in []`                           fixture 期望 GREEN 真跑 GREEN  ok
+SHADOW_SCOPE / 對照:模組真的 `def sorted(g): return g`(#86 review 收的那條,不得放掉)                    fixture 期望 RED   真跑 RED    ok
+SHADOW_SCOPE / 對照:沒有任何撞名,`list(g)` 照常消費(不得誤紅)                                             fixture 期望 GREEN 真跑 GREEN  ok
+ATTR_CONSUMER / import 進來的物件 `.extend(genexp)`,它根本不抽乾                                     fixture 期望 RED   真跑 RED    ok (跑爆)
+ATTR_CONSUMER / bypass 直接寫在交給 `.extend` 的 genexp body 裡                                   fixture 期望 RED   真跑 RED    ok (跑爆)
+ATTR_CONSUMER / bypass 交給 `.next` —— 名單上任一個名字當 method 都行                                  fixture 期望 RED   真跑 RED    ok (跑爆)
+ATTR_CONSUMER / 對照:同模組自己 `class B: def extend`(被尺二那個過寬的 shadowed 擋掉,現在是 RED)              fixture 期望 RED   真跑 RED    ok
+ATTR_CONSUMER / 對照:真的 `"".join(…)`(修法留下 attribute 判讀的理由,不得誤紅)                             fixture 期望 GREEN 真跑 GREEN  ok
+ATTR_CONSUMER / 對照:真的 `list.extend(…)`(不得誤紅)                                              fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def run(x)`,`asyncio.run(adump())` 真的在跑                             fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def gather(x)`,`await asyncio.gather(adump())` 真的在跑                 fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def wait_for(x)`,`await asyncio.wait_for(adump(), 5)` 真的在跑          fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def create_task(x)`,`asyncio.create_task(adump())` 真的在跑             fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def ensure_future(x)`,`await asyncio.ensure_future(adump())` 真的在跑   fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 模組自己 `def run_until_complete(x)`,`loop.run_until_complete(adump())` 真的在跑  fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 別的 def 的參數叫 run `def u(run)`                                              fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 別的 def 裡的 local 叫 wait_for `def u(): wait_for = 1`                        fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / comprehension target 叫 gather `[gather for gather in []]`                 fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / `import json as run` 撞名                                                   fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 對照:沒有任何撞名,`asyncio.run(adump())` 照常驅動(不得誤紅)                               fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_SHADOW / 對照:自己的 `def run(x): return x` 真的沒驅動(shadowed 這半的價值,不得放掉)                  fixture 期望 RED   真跑 RED    ok
+DRIVEN_ATTR / 任意物件的 `.run(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                            fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.gather(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                         fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.wait(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                           fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.wait_for(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                       fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.create_task(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                    fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.ensure_future(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡                  fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / 任意物件的 `.run_until_complete(coroutine)` 當開關,bypass 寫在沒人跑的 body 裡             fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / `subprocess.run(coroutine)` —— 名字撞得最兇的那個                                    fixture 期望 RED   真跑 RED    ok (跑爆)
+DRIVEN_ATTR / `MagicMock().run(coroutine)` —— receiver 不炸,純粹就是沒驅動                         fixture 期望 RED   真跑 RED    ok
+DRIVEN_ATTR / `MagicMock().create_task(coroutine)` —— 同上,換一個名字                            fixture 期望 RED   真跑 RED    ok
+DRIVEN_ATTR / 對照:`loop.run_until_complete(adump())` 真的驅動(attribute 判讀的理由,不得誤紅)            fixture 期望 GREEN 真跑 GREEN  ok
+DRIVEN_ATTR / 對照:`asyncio.Runner().run(adump())` 真的驅動(不得誤紅)                               fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 綁到名字再 await `c = adump()` + `await c`                                      fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 綁到名字再交給 event loop `c = adump()` + `asyncio.run(c)`                        fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / `asyncio.gather(*cs)` 的 Starred 展開                                         fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / async comprehension 裡的 await `[await c for c in [adump()]]`                fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 對照:`asyncio.run(adump())` 一步到位(不得誤紅)                                       fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 對照:`asyncio.run(main=adump())` 走 keyword(不得誤紅)                             fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 對照:兩層 await `outer -> mid -> adump`(不得誤紅)                                  fixture 期望 GREEN 真跑 GREEN  ok
+AWAIT_SHAPES / 對照:`c = adump()` 綁著沒人驅動(#87 母體第一格,不得放掉)                                    fixture 期望 RED   真跑 RED    ok
+
+母體 84,fixture 期望與實跑不合 0
+--- exit=0 ---
+
+=== $ python scripts/qa/113-wide.py . ===
+母體:87 份 .md(skills/ + docs/)
+
+== 未解析的 §N(寬:不管跨檔引用)== 210 筆
+  skills/close/SKILL.md:16 §6  | slice 票 | 過關五條:client 親口 OK、blocking 清零、known issues 有處置、regression 全綠、scenarios 已固化 | `
+  skills/close/SKILL.md:17 §6  | 純基礎工程切片(覆蓋驗收項標「無 — 間接驗證」) | QA blocking 清零 + regression 全綠;驗收由後續票的 demo 間接把關 | `/qa` §6 
+  skills/close/SKILL.md:20 §5  | tech-debt / refactor | regression 全綠(可見行為不變)+ 決策投影 | `/maintain` §5–6 |
+  skills/close/SKILL.md:21 §5  | known issue「之後修」票 | 同 bug,依報的人分級 | `/client-demo` §5 |
+  docs/qa/107-report.md:39 §3  | A2 | 正文「**排序約束**:獨立 judge 排在 walkthrough 之後才開…」整句刪掉,只留 §3 標題 | **green** | red |
+  docs/qa/107-report.md:41 §2  | A4 | §2 的 `###` 子段裡加一張非 lane 表(第一欄粗體) | **red** | green(假陽性) |
+  docs/qa/107-report.md:44 §3  `POOL_SECTION_RE` 的 lookahead 是 `^## ` 而 §3 標題本身含「並行池」「walkthrough 之後」。
+  docs/qa/107-report.md:47 §3  `JUDGE_AFTER_RE.sub("walkthrough 之前", text)` 改壞,那會連 §3 標題一起改掉所以會紅;
+  docs/qa/107-report.md:52 §2  1. `:12` `跑完接 §2 收尾` — 本輪新的 §2 是 code-review 並行位置,收尾是 §3。同檔 `:18` 改對了,這行漏改。
+  docs/qa/107-report.md:52 §2  1. `:12` `跑完接 §2 收尾` — 本輪新的 §2 是 code-review 並行位置,收尾是 §3。同檔 `:18` 改對了,這行漏改。
+  docs/qa/107-report.md:52 §3  1. `:12` `跑完接 §2 收尾` — 本輪新的 §2 是 code-review 並行位置,收尾是 §3。同檔 `:18` 改對了,這行漏改。
+  docs/qa/107-report.md:53 §2  2. `:8` 「執行流程(…、`/code-review`、commit)全依原件,本檔只補一個 delta」 — §2 做的就是改 `/code-review` 的位置,而且現
+  docs/qa/107-walkthrough.md:17 §2  **做了什麼**:讀出貨的 `skills/qa/SKILL.md` §2,判「下一個 agent 照著做會不會真的並行」;
+  docs/qa/107-walkthrough.md:18 §2  再讀 `skills/build/SKILL.md` §2 的 code-review 並行位置,對兩份文件的母體宣告。
+  docs/qa/107-walkthrough.md:57 §2  **排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。
+  docs/qa/107-walkthrough.md:151 §2  | **Information hierarchy / co-location** | 池的宣告、資源規則、失敗處置全在 §2 同一個標題下;三支 lane 各自的細節收進 `##
+  docs/qa/107-walkthrough.md:160 §2  呼叫 `/implement #N`(已收編,模型可叫)跑完整流程,跑完接 §2 收尾。
+  docs/qa/107-walkthrough.md:163 §2  本輪新的 §2 是「code-review 的並行位置」,收尾交棒被推到 §3。這行沒跟著改,現在把下一個
+  docs/qa/107-walkthrough.md:172 §2  這行說「`/code-review` 全依原件」「只補一個 delta」,但本輪新增的 §2 做的就是**改
+  docs/qa/107-walkthrough.md:173 §2  `/code-review` 在原件裡的位置**,而且檔案現在有三個 delta 節(§2 並行位置、§3 收尾交棒、
+  docs/qa/107-walkthrough.md:174 §4  §4 書面證據)。frontmatter 的 description 已經更新成「只補 code-review 並行位置與收尾
+  docs/qa/113-walkthrough.md:64 §2  那 §N 的標題就該含那幾個字。這條是為了抓 #113 第 1 條:`跑完接 §2 收尾` 字面
+  docs/qa/113-walkthrough.md:65 §2  解析得開(§2 存在),錯的是語意。
+  docs/qa/113-walkthrough.md:90 §2  skills/build/SKILL.md:12 §2 的標題是「code-review 的並行位置(delta)」,但「收尾」住在 §3
+  docs/qa/113-walkthrough.md:90 §3  skills/build/SKILL.md:12 §2 的標題是「code-review 的並行位置(delta)」,但「收尾」住在 §3
+  docs/qa/113-walkthrough.md:91 §2  呼叫 `/implement #N`(已收編,模型可叫)跑完整流程,跑完接 §2 收尾。
+  docs/qa/113-walkthrough.md:101 §2  | 未解析 §N **187 筆**(兩側同數) | **全數誤報,設計上的收窄**。絕大多數是 `docs/qa/*.md` 歷史紀錄檔引用**別的檔**的 §N(例:`49-w
+  docs/qa/113-walkthrough.md:102 §8  | 指錯節 `build-batch/SKILL.md:356`(兩側都在) | **誤報**。原句是「§8 一張一張回收掉了」,`一張` 剛好也出現在 §6 的標題裡,寬規則就咬
+  docs/qa/113-walkthrough.md:102 §6  | 指錯節 `build-batch/SKILL.md:356`(兩側都在) | **誤報**。原句是「§8 一張一張回收掉了」,`一張` 剛好也出現在 §6 的標題裡,寬規則就咬
+  docs/qa/113-walkthrough.md:117 §2  | 1 | `build/SKILL.md:12` 的 `§2` 是 stale,收尾在 §3 | `跑完整流程。跑的**過程中** /code-review 的位置改照 §2(原
+  docs/qa/113-walkthrough.md:117 §3  | 1 | `build/SKILL.md:12` 的 `§2` 是 stale,收尾在 §3 | `跑完整流程。跑的**過程中** /code-review 的位置改照 §2(原
+  docs/qa/113-walkthrough.md:117 §2  | 1 | `build/SKILL.md:12` 的 `§2` 是 stale,收尾在 §3 | `跑完整流程。跑的**過程中** /code-review 的位置改照 §2(原
+  docs/qa/113-walkthrough.md:117 §3  | 1 | `build/SKILL.md:12` 的 `§2` 是 stale,收尾在 §3 | `跑完整流程。跑的**過程中** /code-review 的位置改照 §2(原
+  docs/qa/113-walkthrough.md:117 §4  | 1 | `build/SKILL.md:12` 的 `§2` 是 stale,收尾在 §3 | `跑完整流程。跑的**過程中** /code-review 的位置改照 §2(原
+  docs/qa/113-walkthrough.md:122 §2  walkthrough 之後才開,不進 §2 的並行池」還在;理由段前兩句完整;`validate.py` 的
+  docs/qa/113-walkthrough.md:174 §4  `gh issue view #113 --comments` 等於 `gh issue view` 沒帶參數。這違反本檔 §4 自己指過去的
+  docs/qa/114-report.md:77 §3  `:50` 與 `:30` 逐字重複、`:75` 與 §3 標題重複、`:42` vs `:73`(judge 開的時機含糊)。
+  docs/qa/114-walkthrough.md:57 §4  > 完成標準:未 push 的 commit 數是 `0`,`gh issue view <N> --comments` 兩則 comment(產出、交棒)都看得到,且 §4 適用
+  docs/qa/114-walkthrough.md:82 §2  ### A4 —— 修前對照(`/qa` §2 要求:改判準的票要跑修前對照)
+  docs/qa/114-walkthrough.md:103 §1  ### A5 —— 第二把尺(`/qa` §1 的 oracle 獨立性)
+  docs/qa/114-walkthrough.md:157 §2  | 1 | `build/SKILL.md:12` 的 `§2` 是 stale | 現文「改照 §2(原件序列的那一步不照跑),跑完接 §3 收尾;寫交付物的當下照 §4」 | 
+  docs/qa/114-walkthrough.md:157 §2  | 1 | `build/SKILL.md:12` 的 `§2` 是 stale | 現文「改照 §2(原件序列的那一步不照跑),跑完接 §3 收尾;寫交付物的當下照 §4」 | 
+  docs/qa/114-walkthrough.md:157 §3  | 1 | `build/SKILL.md:12` 的 `§2` 是 stale | 現文「改照 §2(原件序列的那一步不照跑),跑完接 §3 收尾;寫交付物的當下照 §4」 | 
+  docs/qa/114-walkthrough.md:157 §4  | 1 | `build/SKILL.md:12` 的 `§2` 是 stale | 現文「改照 §2(原件序列的那一步不照跑),跑完接 §3 收尾;寫交付物的當下照 §4」 | 
+  docs/qa/37-walkthrough.md:42 §7  skills/client-demo/SKILL.md:60:前三條成立後,comment「下一步:`/qa #N`(Codex: `$qa #N`)— 固化 scenarios」
+  docs/qa/37-walkthrough.md:46 §5  skills/maintain/SKILL.md:59:Client 報的即到即分類開票;agent 自撿的照 §5 攢批,client 說了才清。分類完的票進對應產線,每張票 c
+  docs/qa/37-walkthrough.md:92 §6  - 本輪 QA 收尾的交棒 comment(§6)同樣雙寫 — 見 #37 最新一則。
+  docs/qa/40-walkthrough.md:139 §3  輸出完全吻合 `next` skill §3 規定的格式(推薦標 `(Recommended)` + 雙寫 + 替代 1–2 + 現場
+  docs/qa/40-walkthrough.md:140 §1  一句話),且照 §1 先找票上交棒 comment → 推 `/qa #40`。fake HOME 沒有 CLAUDE.md,
+  docs/qa/49-walkthrough.md:5 §2  1. `skills/build/SKILL.md` §2 明確要求「push 後才貼 commit link」,且完成標準涵蓋這一步
+  docs/qa/49-walkthrough.md:41 §2  ## 步驟 2 — 驗收 1:§2 的順序與完成標準
+  docs/qa/49-walkthrough.md:43 §2  `skills/build/SKILL.md` §2 現況(逐字):
+  docs/qa/49-walkthrough.md:77 §2  #49 自己這輪就是新順序的第一次實跑(build comment 由新版 §2 產出)。現場量測:
+  docs/qa/49-walkthrough.md:98 §2  在 throwaway branch 上造一個未 push 的 commit,看 §2 的守門指令與 GitHub 是否一致:
+  docs/qa/49-walkthrough.md:105 §2  1                                   ← §2 的守門會擋(不是 0)
+  docs/qa/49-walkthrough.md:115 §2  守門條件(`count != 0`)與「link 死掉」完全同時發生 — §2 的檢查抓的正是這個失敗模式。
+  docs/qa/49-walkthrough.md:123 §2  | §2 要求 push 後才貼 commit link,完成標準涵蓋 | **pass** | push 列為步驟 1、明寫「push 沒綠不准貼 commit link」,完成
+  docs/qa/49-walkthrough.md:129 §2  judge 額外點出的未涵蓋:§2 寫的是 `origin/<branch>`,但 E4 只量了 `origin/main..HEAD`;
+  docs/qa/49-walkthrough.md:147 §2  可驗的部分全綠:新版 §2 產出的 #49 comment,link 從第一秒就活、QA 期間沒人補 push;
+  docs/qa/49-walkthrough.md:189 §3  `close` §3 貼結案 comment 的 commit links、還會自己產 dashboard 更新的 commit;
+  docs/qa/49-walkthrough.md:190 §6  `retro` §6 貼每條 amendment 的 commit link。client 拍板「順手補」,兩支各補一步 push
+  docs/qa/52-walkthrough.md:49 §3  照 SKILL.md §3 那段指令**逐字**跑,環境是開 #58 那張票時的同一台、同一個 shell
+  docs/qa/52-walkthrough.md:123 §4  「要開」= 1 張 → SKILL.md §4 第一條岔路:印「沒必要開批次,用 `/build #70`
+  docs/qa/52-walkthrough.md:154 §1  ## 步驟 5 — 真實資料端到端(§1 → §2 → §3)
+  docs/qa/52-walkthrough.md:154 §2  ## 步驟 5 — 真實資料端到端(§1 → §2 → §3)
+  docs/qa/52-walkthrough.md:154 §3  ## 步驟 5 — 真實資料端到端(§1 → §2 → §3)
+  docs/qa/52-walkthrough.md:156 §1  照 SKILL.md §1 抓票、§2 解 `## Blocked by`,餵進 §3:
+  docs/qa/52-walkthrough.md:156 §2  照 SKILL.md §1 抓票、§2 解 `## Blocked by`,餵進 §3:
+  docs/qa/52-walkthrough.md:156 §3  照 SKILL.md §1 抓票、§2 解 `## Blocked by`,餵進 §3:
+  docs/qa/52-walkthrough.md:176 §2  §2 的解析(body 的 `## Blocked by` → `blocked_by`)逐字實錄,含 `None` 那種寫法:
+  docs/qa/52-walkthrough.md:186 §4  真實資料現在正好是「只有 1 張能跑」→ agent 端照 §4 印:
+  docs/qa/52-walkthrough.md:218 §4  輸出完就結束,不問點頭 — 對照 SKILL.md §4 第一條岔路。這句話出現在 client 螢幕上,
+  docs/qa/52-walkthrough.md:219 §3  名單也在(§3 印完才走 §4),兩者一起看到。
+  docs/qa/52-walkthrough.md:219 §4  名單也在(§3 印完才走 §4),兩者一起看到。
+  docs/qa/52-walkthrough.md:242 §4  ## 步驟 7 — agent 端文字逐字走查(SKILL.md §4 / §5)
+  docs/qa/52-walkthrough.md:242 §5  ## 步驟 7 — agent 端文字逐字走查(SKILL.md §4 / §5)
+  docs/qa/52-walkthrough.md:248 §4  | 只有 1 張 → 指路單張 | §4 | 「**只有 1 張能跑** → 印「沒必要開批次,用 `/build #47`(Codex: `$build #47`)就好」,結束,
+  docs/qa/52-walkthrough.md:249 §5  | 停下等點頭 | §5 | 「名單印完停下來,明確問 client:「這幾張要一起推嗎?」」 |
+  docs/qa/52-walkthrough.md:250 §5  | 說不 → 乾淨結束 | §5 | 「**說不** → 乾淨結束。什麼都沒開、什麼都沒改,不用回收。」 |
+  docs/qa/52-walkthrough.md:261 §3  (b) `skill_command_issue` 咬 SKILL.md — §3 那段指令必須把 JSON 餵進 `batch.py`,
+  docs/qa/52-walkthrough.md:266 §3  - **#59**(known issue,`/client-demo #58` 已判「之後修」):SKILL.md §3 只給 bash heredoc
+  docs/qa/52-walkthrough.md:271 §3  - SKILL.md §3 寫的是 `python <skill dir>/batch.py`,`<skill dir>` 要自己代換成真路徑
+  docs/qa/53-walkthrough.md:89 §6  跑的是 SKILL.md §6 的這段(原文照抄,`skills/build-batch/SKILL.md` 第 71-75 行):
+  docs/qa/53-walkthrough.md:142 §6  所以「開工」這一行是**指示**,不是動作;真的開工作區的是 §6 接在後面那兩行 git 指令
+  docs/qa/53-walkthrough.md:147 §6  每張綠了各報一行(§6):
+  docs/qa/53-walkthrough.md:168 §9  整批合併完的最後一行(§9):
+  docs/qa/53-walkthrough.md:375 §4  1d1d65a test: 固化 #52 — §4/§5 給 client 的兩句咬進 self-check
+  docs/qa/53-walkthrough.md:375 §5  1d1d65a test: 固化 #52 — §4/§5 給 client 的兩句咬進 self-check
+  docs/qa/53-walkthrough.md:564 §9  SKILL.md §9 寫「`git worktree list` 應該只剩主 repo — 沒剩乾淨就是有 lane 沒走完 §7,
+  docs/qa/53-walkthrough.md:564 §7  SKILL.md §9 寫「`git worktree list` 應該只剩主 repo — 沒剩乾淨就是有 lane 沒走完 §7,
+  docs/qa/53-walkthrough.md:573 §9  **A(#61). §9 的清場檢查在這台機器上永遠誤報。** SKILL.md §9 最後一句拿「`git worktree list` 只剩
+  docs/qa/53-walkthrough.md:573 §9  **A(#61). §9 的清場檢查在這台機器上永遠誤報。** SKILL.md §9 最後一句拿「`git worktree list` 只剩
+  docs/qa/53-walkthrough.md:574 §7  主 repo」當「lane 有沒有走完 §7」的判準。實測:本票 0 個 lane 殘留,那行照樣印 4 列,因為
+  docs/qa/53-walkthrough.md:578 §9  **B(#62). §9 貼批次總結那段沒給可以直接貼的指令。** §6 的兩處都給了完整的
+  docs/qa/53-walkthrough.md:578 §6  **B(#62). §9 貼批次總結那段沒給可以直接貼的指令。** §6 的兩處都給了完整的
+  docs/qa/53-walkthrough.md:579 §9  `… | gh issue comment <N> --body-file -`,§9 只給 `python … <<'JSON'` 的 heredoc,再用散文說
+  docs/qa/53-walkthrough.md:585 §5  1. **§5 的點頭 gate、以及 lane 內真正跑 `/build #N` + `/qa #N`** — 需要三張真的 ready 票 +
+  docs/qa/53-walkthrough.md:591 §9  3. **每張票上的產出紀錄** — 由 lane 內的 `/build` 貼(§9 明寫這裡不重複寫)。本輪沒實跑
+  docs/qa/53-walkthrough.md:602 §5  數字是回吐輸入的長度、不查證 merge — 同型斷點。兩側都要等 §5 點頭之後的真跑才連得上,
+  docs/qa/53-walkthrough.md:604 §5  7. **fail / 撞車 / 超過 3 張排隊三條路徑** — SKILL.md §5、§7 明寫不在本版範圍,遇到停下來
+  docs/qa/53-walkthrough.md:604 §7  7. **fail / 撞車 / 超過 3 張排隊三條路徑** — SKILL.md §5、§7 明寫不在本版範圍,遇到停下來
+  docs/qa/54-walkthrough.md:77 §6  驗收原句講的是「三張裡有一張沒過」。scratchpad 開一個 bare remote + clone,照 SKILL.md §6
+  docs/qa/54-walkthrough.md:284 §7  AssertionError: SKILL.md: 沒過 QA 那張的工作區與 branch 要保留、不回收的那句不見了 — agent 會照 §7 把它一起 remove 掉,c
+  docs/qa/54-walkthrough.md:318 §7  另外兩張),由 `/build-batch` 開著、整批收尾時才照 §7 回收 —— 不是本次 QA 留下的殘留。
+  docs/qa/54-walkthrough.md:319 §7  `batch/61`、`batch/62` 是前一批留著的 branch(§7 明寫 branch 留到票結案),沒有對應的
+  docs/qa/54-walkthrough.md:329 §6  把它送進 `gh` 的那半是 §6 早就在跑的同一條 pipe,活證據就是本票自己那則「開工 #54 …」
+  docs/qa/54-walkthrough.md:336 §7  - **merge 撞車**:#55 的範圍,SKILL.md §7 仍明寫遇到就停下來講給 client 聽。
+  docs/qa/55-walkthrough.md:5 §7  - 第 1 輪:§7a 查「跟誰撞」的指令安靜回空的。
+  docs/qa/55-walkthrough.md:7 §7  §7a 會在「第三張乾淨動過同一個檔案」時報出錯的票號,而「查不出另一張」那條路在工具端
+  docs/qa/55-walkthrough.md:9 §7  - 第 3 輪:§7a 遇到 modify/delete(一張刪檔、一張改同檔)問不出東西,會對 client 講一句
+  docs/qa/55-walkthrough.md:45 §7  所以實錄從「§7 開始一張一張合」那一行起跳。
+  docs/qa/55-walkthrough.md:56 §7  bash …/scratchpad/qa55e-1.sh    # 步驟 2:撞車 + §7a 認票(跑完停在 conflict,等 agent 解)
+  docs/qa/55-walkthrough.md:86 §7  ## 步驟 2 — 撞車發生 + §7a 查出「跟誰撞」
+  docs/qa/55-walkthrough.md:90 §7  檔案。照 §7 的順序 47 → 42 → 48 → 49 一張一張合。**42 是故意擺在中間的**:它讓「這批裡動過
+  docs/qa/55-walkthrough.md:91 §7  這個檔案的」不只一條,逼 §7a 走到第二段(`git blame`)。
+  docs/qa/55-walkthrough.md:160 §7  - §7a 第一段問「**已經合進主線的那幾張**(47、42)裡誰自己動過 `docs/notes.md`」→ 印出
+  docs/qa/55-walkthrough.md:251 §7  是為了不去騷擾這批真的在跑的票 — 走的路徑與命令完全是 §7b 的原句。
+  docs/qa/55-walkthrough.md:259 §7  §7c 動作:退掉沒合完的 merge、停下、把狀態講清楚。
+  docs/qa/55-walkthrough.md:536 §7  的舊行包進去、blame 回這批之前的 commit);§7a 一次只問一個檔案,撞到幾個就跑幾次、一個檔案一則
+  docs/qa/55-walkthrough.md:594 §6  以及在真的多 lane GitHub 批次裡跑完整條 §6→§9(本票只驗撞車那一段)。
+  docs/qa/55-walkthrough.md:594 §9  以及在真的多 lane GitHub 批次裡跑完整條 §6→§9(本票只驗撞車那一段)。
+  docs/qa/56-walkthrough.md:24 §8  | 5b | #61 這條 lane 照 §8 合回主線(真的 `git merge --no-ff`,主線上有 merge commit) |
+  docs/qa/56-walkthrough.md:29 §6  **這份驗不到的**:cap 的實際執行者是「agent 照 `batch.py` 印幾行就開幾個 worktree」(SKILL.md §6.2)—— 這份 transcript
+  docs/qa/56-walkthrough.md:29 §7  **這份驗不到的**:cap 的實際執行者是「agent 照 `batch.py` 印幾行就開幾個 worktree」(SKILL.md §6.2)—— 這份 transcript
+  docs/qa/56-walkthrough.md:55 §3  + echo '==== STEP 2  5 張能跑 -> 只開 3 張,其餘進佇列(SKILL.md §3)===='
+  docs/qa/56-walkthrough.md:56 §3  ==== STEP 2  5 張能跑 -> 只開 3 張,其餘進佇列(SKILL.md §3)====
+  docs/qa/56-walkthrough.md:70 §6  + echo '==== STEP 2b  開頭那幾條:名單 5 張只印 3 行(印幾行才開幾個 worktree,§6.2)===='
+  docs/qa/56-walkthrough.md:71 §6  ==== STEP 2b  開頭那幾條:名單 5 張只印 3 行(印幾行才開幾個 worktree,§6.2)====
+  docs/qa/56-walkthrough.md:86 §6  + echo '==== STEP 3  #61 做完 -> 補 #64;#62 做完 -> 補 #65(SKILL.md §6.3)===='
+  docs/qa/56-walkthrough.md:87 §6  ==== STEP 3  #61 做完 -> 補 #64;#62 做完 -> 補 #65(SKILL.md §6.3)====
+  docs/qa/56-walkthrough.md:127 §10  + echo '-- 同時存在的 lane 數(母體 = .git/batch-worktrees/,同 §10 清場判準)'
+  docs/qa/56-walkthrough.md:128 §10  -- 同時存在的 lane 數(母體 = .git/batch-worktrees/,同 §10 清場判準)
+  docs/qa/56-walkthrough.md:132 §8  + echo '-- #61 綠了:照 §8 收掉工作區(branch 留著),名額讓出來給 #64'
+  docs/qa/56-walkthrough.md:133 §8  -- #61 綠了:照 §8 收掉工作區(branch 留著),名額讓出來給 #64
+  docs/qa/56-walkthrough.md:141 §8  + echo '-- 被收掉工作區的 lane,branch 照 §8 留著'
+  docs/qa/56-walkthrough.md:142 §8  -- 被收掉工作區的 lane,branch 照 §8 留著
+  docs/qa/56-walkthrough.md:148 §8  + echo '==== STEP 5b  #61 照 §8 合回主線(等一下要驗它在中斷之後還在)===='
+  docs/qa/56-walkthrough.md:149 §8  ==== STEP 5b  #61 照 §8 合回主線(等一下要驗它在中斷之後還在)====
+  docs/qa/56-walkthrough.md:190 §6  + echo '==== STEP 7  重跑:偵測既有 worktree -> 接續,不重開(SKILL.md §6.1)===='
+  docs/qa/56-walkthrough.md:191 §6  ==== STEP 7  重跑:偵測既有 worktree -> 接續,不重開(SKILL.md §6.1)====
+  docs/qa/56-walkthrough.md:250 §6  + echo '==== STEP 9  #54、#55 整輪下來 comment 數沒變 —— 排隊的票在開工前不被碰(§6)===='
+  docs/qa/56-walkthrough.md:251 §6  ==== STEP 9  #54、#55 整輪下來 comment 數沒變 —— 排隊的票在開工前不被碰(§6)====
+  docs/qa/57-walkthrough.md:58 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/57-walkthrough.md:58 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/57-walkthrough.md:72 §1  52:餵進去的候選跟 `/build-batch` §1 同一組:**open、帶 `ready-for-agent`、`## Parent` 指向同一份 spec** 的票 — 
+  docs/qa/57-walkthrough.md:85 §3  56:推薦行照 §3 雙寫:`/build-batch #51`(Codex: `$build-batch #51`),替代是 `/build #47`(Codex: `$buil
+  docs/qa/57-walkthrough.md:87 §3  56:推薦行照 §3 雙寫:`/build-batch #51`(Codex: `$build-batch #51`),替代是 `/build #47`(Codex: `$buil
+  docs/qa/57-walkthrough.md:93 §3  42:「彼此不卡」不用眼睛看,也不要在這裡另寫一套 — 那份判斷就是 `/build-batch` §3 在跑的那支檔,`build-batch` skill 目錄底下的 `bat
+  docs/qa/57-walkthrough.md:105 §3  + echo '-- 而 /build-batch §3 跑的也是同一支檔(所以「同一支」不是說法,是同一個路徑)'
+  docs/qa/57-walkthrough.md:106 §3  -- 而 /build-batch §3 跑的也是同一支檔(所以「同一支」不是說法,是同一個路徑)
+  docs/qa/57-walkthrough.md:111 §6  79:沒有輸出(`grep` 回 exit 1,正常)就是乾淨的一批,直接往 §6.2。有輸出就把那幾行**原封不動**貼進 `worktrees`,票號由 [`batch.py`
+  docs/qa/58-walkthrough.md:63 §3  ## 步驟 2 — 重現 scenario:照 SKILL.md §3 逐字跑
+  docs/qa/58-walkthrough.md:102 §3  `HEAD~1` 的 `batch.py` + 修前 SKILL.md §3 的 inline `python -c`:
+  docs/qa/60-walkthrough-r3.md:144 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/60-walkthrough-r3.md:144 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/60-walkthrough-r4.md:21 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/60-walkthrough-r4.md:21 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/61-walkthrough.md:1 §9  # QA walkthrough — #61 build-batch:§9 清場檢查的母體選錯(bug fix)
+  docs/qa/61-walkthrough.md:14 §9  原句 1(票上產出紀錄 + spec 票批次總結)本票**沒有碰到** — 它的判準在 §9 前半段,是同批 #62 的範圍;
+  docs/qa/61-walkthrough.md:217 §7  | B | 1 lane 沒走完 §7 | 5 列 → 判對,但哪一列是 lane 要人挑 | 第一行只印那 1 列 lane 的路徑 ✅ |
+  docs/qa/61-walkthrough.md:220 §7  | A' | 照 §7 `git worktree remove` 收掉,branch 留著 | 4 列 → 一樣誤報 | 第一行無輸出(乾淨)+ 第二行印 `batch/47`(
+  docs/qa/61-walkthrough.md:243 §9  開票時做過另一把尺(絕對詞)的全掃,5 句命中 1(就是 §9 這句);本輪換成「母體」這把尺重掃,
+  docs/qa/61-walkthrough.md:244 §6  結論一致 — 另外兩句(§開頭「點頭之前什麼都不動」、§6「不可能互相把對方寫到一半的東西吃進去」)
+  docs/qa/61-walkthrough.md:253 §5  skills/build-batch/batch.py:44        ← self-check 的斷言字串,母體是 §5 那句,有界
+  docs/qa/61-walkthrough.md:273 §9  - **原句 1 fail** — 證據零覆蓋。**採納**,但改成「不在本票範圍」:原句 1 的判準在 §9 前半段(貼批次
+  docs/qa/61-walkthrough.md:275 §7  - **原句 2 works-but-wrong** — 判準只看 worktree、不看 branch,§7 哪天被改成 `remove` + `branch -D`
+  docs/qa/61-walkthrough.md:291 §6  現在靠的是理由段 + `(#61)` 票號防回改,跟 §6 `-u` 那段同型。真要固化,合理形狀是「skill 文件裡的
+  docs/qa/61-walkthrough.md:305 §9  1. **`/build-batch` 真跑一輪把 §9 走到。** 本輪驗的是判準本身在六種 worktree 狀態下的行為,不是
+  docs/qa/61-walkthrough.md:306 §9  「跑完一整批之後 §9 印出來的樣子」。那需要 client 點頭 + 三個 lane 真的跑完,跟 #53 QA 的第 1 條
+  docs/qa/61-walkthrough.md:308 §9  2. **原句 1(票上產出紀錄 + spec 票批次總結)。** 判準在 §9 前半段,同批 #62 的範圍,本票沒碰。
+  docs/qa/61-walkthrough.md:337 §7  # ===== 狀態 B:1 條 lane 沒走完 §7 =====
+  docs/qa/61-walkthrough.md:357 §7  # ===== 狀態 A':照 §7 收掉 worktree、branch 留著 =====
+  docs/qa/62-walkthrough.md:1 §9  # QA walkthrough — #62 build-batch:§9 貼批次總結那段沒給可直接複製的 gh 指令(bug fix)
+  docs/qa/62-walkthrough.md:9 §9  這輪要判的重點是「client 照 §9 文件逐字跑,那則批次總結有沒有真的落到 spec 票上」——
+  docs/qa/62-walkthrough.md:61 §9  ## 步驟 2 — 重現 scenario:照修後 §9 逐字抄一次
+  docs/qa/62-walkthrough.md:63 §9  修後 §9 那段(`skills/build-batch/SKILL.md:144-150`):
+  docs/qa/62-walkthrough.md:118 §9  `HEAD~1` 的 §9:
+  docs/qa/62-walkthrough.md:133 §6  (§6 兩處把 `gh` 換成 `cat` 做 dry run,避免在票上留垃圾):
+  docs/qa/62-walkthrough.md:137 §6  | `SKILL.md:96`(§6 開工貼票) | `echo "$lane" \| python … \| gh issue comment 47 --body-file -`
+  docs/qa/62-walkthrough.md:138 §6  | `SKILL.md:106`(§6 完成貼票) | `echo "$lane" \| python … \| gh issue comment 47 --body-file -
+  docs/qa/62-walkthrough.md:139 §9  | `SKILL.md:145`(§9 批次總結) | `python … <<'JSON' \| gh issue comment 51 --body-file -` | 是(本
+  docs/qa/62-walkthrough.md:142 §9  §9 上面那個 `merged` block(`SKILL.md:137`)不在同型內 —— 它本來就只印終端機、不貼票。
+  docs/qa/62-walkthrough.md:152 §6  - 同型殘留掃描:§6 兩處 pass,§9 的 `merged` block pass(它散文本來就寫「終端機印最後一行」,不該有 `gh` 半段)。
+  docs/qa/62-walkthrough.md:152 §9  - 同型殘留掃描:§6 兩處 pass,§9 的 `merged` block pass(它散文本來就寫「終端機印最後一行」,不該有 `gh` 半段)。
+  docs/qa/62-walkthrough.md:156 §6  1. `<skill dir>` 佔位符四處都要讀者自己代路徑 — 三處一致、且 §6 是本票認可的 good model,算既有 convention。
+  docs/qa/62-walkthrough.md:157 §6  2. `gh issue comment 51` 跟 JSON 裡的 `"spec": 51` 是兩個要手動同步的票號,改一個忘另一個會把總結貼錯票(§6 的 `47` 同型)。
+  docs/qa/62-walkthrough.md:164 §9  - **真的整批跑完一次 `/build-batch`**:本輪只驗 §9 這一步的指令可複製性,沒有從 §1 走到 §9
+  docs/qa/62-walkthrough.md:164 §1  - **真的整批跑完一次 `/build-batch`**:本輪只驗 §9 這一步的指令可複製性,沒有從 §1 走到 §9
+  docs/qa/62-walkthrough.md:164 §9  - **真的整批跑完一次 `/build-batch`**:本輪只驗 §9 這一步的指令可複製性,沒有從 §1 走到 §9
+  docs/qa/62-walkthrough.md:166 §9  - 本票沒碰 §9 最後那句清場檢查(`git worktree list`)—— 那段是同批 #61 的範圍。
+  docs/qa/64-walkthrough.md:36 §4  | 5 | **繞過方向打在真的 SKILL.md 上**:5a `slice-tickets` §4「回報 client」反寫成「不用問 client」;5b `build` §
+  docs/qa/64-walkthrough.md:36 §1  | 5 | **繞過方向打在真的 SKILL.md 上**:5a `slice-tickets` §4「回報 client」反寫成「不用問 client」;5b `build` §
+  docs/qa/64-walkthrough.md:69 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/64-walkthrough.md:69 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/64-walkthrough.md:122 §4  + echo '-- 5a  slice-tickets §4:條件詞留著,動作從「發佈前回報 client」反過來寫'
+  docs/qa/64-walkthrough.md:123 §4  -- 5a  slice-tickets §4:條件詞留著,動作從「發佈前回報 client」反過來寫
+  docs/qa/64-walkthrough.md:135 §1  + echo '-- 5b  build §1:push 那句留著,動作反過來寫成「不要 git push」'
+  docs/qa/64-walkthrough.md:136 §1  -- 5b  build §1:push 那句留著,動作反過來寫成「不要 git push」
+  docs/qa/79-walkthrough.md:27 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/79-walkthrough.md:27 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/81-walkthrough.md:32 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/81-walkthrough.md:32 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/84-walkthrough.md:38 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/84-walkthrough.md:38 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/86-walkthrough.md:59 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/86-walkthrough.md:59 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/87-walkthrough.md:226 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/87-walkthrough.md:226 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/98-walkthrough.md:210 §8  OK §8a/§8c conflict scenarios green
+  docs/qa/98-walkthrough.md:210 §8  OK §8a/§8c conflict scenarios green
+
+== 指得到但指錯節的 §N(寬:靠標題字比對)== 1 筆
+  skills/build-batch/SKILL.md:356 §8 的標題是「5 沒過的那張留在旁邊修」,但「一張」住在 §6
+      已收那幾張的工作區在 §8 一張一張回收掉了,還在修那幾張照 §8.5 留著,這裡都不用再動。要確認收得對不對,母體只有 `.git/batch-worktrees/` 底下這幾個
+
+== 無界全稱詞候選(寬:不分理由句/規則陳述)== 349 筆
+  docs/agents/issue-tracker.md —— 1 筆
+      :3 「所有」 本倉庫的 issues 與規格存放於 GitHub Issues。所有操作使用 `gh` CLI。
+  docs/blueprint.md —— 5 筆
+      :32 「唯一」 唯一例外:pm-intake → to-spec 同 session(to-spec 吃訪談對話 context)。
+      :36 「所有」 Codex 顯式叫 skill 是 `$name`,只寫 slash 貼過去叫不動。這是所有寫給 client
+      :63 「一律」 談話內容;接法是 map `## Notes` 寫「HITL ticket 一律引用 PM 訪談紀律」。
+      :111 「唯一」 三條線都是重用現有機制,唯一新 skill 是 `retro`。
+      :133 「唯一」 才動 disciplines / skills — 系統自我升級的唯一入口。
+  docs/disciplines/pm-interview.md —— 4 筆
+      :34 「所有」 1. **自動拍板白話清單**:所有「有影響+有把握」的拍板,按白話三行制(見 `tech-decisions.md`)列出,含後果 — 這是 client 的否決點。
+      :37 「每一」 4. **Oracle 對照表**:每一項要交付的輸出(每個欄位、每種句子、每個數字)列一列,寫「這一格的答案由**哪份文件**說了算」,client 逐列確認。同一份 spec 
+      :38 「唯一」 5. **驗收清單拍板**:從 spec 生成 Gherkin scenarios 的白話版,client 逐條拍板 — 這份清單之後是 QA 的唯一 oracle。
+      :42 「所有」 對話與文件用繁體中文,技術名詞保留英文;對 client 的所有輸出過「非技術也看得懂」的檢查 — 出現架構術語就重寫。
+  docs/disciplines/tech-decisions.md —— 1 筆
+      :20 「每一」 清單,接下來每一輪 QA 都拿它當 oracle,於是全綠。查證階段少跑的那一次,會在三輪之後
+  docs/disciplines/written-evidence.md —— 4 筆
+      :29 「絕對」 2. **繞過** — 把主張換一種講法(更赤裸的絕對詞、大小寫不同、同義改寫),guard 要紅。
+      :40 「一律」 - **查不到目標時判 fail,不是靜靜略過** — regex 撈不到那一行、key 不存在,一律算
+      :44 「全部」 「30 筆裡的前 3 筆」),否則讀報告的人會把樣本當全部。
+      :61 「任何」 SKILL.md、報告、票裡任何一條「請你照抄」的指令,判準跟散文同一條:**照字面貼上去,
+  docs/qa/102-walkthrough.md —— 1 筆
+      :29 「全部」 以下全部 exit 0：
+  docs/qa/107-report.md —— 1 筆
+      :54 「唯一」 3. (nit,併本票修)`skills/qa/SKILL.md:79` 「唯一一條看報告驗不出來的約束」是無界全稱詞,同檔 `:35-36` 就是反例。
+  docs/qa/107-walkthrough.md —— 7 筆
+      :26 「每一」 | **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
+      :59 「每一」 理由:judge 的證據來源就是 walkthrough 產出的 a11y snapshot。提早開,它拿到空證據,然後把每一條
+      :61 「唯一」 例外、每條 pass。這是本 skill 唯一一條看報告驗不出來的約束,所以寫在這裡當硬約束。
+      :81 「全部」 六格都符合預期,錯誤全部指名 `skills/qa/SKILL.md`。
+      :137 「所有」 ## AC5 —— 所有改動到的 SKILL.md 都過 `/writing-for-agents`
+      :180 「唯一」 這是本 skill 唯一一條看報告驗不出來的約束,所以寫在這裡當硬約束。
+      :184 「唯一」 「母體多少、命中多少」的可數形式;「唯一一條」沒有邊界,而且本輪同一份文件裡
+  docs/qa/113-walkthrough.md —— 13 筆
+      :18 「唯一」 repo 裡沒有任何機械判準看得到這三條,唯一的收據是 `/writing-for-agents` 走查
+      :18 「任何」 repo 裡沒有任何機械判準看得到這三條,唯一的收據是 `/writing-for-agents` 走查
+      :83 「唯一」 | `skills/qa/SKILL.md` | 「唯一」 | **1** | **0** |
+      :103 「所有」 | 無界全稱詞 `qa/SKILL.md` 剩下 8 筆 | **全數合法**。`:19 任何`、`:31/:50/:77 每一`、`:53/:81 一律`、`:85 所有/全部`
+      :103 「全部」 | 無界全稱詞 `qa/SKILL.md` 剩下 8 筆 | **全數合法**。`:19 任何`、`:31/:50/:77 每一`、`:53/:81 一律`、`:85 所有/全部`
+      :103 「任何」 | 無界全稱詞 `qa/SKILL.md` 剩下 8 筆 | **全數合法**。`:19 任何`、`:31/:50/:77 每一`、`:53/:81 一律`、`:85 所有/全部`
+      :103 「每一」 | 無界全稱詞 `qa/SKILL.md` 剩下 8 筆 | **全數合法**。`:19 任何`、`:31/:50/:77 每一`、`:53/:81 一律`、`:85 所有/全部`
+      :103 「一律」 | 無界全稱詞 `qa/SKILL.md` 剩下 8 筆 | **全數合法**。`:19 任何`、`:31/:50/:77 每一`、`:53/:81 一律`、`:85 所有/全部`
+      :119 「唯一」 | 3 | `qa/SKILL.md:79` 「唯一一條」無界全稱詞 | 整句刪掉,現在是 `例外、每條 pass。` 直接接下一段 | **pass** |
+      :179 「一律」 review 的理由是「repo 一律用 #N」,但那個慣例講的是**散文裡指涉票號**(`/build #N`),
+      :197 「每一」 | `/writing-for-agents` 走查本身是 agent 判斷,不是機械判準 | 這正是本輪加第二把尺的原因。第二把尺蓋住三條中**每一條**的機械形狀,兩者對得上。
+      :236 「所有」 乾淨 subagent,只餵驗收原句 + 證據路徑,不餵實作脈絡。要求它**自己重跑**所有數字。
+      :248 「唯一」 `qa/SKILL.md` 唯一 1→0 與候選 9→8、repo-wide 2→1 / 324→323 / 7→6、未解析 187 兩側同數,
+  docs/qa/114-report.md —— 1 筆
+      :71 「任何」 QA 覆核:理由成立,且不影響任何驗收句。**建議觸發點**:下一張為別的理由動
+  docs/qa/114-walkthrough.md —— 7 筆
+      :95 「永遠」 差額剛好是那一行,**沒有本輪引入的新誤判**。這格也排除「加一條永遠不會 fire 的
+      :106 「任何」 `scripts/qa/114-paste.py`:**不套**受測守門的任何規則(不用命令字表、不用引號
+      :111 「每一」 母體刻意寫寬:`skills/` + `docs/specs/` + `docs/agents/` + `AGENTS.md`,每一個
+      :137 「全部」 70 筆全部判為誤報,**沒有一筆是真的壞指令**。
+      :159 「唯一」 | 3 | `qa/SKILL.md:79` 「唯一一條」無界全稱詞 | 整句已刪 | pass |
+      :189 「每一」 `:31`、`:33`、`:35`、`:37`、`:42`)逐一比對交付檔,**每一個都落在它宣稱的
+      :213 「全部」 三條天花板全部是「少咬」,**沒有一條是多咬** —— 與 `AGENTS.md` 的宣告一致。
+  docs/qa/37-walkthrough.md —— 8 筆
+      :3 「任何」 驗收 oracle:第 7 條「任何一個 skill 的交棒 comment,同一行同時看得到 `/xxx` 與 `$xxx` 兩種寫法。」
+      :34 「全部」 ## 步驟 2 — 掃全部 skill 的交棒行,每行都雙寫
+      :42 「全部」 skills/client-demo/SKILL.md:60:前三條成立後,comment「下一步:`/qa #N`(Codex: `$qa #N`)— 固化 scenarios」
+      :45 「唯一」 skills/close/SKILL.md:8:所有票的結案唯一出口。Invariant:**完工定義沒滿足的票不關** — 缺哪條就 comment 指路對應下一棒(固定一行:「
+      :45 「所有」 skills/close/SKILL.md:8:所有票的結案唯一出口。Invariant:**完工定義沒滿足的票不關** — 缺哪條就 comment 指路對應下一棒(固定一行:「
+      :62 「每一」 命中 21 行。其中**帶指令的交棒行**(baton)每一行都雙寫:build:19、client-demo:60/72、
+      :78 「任何」 裝到 `~/.claude/skills/` 的副本裡,沒有任何一行「下一步:」缺 `$` 那半。
+      :140 「唯一」 AssertionError: skills/build/SKILL.md   <- 新 case 唯一抓到
+  docs/qa/38-walkthrough.md —— 2 筆
+      :74 「完全」 「立刻生效,不用 push」,並說明 install 自己會先 validate、紅就拒裝、完全不碰 GitHub。
+      :131 「唯一」 AssertionError: build            <- 新 case 唯一抓到
+  docs/qa/39-walkthrough.md —— 2 筆
+      :47 「唯一」 環境選型、評量指標)。無第三方客戶名、無報價/合約/商業資料。唯一外部指向:
+      :85 「唯一」 ### Step 7 — 唯一 code 變更
+  docs/qa/40-walkthrough.md —— 14 筆
+      :5 「所有」 `HOME`/`USERPROFILE`,不碰本機既有安裝)。所有結果 QA 自己重跑,不採信 build comment 的自陳。
+      :61 「完全」 $ ls -aR "$HOME"   # fake HOME 完全沒被碰
+      :76 「全部」 $ ls -la "$HOME/.claude/skills"        # 全部是 symlink → .agents/skills
+      :96 「所有」 **所有 `*.md`**,以 skill 目錄為基準解析 markdown link + 反引號路徑:
+      :121 「完全」 檔案的引用完全沒進掃描範圍 — 正是 spec 拍板④要堵的洞漏了一半。
+      :139 「完全」 輸出完全吻合 `next` skill §3 規定的格式(推薦標 `(Recommended)` + 雙寫 + 替代 1–2 + 現場
+      :192 「全部」 | 3 | 裝完內部引用全部讀得到 | **fail** |
+      :259 「全部」 $ ls -l "$HOME/.claude/skills"           # 15 行全部是 symlink,無例外
+      :280 「所有」 (b) 獨立於該 lint、QA 自寫的掃描器掃安裝樹所有 `*.md`:
+      :294 「任何」 $ grep -rn "docs/specs/maintain.md" ~/.agents/skills/     -> 無任何 match
+      :304 「任何」 fake HOME 只額外複製登入憑證 `.claude/.credentials.json`,沒有任何 skill / 設定 / hook。
+      :367 「全部」 | 3 | 裝完內部引用全部讀得到 | pass |
+      :405 「全部」 | 3 裝完內部引用全部讀得到 | **已固化**(#46 修時寫的)| `validate.py` self-check:拿真的 `references/*.md` 竄改必須變紅
+      :413 「任何」 複製去乾淨機器上跑的東西。程式端有 `DEFAULT_DESTS`,文件端沒有任何東西綁住它,兩邊
+  docs/qa/41-walkthrough.md —— 9 筆
+      :3 「唯一」 票上「覆蓋驗收項」= spec #35 驗收清單**第 6 條**(唯一一條):
+      :27 「任何」 # 交棒行在 Codex 上可直接使用(read-only,不動任何東西)
+      :118 「所有」 註:GitHub 上所有動作都掛在同一個 `c3lew` token,**author 欄位無法區分 agent**;判定依據是
+      :132 「全部」 … 同樣全部 U+0028 / U+0029 / U+003A(半形)
+      :154 「全部」 ## Step 5 — AC5:Claude Code 專屬假設全部記錄並標明已修 / 待決
+      :181 「唯一」 | AC4 雙寫格式正確顯示且可直接使用 | **pass** | 「唯一有第一手 Codex 驗證的一條」:字元級一致 + 全新獨立 session 正確解讀 |
+      :182 「全部」 | AC5 專屬假設全部記錄並標明已修/待決 | **pass** | 七條各有明確 disposition;⑦ 標法較模糊但仍有處置紀錄 |
+      :220 「完全」 它留下的持久 artifact(commit / comment / issue)+ 一次 read-only 的 Codex 實跑。若要「完全重演」,
+      :223 「所有」 - **agent 歸屬無法從 GitHub 側證明**:所有 API 動作共用同一個 `c3lew` token。
+  docs/qa/42-close/next.previous.SKILL.md —— 1 筆
+      :8 「任何」 整條產線的問路亭:判斷專案現在卡在哪一段,推薦**一個**下一棒指令。只指路,不 spawn 任何環節 — 推薦完就結束,跑不跑由 client 決定。
+  docs/qa/43-walkthrough.md —— 2 筆
+      :101 「全部」 - 未涵蓋：無 UI 或原生殼；本票全部行為均為 CLI，已全數實跑。
+      :110 「任何」 | 1 fixture 預期輸出不會被誤讀成真的失敗 | **已固化**(本輪新增)| `install.py` self-check 末段:重跑自己一次(`--no-recurs
+  docs/qa/46-walkthrough.md —— 12 筆
+      :4 「全部」 **第 3 條**(「裝完之後,skill 內部引用的檔案(紀律副本等)全部讀得到 — 沒有任何『找不到檔案』」)。
+      :4 「任何」 **第 3 條**(「裝完之後,skill 內部引用的檔案(紀律副本等)全部讀得到 — 沒有任何『找不到檔案』」)。
+      :6 「所有」 `HOME`/`USERPROFILE`,不碰本機既有安裝)。所有結果 QA 自己重跑,不採信 build comment 的自陳。
+      :58 「任何」 **刻意不套 validate 的任何豁免規則(dot-dir 等),寬到會誤報**,再逐筆判讀;這樣才驗得到
+      :59 「全部」 「新豁免規則有沒有順手把真斷連結也蓋掉」。掃安裝樹 15 個 skill 的全部 25 個 `*.md`:
+      :100 「任何」 『夠開一張票』就收。」不再指向任何檔案。
+      :102 「任何」 另驗新豁免規則的前提:`find <安裝樹> -type d -name ".*"` → **沒有任何 dot-directory 被出貨**,
+      :103 「一律」 所以「dot-dir 底下的路徑一律不當 link」不可能誤放一個真的能在 skill 內解析的引用。
+      :103 「不可能」 所以「dot-dir 底下的路徑一律不當 link」不可能誤放一個真的能在 skill 內解析的引用。
+      :111 「全部」 OK installed build -> …/.claude/skills/build   … (15+15 全部 OK)   exit=0
+      :135 「所有」 「skill 目錄下所有 `*.md`」,不是「SKILL.md + references/」。
+      :157 「全部」 | A | 裝完內部引用全部讀得到 | **pass** |
+  docs/qa/49-walkthrough.md —— 6 筆
+      :93 「任何」 票上 comment 貼的 `66fec63` link 現在解析得到,且本輪 QA **沒有**做任何補 push
+      :115 「完全」 守門條件(`count != 0`)與「link 死掉」完全同時發生 — §2 的檢查抓的正是這個失敗模式。
+      :125 「任何」 | **下一張**走 `/build` 的票,commit link 當場點得開 | **fail** | E4 只證明守門抓得到未 push;E3 是本票自己,證據自己註明還沒有
+      :158 「唯一」 沒有加機器守門(build comment 自審提過:唯一能寫的是 grep string-presence 測試,
+      :195 「所有」 self-check 掃出所有提到 commit link 的真 SKILL.md(現在是 build / close / retro),
+      :196 「任何」 每支都驗兩次:原檔綠、把 `git push` 抽掉就紅。所以之後任何人刪掉或搬動 push 步驟、
+  docs/qa/52-walkthrough.md —— 8 筆
+      :5 「唯一」 環境:`D:/Self Project/Skills`,HEAD = `dd9675a`,跑 QA 時 working tree 乾淨(唯一的異動就是本檔)。
+      :74 「全部」 三段標題(要開 / 排隊 / 還卡著)、「張」、「(無)」、「卡在」全部讀得出來 — 第 1 輪
+      :191 「全部」 跑完上面全部情境後:
+      :229 「任何」 然後**停手**:輸出這行之後沒有再執行任何指令。本輪 QA 是 AFK,由我扮 client 回「不」,
+      :233 「任何」 好,那就這樣,沒有開任何工作區、沒有改任何檔案。
+      :251 「任何」 | 點頭前不開 worktree | 開頭 | 「**點頭之前什麼都不動** — 不開 worktree、不改任何檔案、不碰票。」 |
+      :256 「全部」 `plan_batch` 不碰 `gh` / git / 檔案系統;`batch.py --self-check` 的斷言涵蓋:全部互不相卡、
+      :262 「所有」 不准換回 inline `python -c`(印跑到所有測試與所有 pin 外面,就是 #58 出廠的樣子)。
+  docs/qa/53-walkthrough.md —— 9 筆
+      :5 「每一」 每一輪打回的是**證據品質**,不是受測物的行為。
+      :7 「唯一」 環境:`D:/Self Project/Skills`,HEAD = `67619b5`,working tree 乾淨(唯一異動就是本檔)。
+      :22 「全部」 `printf` 的參數全部照實出現,順序就是真的執行順序(stdout 與 stderr 合流)。**一個已知限制:
+      :25 「唯一」 沒有摺疊、沒有省略號、沒有補寫的摘要行。唯一的改動是把 scratchpad 的長路徑統一縮寫成
+      :177 「任何」 **「3 張」同樣是把輸入 `numbers` 的長度回吐,不查證任何 merge 真的發生過** — 跟上面的
+      :189 「全部」 在跑的時候是 `+ batch/47`,全部合完收掉工作區之後變回 `  batch/47`,這本身就是「工作區真的
+      :397 「完全」 (完全不帶參數)都成功推上去(`67619b5..e58c19a` 等)。反例那條 lane 沒跑 `push -u`,
+      :402 「任何」 它沒有留到後面污染任何一份 listing。
+      :573 「永遠」 **A(#61). §9 的清場檢查在這台機器上永遠誤報。** SKILL.md §9 最後一句拿「`git worktree list` 只剩
+  docs/qa/54-walkthrough.md —— 9 筆
+      :25 「唯一」 貼上,沒有摺疊、沒有省略號。唯一的改動是把 scratchpad 的長路徑統一縮寫成 `…/scratchpad`,
+      :49 「絕對」 bash qa54.sh  <scratchpad dir> <skills/build-batch/batch.py 的絕對路徑>
+      :50 「絕對」 bash qa54b.sh <scratchpad dir> <skills/build-batch/batch.py 的絕對路徑>
+      :197 「全部」 ## 步驟 3b — 三條 lane 全部沒過(驗收原句的極端側)
+      :248 「每一」 四個「不猜、當場停」的入口逐個餵壞資料。**第一次跑的結果是 works-but-wrong**:每一條都
+      :287 「全部」 --- 拿掉:全部 lane 都沒過 → 一張都不合
+      :288 「全部」 AssertionError: SKILL.md: 全部 lane 都沒過就不 merge 任何東西的那句不見了 — 剩下的是一個沒人看得懂的半套狀態
+      :288 「任何」 AssertionError: SKILL.md: 全部 lane 都沒過就不 merge 任何東西的那句不見了 — 剩下的是一個沒人看得懂的半套狀態
+      :324 「唯一」 `worktree …/scratchpad/qa54…` 的前綴就是它們住在別的 repo 的證明。工作樹唯一的異動是本檔。
+  docs/qa/55-walkthrough.md —— 13 筆
+      :13 「所有」 - 第 5 輪:認票的候選母體用 `git branch --list 'batch/*'` 撈 — 那是「所有還活著的 branch」,
+      :25 「全部」 本輪的證據全部重新產生。
+      :40 「每一」 command substitution 層級、shell function 內部每一次迴圈、git 自己的 `+ batch/48`(branch
+      :41 「全部」 被別的 worktree checkout 的原生標記)全部照實出現,順序就是真的執行順序(stdout 與 stderr
+      :178 「任何」 QA 自己沒有動過任何一個字元 — 下一步是拿它的結果來驗。
+      :251 「完全」 是為了不去騷擾這批真的在跑的票 — 走的路徑與命令完全是 §7b 的原句。
+      :307 「任何」 沒有猜、沒有強推,也沒有把任何一邊蓋掉。'
+      :317 「任何」 沒有猜、沒有強推,也沒有把任何一邊蓋掉。'
+      :327 「任何」 沒有猜、沒有強推,也沒有把任何一邊蓋掉。
+      :515 「任何」 沒有猜、沒有強推,也沒有把任何一邊蓋掉。
+      :520 「完全」 鑑識法(`git log -S'- [ ] 待補說明'`)回的是 **`42`** — 錯的票號,而且錯得完全看不出來。
+      :524 「所有」 第 5 輪 judge 卡的就是這裡(當時母體是所有 `batch/*`,49 會被算進去)。
+      :529 「完全」 - 戊:`batch/61` 還在 branch 清單裡,但它不在「已合」名單裡,所以完全不會被問到;這批已合的
+  docs/qa/56-walkthrough.md —— 2 筆
+      :5 「每一」 全程 bash xtrace(`PS4='+ '` + `set -x`),指令與輸出在同一份裡,沒有事後 render。餵進去的 JSON 每一份都先 `printf` 建檔、再
+      :18 「全部」 | 1 | regression suite(全部 `--self-check` + `validate.py`) |
+  docs/qa/57-walkthrough.md —— 11 筆
+      :7 「全部」 mutation 全部跑在拋棄式暫存目錄的副本上,repo 本體沒被動過(STEP 8 的 `git status` 是證據)。
+      :23 「任何」 | 5 | `slice-tickets` §4 的那一步原文(問句、不自己補邊、不靜靜發佈、有任何一張宣告了就不問) | AC4 |
+      :150 「唯一」 真的沒有先後關係是常態(平行切片),但「漏標」跟「真的沒有」在票面上長得一模一樣,而下游 `/build-batch` 完全吃這份宣告:漏標的那批會被算成全部能同時開,兩張改同一個
+      :150 「全部」 真的沒有先後關係是常態(平行切片),但「漏標」跟「真的沒有」在票面上長得一模一樣,而下游 `/build-batch` 完全吃這份宣告:漏標的那批會被算成全部能同時開,兩張改同一個
+      :150 「完全」 真的沒有先後關係是常態(平行切片),但「漏標」跟「真的沒有」在票面上長得一模一樣,而下游 `/build-batch` 完全吃這份宣告:漏標的那批會被算成全部能同時開,兩張改同一個
+      :152 「任何」 有任何一張宣告了邊就不問 — 這一問防的是整批一起漏標(切票時根本沒想過先後),不是逐張複查。
+      :176 「唯一」 + echo '   做法:整份 skills 原封不動複製一份,只抽掉唯一呼叫 /to-tickets 的那張(slice-tickets),'
+      :177 「唯一」 做法:整份 skills 原封不動複製一份,只抽掉唯一呼叫 /to-tickets 的那張(slice-tickets),
+      :192 「所有」 + echo '   母體用數的、不用「所有」—— 掃描器本身在 scripts/qa/57-guard-sweep.py。'
+      :193 「所有」 母體用數的、不用「所有」—— 掃描器本身在 scripts/qa/57-guard-sweep.py。
+      :212 「每一」 受測形狀 = prose-keyword(用一個關鍵詞證明「某句指示存在」)。母體 2 個,下面每一個都驗兩個方向。
+  docs/qa/58-walkthrough.md —— 5 筆
+      :87 「任何」 沒有加任何 `PYTHONIOENCODING`,三段標題「要開 / 排隊 / 還卡著」、「張」、「(無)」、
+      :88 「全部」 「卡在」全部讀得出來,emoji 沒炸。分段本身也對:只列那 3 張,#63 在「還卡著」。
+      :97 「完全」 `PYTHONIOENCODING=cp950` 強塞也一樣 — 輸出 bytes 與預設跑完全相同(`cmp` 無差異),
+      :111 「全部」 再原封不動編回去。兩個症狀在同一次跑裡同時看得到。修後全部消失。
+      :133 「全部」 票上「同型全掃」表列的四處,現在全部釘住,且守門抓得到位置:
+  docs/qa/60-walkthrough-r3.md —— 9 筆
+      :18 「完全」 到尾沒實作,所以一支完全不印 console 的 script 也被誤紅。兩處都往誤紅倒,都落在 AC1 原句上,
+      :57 「完全」 > 「換個做法達成同樣效果」,而是少了一整條豁免路徑:一支完全不印 console 的 script 現在
+      :68 「所有」 一條 fail 當尺,掃過同一份 artifact 的所有同型 case。`scripts/qa/60-mention-sweep.py`
+      :93 「完全」 執行的形狀誤紅(regression);AC1 第二支路「或檔案裡沒有裸 `print(`」完全沒實作,不印
+      :118 「全部」 沒有 UI、沒有 Tauri 原生殼,不適用。全部是 CLI guard,終端 transcript 即實錄
+      :127 「全部」 | 全部(STEP 1–7,含 1b / 6b–6j) | 本檔〈終端實錄〉 |
+      :190 「所有」 + echo '==== STEP 4  同型全掃:「提到」的所有寫法 vs 「用到」的所有寫法 ===='
+      :191 「所有」 ==== STEP 4  同型全掃:「提到」的所有寫法 vs 「用到」的所有寫法 ====
+      :274 「完全」 只寫檔案、完全不印到 console                  第二支路會判 GREEN  實際 RED
+  docs/qa/60-walkthrough-r4.md —— 6 筆
+      :8 「所有」 STEP 6k–6n 是本輪的同型全掃:拿 #71 新增的兩個判準當尺,量過所有同型寫法。
+      :67 「所有」 + echo '==== STEP 4  同型全掃:「提到」的所有寫法 vs 「用到」的所有寫法 ===='
+      :68 「所有」 ==== STEP 4  同型全掃:「提到」的所有寫法 vs 「用到」的所有寫法 ====
+      :151 「完全」 只寫檔案、完全不印到 console                  期望 GREEN  實際 GREEN
+      :216 「完全」 對照:真的完全不印 console(不得誤紅)                            期望 GREEN  實際 GREEN  ok
+      :232 「完全」 對照:真的完全不印 console(不得誤紅)                            期望 GREEN  實際 RED    MISMATCH
+  docs/qa/61-walkthrough.md —— 7 筆
+      :21 「全部」 (`PS4` 設成 `+ `,`set -x`),不是事後照著寫的 — `cd`、pipe 拆成兩行、參數展開全部照實出現,順序就是
+      :23 「唯一」 值,所以直接讀 `+ echo` 那一行就是真的 exit code。整段原封不動貼上,沒有摺疊、沒有省略號。唯一的改動是
+      :237 「一律」 | 51 | blocker 還開著、或 blocker 不在資料裡的一律留在「還卡著」 | 「這份資料」 | 有界 ✅ |
+      :238 「所有」 | 128 | 整批驗證要對「這批**所有票**的覆蓋驗收項聯集」 | 「這批」 | 有界 ✅ |
+      :243 「絕對」 開票時做過另一把尺(絕對詞)的全掃,5 句命中 1(就是 §9 這句);本輪換成「母體」這把尺重掃,
+      :244 「不可能」 結論一致 — 另外兩句(§開頭「點頭之前什麼都不動」、§6「不可能互相把對方寫到一半的東西吃進去」)
+      :289 「絕對」 **A. 沒有自動化 guard。** 這條判準是散文,寫得出來的 guard 只能禁某個字面字串,換一種絕對詞講法就
+  docs/qa/62-walkthrough.md —— 2 筆
+      :74 「任何」 票號 51 → 62(拿本票當靶,跑完刪掉)。**沒有自己拼任何東西**:
+      :132 「全部」 票上點名「同一份文件、同一種動作,三處裡兩處給全、一處沒給」,所以三處全部照抄實跑
+  docs/qa/64-walkthrough.md —— 3 筆
+      :18 「全部」 mutation 全部跑在拋棄式暫存目錄的副本上,repo 本體沒被動過(STEP 9 的 `git status` 是證據)。
+      :44 「全部」 而 #57 加這支 guard 的全部理由就是守住那一問。
+      :97 「每一」 受測形狀 = prose-assertion(讀散文證明「某句指示存在」)。母體 2 個,下面每一個都驗兩個方向。
+  docs/qa/65-walkthrough.md —— 10 筆
+      :20 「任何」 > - [ ] `__main__` 縮排在 `try` / `if True` / 任何 block 底下,守門照樣抓
+      :29 「全部」 實錄就是終端 transcript(全程 bash xtrace,指令與輸出在同一份,沒有事後 render)。mutation 全部
+      :54 「全部」 | 4b | 對照組:同一份母體在 `3d402e9^`(#65 修之前)壞 10 條 —— 每一種包法的「裸 print」全部無聲過關。證明修掉的是一整族,不是票上撞到的那兩條 
+      :54 「每一」 | 4b | 對照組:同一份母體在 `3d402e9^`(#65 修之前)壞 10 條 —— 每一種包法的「裸 print」全部無聲過關。證明修掉的是一整族,不是票上撞到的那兩條 
+      :60 「永遠」 | 7d | **judge 追問的同型全掃**:擋 `__pycache__` 用的檔名過濾 `part.startswith(("." , "__"))` 掃的是 `py.pa
+      :76 「任何」 | 完工定義 1 — 任何 block 底下照樣抓 | pass(母體 22 全中,對照組 `3d402e9^` 壞 10 條) |
+      :93 「全部」 judge 判 STEP 7 / 7c / 7d 全部**本票範圍外**:三條的對照組都證明 `3d402e9^` 與 `d3cc9ed^`
+      :105 「每一」 這三條都是 **#58 就在的天花板**,不是 #65 引入的 —— 每一條都附了 `--old` 對照組。共同的
+      :113 「永遠」 永遠不受檢(2 條)。repo 現況沒有這種檔,是盲點不是現行破口。
+      :119 「完全」 `try-else` / 完全沒有 `__main__` 的 library 檔不得誤紅)。都不影響本票判 pass —— `ast.walk`
+  docs/qa/79-walkthrough.md —— 2 筆
+      :279 「每一」 + echo '==== STEP 9  本輪同型全掃(二):把結果送到呼叫位置的每一種寫法(誤紅那邊)===='
+      :280 「每一」 ==== STEP 9  本輪同型全掃(二):把結果送到呼叫位置的每一種寫法(誤紅那邊)====
+  docs/qa/84-walkthrough.md —— 1 筆
+      :12 「所有」 - **AC1 前半(會跑到 → 得豁免)**:獨立 judge 判 **pass**。所有「真的會執行到」的形狀一格
+  docs/qa/86-walkthrough.md —— 8 筆
+      :16 「任何」 對照確實全 GREEN,但 STEP 9 證明它們過的理由是 fixture 剛好沒撞名 —— 檔案裡任何一個
+      :26 「任何」 `b.next(… for _ in [1])` 任何 import 進來的物件都能當開關。母體 6,**3 格誤放**;
+      :29 「每一」 - **尺二,`shadowed` 走遍每一個 scope**(STEP 9):`set().union(*map(binds, ast.walk(tree)))`
+      :37 「一律」 —— 誤放讓守門閉嘴(危險)一律 blocking,誤紅是吵(#82 / #85 兩張都是「被驗的那顆 commit
+      :654 「完全」 對照:真的完全不印 console(不得誤紅)                            期望 GREEN  實際 GREEN  ok
+      :678 「完全」 對照:名字完全沒被提到(#70 的天花板)                          期望 RED    實際 RED    ok
+      :786 「任何」 對照:沒有任何撞名,`list(g)` 照常消費(不得誤紅)                           期望 GREEN  實際 GREEN  ok
+      :804 「任何」 對照:沒有任何撞名,`list(g)` 照常消費(不得誤紅)                           期望 GREEN  實際 GREEN  ok
+  docs/qa/87-walkthrough.md —— 20 筆
+      :16 「全部」 coroutine 被判 RED,**全部是這顆 commit 帶進來的**(STEP 9 逐格對照)。
+      :23 「任何」 再用 222 格 fixture 的全域對照收一次網,除了本輪三把新尺的格子以外,**沒有任何一格翻面**
+      :56 「全部」 **oracle 獨立性**:這串 sweep 全部 import 受測物自己的 `stream_encoding_issues`,它綠只證明
+      :68 「唯一」 唯一一格對不上就是它。已換成 `from collections import deque as list`(一樣是 import
+      :91 「全部」 > 寫在沒人 await 的 async def body)全部收成 RED,這一面 pass。但表 D 是同一條後半的正面
+      :112 「一律」 > 不在 module scope、也擋不到 `asyncio.run` 這個 attribute access,卻一律被當成遮蔽。
+      :119 「任何」 > 1. **誤放是靜音的,誤紅是有聲的。** 誤紅會被人看到、會被抱怨、會被開票;誤放不會有任何
+      :121 「唯一」 > 2. **誤放讓守門在它唯一該出手的地方價值歸零。** 這條規則存在的理由就是攔「拿死碼騙豁免」;
+      :122 「任何」 >    D 證明只要寫一行帶 `.run(` 的東西就能繞過,那這條規則對任何刻意繞過的人來說等於不存在
+      :136 「一律」 > 相關的一律判 RED」蒙混,那 4 格會翻成 RED。它們沒翻。所以修法是有分辨力的,不是一刀切。
+      :150 「全部」 > C/D/E 三組的「期望」欄本身沒有問題 —— F 對這三段全部 ok […] 所以 C/D/E 的不合是**守門
+      :154 「全部」 > truth RED 全部標著「跑爆」[…] 建議補幾個**不跑爆**的 attr fixture,讓 RED 是從「沒執行到」
+      :176 「任何」 開關(`--driven-attr` 12/10,誤放);名字被任何 scope 綁走就整條放棄(`--driven-shadow`
+      :801 「完全」 對照:真的完全不印 console(不得誤紅)                            期望 GREEN  實際 GREEN  ok
+      :825 「完全」 對照:名字完全沒被提到(#70 的天花板)                          期望 RED    實際 RED    ok
+      :893 「任何」 對照:沒有任何撞名,`list(g)` 照常消費(不得誤紅)                               期望 GREEN  實際 GREEN  ok
+      :985 「任何」 SHADOW_SCOPE / 對照:沒有任何撞名,`list(g)` 照常消費(不得誤紅)                                             
+      :1002 「任何」 DRIVEN_SHADOW / 對照:沒有任何撞名,`asyncio.run(adump())` 照常驅動(不得誤紅)                               
+      :1043 「任何」 對照:沒有任何撞名,`asyncio.run(adump())` 照常驅動(不得誤紅)                               期望 GREEN  實際 GRE
+      :1062 「任何」 對照:沒有任何撞名,`asyncio.run(adump())` 照常驅動(不得誤紅)                               期望 GREEN  實際 GRE
+  docs/qa/98-rerun.md —— 3 筆
+      :10 「全部」 #102 修好 mutation 台的控制組後，#98 三條驗收原句與票面其餘 AC 全部重跑通過。
+      :22 「全部」 - `python scripts/validate.py` + 五支 self-check：全部 exit 0。
+      :55 「全部」 三條驗收與其餘票面 AC 全部 **PASS**；blocking 0。judge 認定控制組已先建立綠基準，
+  docs/qa/98-walkthrough.md —— 15 筆
+      :13 「全部」 - **三條驗收原句本身全部成立,而且每一條都有反面對照組**:兩個 `__main__` 只釘第一個
+      :13 「每一」 - **三條驗收原句本身全部成立,而且每一條都有反面對照組**:兩個 `__main__` 只釘第一個
+      :21 「絕對」 - **順手收掉票面沒列的第四個入口缺口**:修前的過濾吃的是**絕對路徑**的 parts,repo 只要
+      :23 「任何」 STEP 5 最後一節)。修後改吃相對路徑,不受影響 —— 但**沒有任何 fixture 或 knob 釘住
+      :55 「全部」 - 差額 3 筆,**全部是「修前綠 → 修後紅」**:`pkg/__main__.py`(#68)、`r10_syntax_error.py`
+      :57 「任何」 - 「修前紅 → 修後綠」**0 筆**,本輪沒有放掉任何東西。
+      :65 「任何」 regex 認任何寫法、不 import 受測物的任何 helper。
+      :106 「絕對」 - **#103 —— 過濾吃相對路徑這件事沒被釘住。** 本輪順手把 `is_source` 從吃絕對路徑改成吃
+      :157 「任何」 的任何判斷,明講「不要去讀實作原始碼替它找理由」。逐條判 pass / fail / works-but-wrong。
+      :184 「唯一」 > 唯一有效的那次量測是控制組腳本自己另起的第二塊(完整 repo 副本,baseline 綠),那塊的
+      :441 「每一」 (每一筆都要對得上票面三條;出現「修前紅 → 修後綠」就是本輪放掉了東西)
+      :445 「絕對」 修前:0 紅(過濾吃絕對路徑 —— 整條守門靜靜全綠)
+      :454 「全部」 ==== 寬尺看到的全部 .py ====
+      :487 「每一」 ==== 差額(寬尺 vs 受測物)—— 每一筆要人判讀 ====
+      :519 「每一」 ==== 差額(寬尺 vs 受測物)—— 每一筆要人判讀 ====
+  docs/qa/99-build/README-original.md —— 1 筆
+      :13 「全部」 要整張表全部咬住(exit 0)。
+  docs/qa/99-build/issue-60-body.md —— 1 筆
+      :7 「每一」 有 `if __name__ == "__main__":` 的 `.py`，必須在**每一個該 block 的第一層**寫
+  docs/qa/99-build/issue-99-body.md —— 1 筆
+      :31 「唯一」 (它是唯一不讀守門規則的實跑 oracle,下次再有「受測物自己就是尺」的票要用它)。
+  docs/specs/build.md —— 1 筆
+      :7 「唯一」 執行票的唯一入口:呼叫原件 `/implement` 跑 tdd / code-review / commit,收尾補產線交棒 — 產出 comment + 固定「下一步:`/qa
+  docs/specs/client-demo.md —— 1 筆
+      :32 「全部」 5. **過關判定**(全部成立才算):client 親口 OK + blocking 清零 + 每條 known issue 都有處置決定 + regression suite 
+  docs/specs/maintain.md —— 6 筆
+      :7 「一律」 上線後 client 白話丟來的問題或想法(bug / 改功能 / 技術債)走 `/triage` 的 state machine 進件,補四個 delta。不重造 state m
+      :11 「唯一」 Client 白話進件為主;client 自開 issue 也收(標 `needs-triage`)。**本檔是進件唯一入口** — 直接跑原件 `/triage` 會少掉四個 d
+      :18 「任何」 4. **Refactor 結案儀式**:任何 refactor(含 `/improve-codebase-architecture` 拍板者)的 invariant — 沒有 t
+      :26 「永遠」 - **Spec 永遠是正本**:bug fix 通常不動 spec;bug 暴露 spec 漏洞就補驗收項;改功能一律回寫 spec + 驗收清單。
+      :26 「一律」 - **Spec 永遠是正本**:bug fix 通常不動 spec;bug 暴露 spec 漏洞就補驗收項;改功能一律回寫 spec + 驗收清單。
+      :28 「唯一」 - **`/improve-codebase-architecture`** 是系統唯一 engineer-mode 入口,保持原樣,僅受結案儀式 invariant 約束;決策投
+  docs/specs/pm-intake.md —— 1 筆
+      :27 「唯一」 6. 同 session 呼叫 `/to-spec`(收編件)收斂(to-spec 吃訪談對話 context — 這是「一環節一 session」的唯一例外)。
+  docs/specs/qa.md —— 1 筆
+      :15 「唯一」 - Spec 的驗收清單(唯一 oracle,pm-intake 收斂回合已拍板 — QA 不另生 scenarios)。
+  docs/specs/retro.md —— 1 筆
+      :3 「唯一」 **類型**:自建 skill(AFK + 點頭把關)。solo retro — 系統自我升級的唯一入口。
+  docs/specs/slice-tickets.md —— 1 筆
+      :17 「每一」 3. 檢查覆蓋完整性:驗收清單每一條至少被一張 ticket 覆蓋,漏了就回報。
+  docs/specs/tracking-viz.md —— 1 筆
+      :23 「任何」 - 全白話:任何欄位出現技術術語即違規。
+  docs/specs/ui-mockup.md —— 1 筆
+      :16 「所有」 - Design system 文件(如已存在)— 所有 prototype 引用它;要偏離時當成分岔給 client 選。
+  skills/build-batch/SKILL.md —— 24 筆
+      :8 「任何」 **點頭之前什麼都不動** — 不開 worktree、不改任何檔案、不碰票。這一步只做一件事:把「誰現在能開」算出來給 client 看。他說不,就乾淨結束,沒有殘留。
+      :18 「全部」 候選是 **open、帶 `ready-for-agent`、且 body 的 `## Parent` 指向這份 spec** 的票。批次只在同一份 spec 切出來的票之間算 —
+      :51 「一律」 cap 寫死 3,不做設定。blocker 已關的票會被放行;blocker 還開著、或 blocker 根本不在這份資料裡的,一律留在「還卡著」— 看不到它關了就不賭。
+      :69 「完全」 同時最多 3 條 lane(cap 同 §3),名單上其餘的票排隊。**排隊中的票在被開工前完全不動它** — 不開 worktree、不貼 comment、不改它一個字:它可能根
+      :95 「不可能」 開工的每張票各自一個 git worktree — lane 之間是檔案系統層級隔離,不共用工作目錄,所以不可能互相把對方寫到一半的東西吃進去。開哪幾張、branch 與工作區路徑
+      :105 「每一」 印出來的每一行就是 client 在終端機看到的「開工」,同一行也告訴你 branch 與路徑:
+      :153 「每一」 印出來的每一行就是 client 在終端機看到的「補位」,同一行也告訴你 branch 與路徑 — 照 §6.2 一模一樣的三步開下去(`git worktree add` → `
+      :157 「全部」 全部票都跑完(佇列空、沒有 lane 在跑)才往 §8。
+      :161 「全部」 Ctrl-C、lane 死掉、client 喊停 — **中斷不等於全部重來**。已經 merge 的留在主線,未合併的 lane 留著 worktree 與 branch,什麼都
+      :177 「任何」 排隊中還沒開工的票不留任何紀錄 — 它們從頭到尾沒被碰過(§6),下次重跑就是一般的候選票。
+      :183 「全部」 全部 lane 都跑完了才進這一段(綠的、沒綠的都跑完),而且**一張一張**合、不同時 — 同時 merge 撞在一起會留下一個沒人看得懂的中間狀態。
+      :206 「所有」 `git merge` 紅了就是撞車。對面只可能是**這批裡、已經合進主線的那幾張**之一 — 還沒輪到的 lane 不在主線上,撞不到;上一批殘留沒合成的 branch 也不在主
+      :234 「不可能」 - **一張** → 就是它。(圖檔、刪檔、改名這些「不可能被兩張乾淨共改」的撞法都落在這裡。)
+      :245 「全部」 分得出來(而且那條在候選名單裡)就用那一張。分不出來(圖檔沒有行可以 blame、blame 回的 commit 不在候選裡)就把候選**全部**放進 `numbers`,印出來會
+      :247 「完全」 **不要**用「最近一次動到這個檔案的 merge 是誰」或 `git log -S'<那段內容>'` 去認票:前者會回報中間那張乾淨的票;後者問的是「這個字串的出現次數在哪顆 c
+      :251 「唯一」 呼叫既有的 `/resolving-merge-conflicts` 原件解。它是唯一的解法來源 — 不自己 `-X ours` / `-X theirs` 挑一邊蓋過去,不強推,
+      :294 「全部」 `merged` 是已經合進主線的(照合的順序),`pending` 是還沒合的(含撞車失敗的那張)。印完就結束,§9 之後都不跑 — 這批沒有全部進主線,整批驗證與 demo 都
+      :312 「永遠」 留置不是終點,但接下去的那一棒不在這次執行裡:client 之後跑 `/build #48` → `/qa #48`,兩個都綠之後**不要直接跳 demo** — 先回到主 rep
+      :314 「全部」 **全部 lane 都沒過 → 一張都不合**:不 merge 任何東西、不 push、主線一個 commit 都不動,每張各自留 worktree + branch + 票上 c
+      :314 「任何」 **全部 lane 都沒過 → 一張都不合**:不 merge 任何東西、不 push、主線一個 commit 都不動,每張各自留 worktree + branch + 票上 c
+      :318 「唯一」 三個 lane 各自綠不蘊含合起來綠(語意衝突、共用檔案的互相假設)。這是平行化唯一真正新增的風險,所以合完之後在主線上再跑一次:
+      :338 「全部」 `fixing` 空著就是全綠那一行(「3 張已合併,下一步 demo」);有東西就變成「2 張已合併可以 demo,#48 還在修」,後面接那張的工作區、branch 與它的下一
+      :365 「所有」 判準只看 `.git/batch-worktrees/` 這個母體、不看 `git worktree list` 的列數,因為完整輸出是整個 repo 的所有 worktree,包
+      :371 「完全」 `$build-batch` 走完全一樣的 §1–§4,印完名單與建議順序就結束 — **不開 worktree、不平行**。Codex 端拿到的是「這幾張彼此不卡,順序是 #A 
+  skills/build/references/written-evidence.md —— 4 筆
+      :29 「絕對」 2. **繞過** — 把主張換一種講法(更赤裸的絕對詞、大小寫不同、同義改寫),guard 要紅。
+      :40 「一律」 - **查不到目標時判 fail,不是靜靜略過** — regex 撈不到那一行、key 不存在,一律算
+      :44 「全部」 「30 筆裡的前 3 筆」),否則讀報告的人會把樣本當全部。
+      :61 「任何」 SKILL.md、報告、票裡任何一條「請你照抄」的指令,判準跟散文同一條:**照字面貼上去,
+  skills/client-demo/SKILL.md —— 4 筆
+      :8 「所有」 QA 過後的驗收點:agent **跑給 client 看**,client 確認「是不是我要的」、處理「不對」、判定過關。「真的會動」由 `qa` 證明,demo 只驗「是不是你
+      :31 「永遠」 然後 agent 照 script **逐條放 QA 實錄給 client 看**(標明「這是 QA 實跑的錄影」),每條看完 client 點頭「這是我要的」才走下一條 — 不為
+      :56 「全部」 五條**全部成立**才算過關:
+      :64 「全部」 前三條成立後,comment「下一步:`/qa #N`(Codex: `$qa #N`)— 固化 scenarios」交 `qa` 把本切片高價值 scenarios 寫進 reg
+  skills/client-demo/references/pm-interview.md —— 4 筆
+      :34 「所有」 1. **自動拍板白話清單**:所有「有影響+有把握」的拍板,按白話三行制(見 `tech-decisions.md`)列出,含後果 — 這是 client 的否決點。
+      :37 「每一」 4. **Oracle 對照表**:每一項要交付的輸出(每個欄位、每種句子、每個數字)列一列,寫「這一格的答案由**哪份文件**說了算」,client 逐列確認。同一份 spec 
+      :38 「唯一」 5. **驗收清單拍板**:從 spec 生成 Gherkin scenarios 的白話版,client 逐條拍板 — 這份清單之後是 QA 的唯一 oracle。
+      :42 「所有」 對話與文件用繁體中文,技術名詞保留英文;對 client 的所有輸出過「非技術也看得懂」的檢查 — 出現架構術語就重寫。
+  skills/client-demo/references/tech-decisions.md —— 1 筆
+      :20 「每一」 清單,接下來每一輪 QA 都拿它當 oracle,於是全綠。查證階段少跑的那一次,會在三輪之後
+  skills/close/SKILL.md —— 2 筆
+      :8 「唯一」 所有票的結案唯一出口。Invariant:**完工定義沒滿足的票不關** — 缺哪條就 comment 指路對應下一棒(固定一行:「下一步:`/skill #N`(Codex: `
+      :8 「所有」 所有票的結案唯一出口。Invariant:**完工定義沒滿足的票不關** — 缺哪條就 comment 指路對應下一棒(固定一行:「下一步:`/skill #N`(Codex: `
+  skills/maintain/SKILL.md —— 7 筆
+      :8 「一律」 薄層 wrap 原件 `/triage`:state machine、roles、agent brief、verify-before-grill 全依原件,本檔只補維護情境的 de
+      :34 「永遠」 Spec 永遠是正本:bug fix 通常不動 spec;bug 暴露 spec 漏洞(驗收清單沒擋住它)就補驗收項。
+      :43 「一律」 無論哪條,改功能一律回寫 spec + 驗收清單。
+      :51 「任何」 Invariant:任何 refactor — 含 `/improve-codebase-architecture` 拍板的 — 要有 **ticket + regression 
+      :57 「唯一」 `/improve-codebase-architecture` 是系統唯一 engineer-mode 入口,僅受本 invariant 約束;決策投影照它的格式發即可。
+      :67 「任何」 任何票的關票一律走 `/close #N` — 結案出口(`/close`)核對完工定義(§3 的分級閉環、§5–6 的 regression + 投影都是它對表的正本)才關。
+      :67 「一律」 任何票的關票一律走 `/close #N` — 結案出口(`/close`)核對完工定義(§3 的分級閉環、§5–6 的 regression + 投影都是它對表的正本)才關。
+  skills/maintain/references/pm-interview.md —— 4 筆
+      :34 「所有」 1. **自動拍板白話清單**:所有「有影響+有把握」的拍板,按白話三行制(見 `tech-decisions.md`)列出,含後果 — 這是 client 的否決點。
+      :37 「每一」 4. **Oracle 對照表**:每一項要交付的輸出(每個欄位、每種句子、每個數字)列一列,寫「這一格的答案由**哪份文件**說了算」,client 逐列確認。同一份 spec 
+      :38 「唯一」 5. **驗收清單拍板**:從 spec 生成 Gherkin scenarios 的白話版,client 逐條拍板 — 這份清單之後是 QA 的唯一 oracle。
+      :42 「所有」 對話與文件用繁體中文,技術名詞保留英文;對 client 的所有輸出過「非技術也看得懂」的檢查 — 出現架構術語就重寫。
+  skills/maintain/references/tech-decisions.md —— 1 筆
+      :20 「每一」 清單,接下來每一輪 QA 都拿它當 oracle,於是全綠。查證階段少跑的那一次,會在三輪之後
+  skills/next/SKILL.md —— 1 筆
+      :8 「任何」 整條產線的問路亭:判斷專案現在卡在哪一段,推薦**一個**下一棒指令。只指路,不 spawn 任何環節 — 推薦完就結束,跑不跑由 client 決定。
+  skills/pm-intake/SKILL.md —— 2 筆
+      :33 「每一」 照 pm-interview 的「收斂回合」四步一次做完:自動拍板白話清單 → devil's advocate → 相對成本標注(不給時數)→ 驗收清單拍板。完成標準:四步每一步
+      :37 「唯一」 同 session 呼叫 `/to-spec`(已收編,模型可叫;「一環節一 session」的唯一例外 — to-spec 要吃訪談對話 context)。Spec issue 
+  skills/pm-intake/references/pm-interview.md —— 4 筆
+      :34 「所有」 1. **自動拍板白話清單**:所有「有影響+有把握」的拍板,按白話三行制(見 `tech-decisions.md`)列出,含後果 — 這是 client 的否決點。
+      :37 「每一」 4. **Oracle 對照表**:每一項要交付的輸出(每個欄位、每種句子、每個數字)列一列,寫「這一格的答案由**哪份文件**說了算」,client 逐列確認。同一份 spec 
+      :38 「唯一」 5. **驗收清單拍板**:從 spec 生成 Gherkin scenarios 的白話版,client 逐條拍板 — 這份清單之後是 QA 的唯一 oracle。
+      :42 「所有」 對話與文件用繁體中文,技術名詞保留英文;對 client 的所有輸出過「非技術也看得懂」的檢查 — 出現架構術語就重寫。
+  skills/pm-intake/references/tech-decisions.md —— 1 筆
+      :20 「每一」 清單,接下來每一輪 QA 都拿它當 oracle,於是全綠。查證階段少跑的那一次,會在三輪之後
+  skills/qa/SKILL.md —— 9 筆
+      :19 「任何」 **Oracle 獨立性**:受測物本身就是判準的時候(lint、守門、validator、任何「自己判自己對不對」
+      :31 「每一」 | **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
+      :35 「每一」 **這張表就是池的宣告**:表頭第一欄寫 `lane`,底下每一列的第一欄就是一支 lane 的名字。
+      :54 「每一」 跑既有 regression suite,紅的每一條記為 blocking。
+      :57 「一律」 跑現況,還要用**修之前那個 commit** 跑同一份母體,列出差額。新出現的誤判一律當成「本輪
+      :81 「每一」 理由:judge 的證據來源就是 walkthrough 產出的 a11y snapshot。提早開,它拿到空證據,然後把每一條
+      :85 「一律」 開一個乾淨 subagent 當 judge:只餵 spec 驗收原句 + walkthrough 證據(snapshots),不餵實作脈絡與本 session 的判斷。judge
+      :89 「所有」 **同型全掃**:抓到一條 fail,先把它當成一把尺,掃過同一份 artifact 的**所有**同型句子 / 數字 / 值,一次全部列進報告再開票 — 不是只回報眼前撞到的那一
+      :89 「全部」 **同型全掃**:抓到一條 fail,先把它當成一把尺,掃過同一份 artifact 的**所有**同型句子 / 數字 / 值,一次全部列進報告再開票 — 不是只回報眼前撞到的那一
+  skills/qa/references/tech-decisions.md —— 1 筆
+      :20 「每一」 清單,接下來每一輪 QA 都拿它當 oracle,於是全綠。查證階段少跑的那一次,會在三輪之後
+  skills/qa/references/written-evidence.md —— 4 筆
+      :29 「絕對」 2. **繞過** — 把主張換一種講法(更赤裸的絕對詞、大小寫不同、同義改寫),guard 要紅。
+      :40 「一律」 - **查不到目標時判 fail,不是靜靜略過** — regex 撈不到那一行、key 不存在,一律算
+      :44 「全部」 「30 筆裡的前 3 筆」),否則讀報告的人會把樣本當全部。
+      :61 「任何」 SKILL.md、報告、票裡任何一條「請你照抄」的指令,判準跟散文同一條:**照字面貼上去,
+  skills/retro/SKILL.md —— 2 筆
+      :3 「唯一」 description: 系統自我升級的唯一入口:AFK 掃三餵食口(拍板錯更正、tech-debt backlog、QA 漏抓)找重複 pattern,產白話 retro 報告 
+      :24 「每一」 3. **QA 漏抓**:demo「不對」分類為**實作錯**的紀錄(分類 comment 與回流 tickets 都算)— QA 該抓沒抓的每一件。
+  skills/retro/references/tech-decisions.md —— 1 筆
+      :20 「每一」 清單,接下來每一輪 QA 都拿它當 oracle,於是全綠。查證階段少跑的那一次,會在三輪之後
+  skills/slice-tickets/SKILL.md —— 9 筆
+      :47 「任何」 - `judgement` —— 這張票會不會動到判斷邏輯、篩選條件、分類判準、或任何資料寫入。會就是 `true`,它是硬規則:一律慢,不看 `coverage` 寫什麼。
+      :47 「一律」 - `judgement` —— 這張票會不會動到判斷邏輯、篩選條件、分類判準、或任何資料寫入。會就是 `true`,它是硬規則:一律慢,不看 `coverage` 寫什麼。
+      :62 「任何」 **這條判準的天花板**:`coverage` 是照抄的、判得準,但 `judgement` 是 agent 讀 diff 自己判的,判錯必然會發生 —— 這關只保證你有否決權,判
+      :62 「必然」 **這條判準的天花板**:`coverage` 是照抄的、判得準,但 `judgement` 是 agent 讀 diff 自己判的,判錯必然會發生 —— 這關只保證你有否決權,判
+      :68 「唯一」 真的沒有先後關係是常態(平行切片),但「漏標」跟「真的沒有」在票面上長得一模一樣,而下游 `/build-batch` 完全吃這份宣告:漏標的那批會被算成全部能同時開,兩張改同一個
+      :68 「全部」 真的沒有先後關係是常態(平行切片),但「漏標」跟「真的沒有」在票面上長得一模一樣,而下游 `/build-batch` 完全吃這份宣告:漏標的那批會被算成全部能同時開,兩張改同一個
+      :68 「完全」 真的沒有先後關係是常態(平行切片),但「漏標」跟「真的沒有」在票面上長得一模一樣,而下游 `/build-batch` 完全吃這份宣告:漏標的那批會被算成全部能同時開,兩張改同一個
+      :70 「任何」 有任何一張宣告了邊就不問 — 這一問防的是整批一起漏標(切票時根本沒想過先後),不是逐張複查。
+      :74 「每一」 對帳:驗收清單每一條至少被一張 ticket 覆蓋。有漏條就回報使用者,補一張票或拍板不做 — 每條都有著落才發佈。發佈照原件的 tracker 流程走。
+  skills/tracking-viz/SKILL.md —— 2 筆
+      :8 「任何」 從 GitHub Issues 讀資料,產給 client 看的一頁靜態 HTML dashboard。讀者是非技術 client:每個欄位都要他一眼看懂,dashboard 上任
+      :50 「全部」 產完逐欄重讀一遍:每個 client 看得到的字,想像唸給沒寫過程式的人聽 — 出現 QA、regression、blocking、ticket、merge 這類詞就換白話再存檔。
+  skills/ui-mockup/SKILL.md —— 1 筆
+      :13 「所有」 - Design system 文件(如已存在):所有 prototype 引用它;要偏離時,把偏離本身當一個分岔給 client 選。
+
+== delta 記帳對不上 == 8 份
+  skills/maintain/SKILL.md 自稱 [4] 個,正文有 0 個 (delta) 標題
+  skills/slice-tickets/SKILL.md 自稱 [3] 個,正文有 0 個 (delta) 標題
+  docs/qa/107-report.md 自稱 [1, 3] 個,正文有 0 個 (delta) 標題
+  docs/qa/107-walkthrough.md 自稱 [1, 3] 個,正文有 0 個 (delta) 標題
+  docs/qa/113-walkthrough.md 自稱 [1, 3] 個,正文有 0 個 (delta) 標題
+  docs/qa/114-walkthrough.md 自稱 [3] 個,正文有 0 個 (delta) 標題
+  docs/specs/maintain.md 自稱 [4] 個,正文有 0 個 (delta) 標題
+  docs/specs/slice-tickets.md 自稱 [1] 個,正文有 0 個 (delta) 標題
+--- exit=0 ---
+=== $ bash scripts/qa/114-walkthrough.sh /tmp/tmp.HLToe1cBr5/qa114 ===
+==== A1  交付版 skills/build/SKILL.md:37 的指令,代換後照字面貼進 bash ====
+抽出的指令(代換 <N> -> 113):gh issue view 113 --comments
+OK   A1 貼進 bash 跑得動 (0)
+author:	c3lew
+association:	owner
+
+==== A2  對照組:修前那版同一行,照同一條路貼進 bash ====
+抽出的指令:gh issue view #113 --comments
+OK   A2 修前那版參數被 # 吃掉(accepts 1 arg(s), received 0)—— 這就是 #114 的 bug
+accepts 1 arg(s), received 0
+
+==== A3  完工定義 3:regression suite ====
+OK   validate (0)
+OK   validate --self-check (0)
+OK   97-mutate (0)
+OK   107-mutate (0)
+OK   96-newrule-probe (0)
+
+==== A4  修前對照:新守門對修之前那份母體咬不咬得到 ====
+修前: 1 筆
+    skills/build/SKILL.md: pasteable command `gh issue view #N --comments` has a `#`-prefixed argument — bash and PowerShell both read it as a comment, so the pasted line runs without it
+交付版: 0 筆
+OK   A4 修前對照跑完 (0)
+
+==== A5  第二把尺(不讀守門判準,問 bash 自己)====
+OK   A5 寬尺在修前樹撈到 :37 (1)
+OK   A5 寬尺在交付版沒撈到 :37 (0)
+== shell 吃掉 token 的 span(72 筆)==
+
+==== A6  完工定義 4:#113 的三條 finding 還在修好的狀態 ====
+OK   A6 113-wide 對 skills/build/SKILL.md 零筆 (0)
+
+ALL GREEN
+--- exit=0 ---
+=== $ bash scripts/qa/112-walkthrough.sh /tmp/tmp.BTw0JZ5F2N/qa112 ===
++ echo '==== 出貨版散文原文(所有判定倚賴的行號)===='
+==== 出貨版散文原文(所有判定倚賴的行號)====
++ echo '---- §2 並行池:三線同時開(含 lane 表與『這張表就是池的宣告』)'
+---- §2 並行池:三線同時開(含 lane 表與『這張表就是池的宣告』)
++ sed -n 24,50p '/d/Self Project/Skills/skills/qa/SKILL.md'
++ cat -n
+     1	## 2. 並行池:三線同時開
+     2	
+     3	這三件事之間沒有資料依賴 — regression 不吃 walkthrough 的結果,walkthrough 也不吃 regression 的結果,
+     4	code-review 讀的是 diff。三支各開一個 sub-agent,**同時開始**,不排隊:
+     5	
+     6	| lane | 做什麼 | 產出 |
+     7	| --- | --- | --- |
+     8	| **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
+     9	| **walkthrough** | 照驗收原句實測切片 | 每條驗收項一份 a11y snapshot + demo 實錄 |
+    10	| **code-review** | 對本票的最終 diff 跑 `/code-review` | findings 清單與處置 |
+    11	
+    12	**這張表就是池的宣告**:表頭第一欄寫 `lane`,底下每一列的第一欄就是一支 lane 的名字。
+    13	粗體只是排版,不是宣告 —— 加不加都算數。要增減 lane 就改這張表,別在散文裡多寫一支。
+    14	守門讀的就是這張表:表頭那個字被改掉、或表整張不見,它會當成池沒被宣告而紅。
+    15	
+    16	**同時開始 = 三個 sub-agent 在同一則訊息裡一次發出去**。一支一支發,讀起來每支都是
+    17	sub-agent,實際還是排隊,而且報告長得跟真的並行一模一樣。
+    18	
+    19	**lane 之間不共用資源**:各自的 port、暫存目錄、QA artifacts 子目錄分開;真的共用
+    20	(同一個 dev server、同一份 fixture DB)就把撞到的那兩支序列化,寧可慢也不要搶。
+    21	搶資源的失敗會長得像 flaky,查起來比省下的時間貴。
+    22	
+    23	三支都回來才收斂成一份報告 — 有一支先紅也照樣等完另外兩支,一次跑完、一份完整報告。
+    24	
+    25	**任一支失敗要指名道姓**:報告寫明是哪一支 lane 失敗、失敗內容是什麼,其他兩支綠不能
+    26	蓋過它 — 三支的判定是 AND,不是多數決。lane 自己爆掉(sub-agent 掛了、環境起不來)跟
+    27	lane 判 fail 同級:照樣寫進報告當紅,不准當成「沒跑到」略過。
++ echo '---- §3 標題自己就含 judge 與『walkthrough 之後』,正文那句才是 load-bearing 的約束'
+---- §3 標題自己就含 judge 與『walkthrough 之後』,正文那句才是 load-bearing 的約束
++ sed -n 77,86p '/d/Self Project/Skills/skills/qa/SKILL.md'
++ cat -n
+     1	## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+     2	
+     3	**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。
+     4	
+     5	理由:judge 的證據來源就是 walkthrough 產出的 a11y snapshot。提早開,它拿到空證據,然後把每一條
+     6	都判 pass — 而「證據是空的所以全過」跟「真的全過」在報告上長得一模一樣:沒有紅字、沒有
+     7	例外、每條 pass。
+     8	
+     9	開一個乾淨 subagent 當 judge:只餵 spec 驗收原句 + walkthrough 證據(snapshots),不餵實作脈絡與本 session 的判斷。judge 逐條判 pass / fail / **works-but-wrong**(功能會動但不是 spec 說的那件事)— works-but-wrong 一律算 fail。
+    10	
++ echo '---- 絕對行號版'
+---- 絕對行號版
++ grep -n -e '^## 2\.' -e '^| lane' -e '^## 3\.' -e 排序約束 '/d/Self Project/Skills/skills/qa/SKILL.md'
+24:## 2. 並行池:三線同時開
+29:| lane | 做什麼 | 產出 |
+77:## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+79:**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。
++ echo '==== A1  票上原句:「並行池 lane 表插一列 `| judge | 逐條判定 | pass/fail |`(第一欄不粗體)」現況 OK validate green exit 0 → 應該 red ===='
+==== A1  票上原句:「並行池 lane 表插一列 `| judge | 逐條判定 | pass/fail |`(第一欄不粗體)」現況 OK validate green exit 0 → 應該 red ====
++ fresh
++ rm -rf /tmp/tmp.BTw0JZ5F2N/qa112/case
++ cp -r /tmp/tmp.BTw0JZ5F2N/qa112/pristine /tmp/tmp.BTw0JZ5F2N/qa112/case
++ python - /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ sed -n 29,35p /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ cat -n
+     1	| lane | 做什麼 | 產出 |
+     2	| --- | --- | --- |
+     3	| **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
+     4	| **walkthrough** | 照驗收原句實測切片 | 每條驗收項一份 a11y snapshot + demo 實錄 |
+     5	| **code-review** | 對本票的最終 diff 跑 `/code-review` | findings 清單與處置 |
+     6	| judge | 逐條判定 | pass/fail |
+     7	
++ gate
++ set +e
++ python /tmp/tmp.BTw0JZ5F2N/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+FAIL skills/qa/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'A1 不粗體的 judge lane'
++ local want=red 'what=A1 不粗體的 judge lane'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (A1 不粗體的 judge lane):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (A1 不粗體的 judge lane):預期紅、實際紅,且錯誤指名 judge/並行池
++ expect_msg '並行池 lanes are' 'no 並行池 section' 'A1 訊息指到 lane 集合不對'
++ local 'want=並行池 lanes are' 'nope=no 並行池 section' 'what=A1 訊息指到 lane 集合不對'
++ grep -q -- '並行池 lanes are' /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ grep -q -- 'no 並行池 section' /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ echo 'RESULT PASS (A1 訊息指到 lane 集合不對):訊息含「並行池 lanes are」、不含「no 並行池 section」'
+RESULT PASS (A1 訊息指到 lane 集合不對):訊息含「並行池 lanes are」、不含「no 並行池 section」
++ echo '==== A2  票上原句:「正文 `**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。` 整句刪掉,只留 §3 標題」現況 OK validate green exit 0 → 應該 red ===='
+==== A2  票上原句:「正文 `**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。` 整句刪掉,只留 §3 標題」現況 OK validate green exit 0 → 應該 red ====
++ fresh
++ rm -rf /tmp/tmp.BTw0JZ5F2N/qa112/case
++ cp -r /tmp/tmp.BTw0JZ5F2N/qa112/pristine /tmp/tmp.BTw0JZ5F2N/qa112/case
++ python - /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ echo '--- §3 標題還在(它自己就含 judge 與 walkthrough 之後),正文那句沒了'
+--- §3 標題還在(它自己就含 judge 與 walkthrough 之後),正文那句沒了
++ sed -n 77,82p /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ cat -n
+     1	## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+     2	
+     3	
+     4	理由:judge 的證據來源就是 walkthrough 產出的 a11y snapshot。提早開,它拿到空證據,然後把每一條
+     5	都判 pass — 而「證據是空的所以全過」跟「真的全過」在報告上長得一模一樣:沒有紅字、沒有
+     6	例外、每條 pass。
++ set +e
++ grep -n 排序約束 /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ set -e
++ gate
++ set +e
++ python /tmp/tmp.BTw0JZ5F2N/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+FAIL skills/qa/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'A2 刪正文、留標題'
++ local want=red 'what=A2 刪正文、留標題'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (A2 刪正文、留標題):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (A2 刪正文、留標題):預期紅、實際紅,且錯誤指名 judge/並行池
++ expect_msg 'never states that the 獨立 judge runs walkthrough' '並行池 lanes are' 'A2 訊息指到排序約束沒寫在正文'
++ local 'want=never states that the 獨立 judge runs walkthrough' 'nope=並行池 lanes are' 'what=A2 訊息指到排序約束沒寫在正文'
++ grep -q -- 'never states that the 獨立 judge runs walkthrough' /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ grep -q -- '並行池 lanes are' /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ echo 'RESULT PASS (A2 訊息指到排序約束沒寫在正文):訊息含「never states that the 獨立 judge runs walkthrough」、不含「並行池 lanes are」'
+RESULT PASS (A2 訊息指到排序約束沒寫在正文):訊息含「never states that the 獨立 judge runs walkthrough」、不含「並行池 lanes are」
++ echo '==== A3  票上原句:「整段 `## 2. 並行池` 拿掉」現況 red 但訊息是 `並行池 lanes are []` → 應該 `runs an 獨立 judge but declares no 並行池 section` ===='
+==== A3  票上原句:「整段 `## 2. 並行池` 拿掉」現況 red 但訊息是 `並行池 lanes are []` → 應該 `runs an 獨立 judge but declares no 並行池 section` ====
++ fresh
++ rm -rf /tmp/tmp.BTw0JZ5F2N/qa112/case
++ cp -r /tmp/tmp.BTw0JZ5F2N/qa112/pristine /tmp/tmp.BTw0JZ5F2N/qa112/case
++ python - /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ set +e
++ grep -n 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
+24:## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+26:**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。
++ set -e
++ gate
++ set +e
++ python /tmp/tmp.BTw0JZ5F2N/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+FAIL skills/qa/SKILL.md: runs an 獨立 judge but no 並行池 section declares its lane table — the three lanes have to be written down in a table under a 「並行池」 heading, its first header column literally `lane`, where the next agent reads them
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'A3 並行池整段消失'
++ local want=red 'what=A3 並行池整段消失'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (A3 並行池整段消失):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (A3 並行池整段消失):預期紅、實際紅,且錯誤指名 judge/並行池
++ expect_msg 'no 並行池 section declares its lane' 'lanes are \[\]' 'A3 訊息指到宣告整個不見,不是 lanes are []'
++ local 'want=no 並行池 section declares its lane' 'nope=lanes are \[\]' 'what=A3 訊息指到宣告整個不見,不是 lanes are []'
++ grep -q -- 'no 並行池 section declares its lane' /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ grep -q -- 'lanes are \[\]' /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ echo 'RESULT PASS (A3 訊息指到宣告整個不見,不是 lanes are []):訊息含「no 並行池 section declares its lane」、不含「lanes are \[\]」'
+RESULT PASS (A3 訊息指到宣告整個不見,不是 lanes are []):訊息含「no 並行池 section declares its lane」、不含「lanes are \[\]」
++ echo '==== A4  票上原句:「§2 的 `###` 子段裡加一張非 lane 表(第一欄粗體,例如資源分配表)」現況 red(`lanes are [...,port]`)→ 應該 green,這是要消失的假陽性 ===='
+==== A4  票上原句:「§2 的 `###` 子段裡加一張非 lane 表(第一欄粗體,例如資源分配表)」現況 red(`lanes are [...,port]`)→ 應該 green,這是要消失的假陽性 ====
++ fresh
++ rm -rf /tmp/tmp.BTw0JZ5F2N/qa112/case
++ cp -r /tmp/tmp.BTw0JZ5F2N/qa112/pristine /tmp/tmp.BTw0JZ5F2N/qa112/case
++ python - /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ sed -n 52,64p /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ cat -n
+     1	### regression lane
+     2	
+     3	資源分配(不是 lane 宣告,只是同一段裡的另一張表):
+     4	
+     5	| 資源 | 誰用 | 備註 |
+     6	| --- | --- | --- |
+     7	| **port** | regression | 5173 |
+     8	| **暫存目錄** | walkthrough | mktemp -d |
+     9	
+    10	跑既有 regression suite,紅的每一條記為 blocking。
+    11	
+    12	**改判準的票要跑修前對照**:這張票動的是判斷邏輯(守門規則、篩選條件、分類判準)時,除了
+    13	跑現況,還要用**修之前那個 commit** 跑同一份母體,列出差額。新出現的誤判一律當成「本輪
++ gate
++ set +e
++ python /tmp/tmp.BTw0JZ5F2N/qa112/case/scripts/validate.py
++ GATE_EXIT=0
++ cat /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+OK validate green
++ echo 'exit 0'
+exit 0
+++ grep -c -e judge -e 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+++ true
++ GATE_JUDGE=0
++ echo 'judge/並行池 錯誤行數: 0'
+judge/並行池 錯誤行數: 0
++ expect green 'A4 §2 子段多一張非 lane 表'
++ local want=green 'what=A4 §2 子段多一張非 lane 表'
++ '[' green = red ']'
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (A4 §2 子段多一張非 lane 表):預期綠、實際綠'
+RESULT PASS (A4 §2 子段多一張非 lane 表):預期綠、實際綠
++ echo '==== pristine  出貨檔原封不動 → 該綠 ===='
+==== pristine  出貨檔原封不動 → 該綠 ====
++ fresh
++ rm -rf /tmp/tmp.BTw0JZ5F2N/qa112/case
++ cp -r /tmp/tmp.BTw0JZ5F2N/qa112/pristine /tmp/tmp.BTw0JZ5F2N/qa112/case
++ gate
++ set +e
++ python /tmp/tmp.BTw0JZ5F2N/qa112/case/scripts/validate.py
++ GATE_EXIT=0
++ cat /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+OK validate green
++ echo 'exit 0'
+exit 0
+++ grep -c -e judge -e 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+++ true
++ GATE_JUDGE=0
++ echo 'judge/並行池 錯誤行數: 0'
+judge/並行池 錯誤行數: 0
++ expect green pristine
++ local want=green what=pristine
++ '[' green = red ']'
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (pristine):預期綠、實際綠'
+RESULT PASS (pristine):預期綠、實際綠
++ echo '==== 完工定義:「順手一併修 —— scripts/validate.py:201 與 AGENTS.md:72 舉的假陽性例子(client-demo / next 的散文)repo 裡根本不存在,真正的例子是 skills/build-batch/SKILL.md:243「QA 第 6 輪 judge 實測」」 ===='
+==== 完工定義:「順手一併修 —— scripts/validate.py:201 與 AGENTS.md:72 舉的假陽性例子(client-demo / next 的散文)repo 裡根本不存在,真正的例子是 skills/build-batch/SKILL.md:243「QA 第 6 輪 judge 實測」」 ====
++ echo '---- 真的例子要在 repo 裡存在'
+---- 真的例子要在 repo 裡存在
++ assert_grep 'QA 第 6 輪 judge 實測' '/d/Self Project/Skills/skills/build-batch/SKILL.md' 真例子存在
++ set +e
++ grep -n -- 'QA 第 6 輪 judge 實測' '/d/Self Project/Skills/skills/build-batch/SKILL.md'
+243:  `--contains` 印出來的東西**只認候選名單裡的那一條** — 它問的是「哪些 branch 含這顆 commit」,上一批殘留的 branch 也會被列出來。衝突區塊還常常把沒人動過的舊行一起包進去,那時候 blame 回的是這批之前的 commit,`--contains` 就會吐出一整排 branch(QA 第 6 輪 judge 實測),那不是答案。
++ echo 'RESULT PASS (真例子存在):/d/Self Project/Skills/skills/build-batch/SKILL.md 找得到「QA 第 6 輪 judge 實測」'
+RESULT PASS (真例子存在):/d/Self Project/Skills/skills/build-batch/SKILL.md 找得到「QA 第 6 輪 judge 實測」
++ echo '---- 守門與 AGENTS.md 現在引的就是這個例子'
+---- 守門與 AGENTS.md 現在引的就是這個例子
++ assert_grep 'QA 第 6 輪 judge' '/d/Self Project/Skills/scripts/validate.py' 'validate.py 引真例子'
++ set +e
++ grep -n -- 'QA 第 6 輪 judge' '/d/Self Project/Skills/scripts/validate.py'
+241:# (`skills/build-batch/SKILL.md` 引用「QA 第 6 輪 judge 實測」當出處)一支 judge 都沒跑,
++ echo 'RESULT PASS (validate.py 引真例子):/d/Self Project/Skills/scripts/validate.py 找得到「QA 第 6 輪 judge」'
+RESULT PASS (validate.py 引真例子):/d/Self Project/Skills/scripts/validate.py 找得到「QA 第 6 輪 judge」
++ assert_grep 'QA 第 6 輪 judge' '/d/Self Project/Skills/AGENTS.md' 'AGENTS.md 引真例子'
++ set +e
++ grep -n -- 'QA 第 6 輪 judge' '/d/Self Project/Skills/AGENTS.md'
+94:judge`。散文裡光提到 judge 的(`skills/build-batch/SKILL.md` 引「QA 第 6 輪 judge
++ echo 'RESULT PASS (AGENTS.md 引真例子):/d/Self Project/Skills/AGENTS.md 找得到「QA 第 6 輪 judge」'
+RESULT PASS (AGENTS.md 引真例子):/d/Self Project/Skills/AGENTS.md 找得到「QA 第 6 輪 judge」
++ echo '---- 舊的假例子(client-demo / next)不能再被引'
+---- 舊的假例子(client-demo / next)不能再被引
++ selfcheck_refute 'QA 第 6 輪 judge' '/d/Self Project/Skills/AGENTS.md'
++ local before=0
++ FAILED=0
++ refute_grep 'QA 第 6 輪 judge' '/d/Self Project/Skills/AGENTS.md' '儀器自檢(預期 FAIL)'
++ '[' 1 -eq 1 ']'
++ echo 'RESULT PASS (儀器自檢):refute_grep 對確實存在的「QA 第 6 輪 judge」有判 FAIL,斷言不是空的'
+RESULT PASS (儀器自檢):refute_grep 對確實存在的「QA 第 6 輪 judge」有判 FAIL,斷言不是空的
++ FAILED=0
++ refute_grep client-demo '/d/Self Project/Skills/scripts/validate.py' 'validate.py 不再引假例子'
++ set +e
++ '[' '!' -f '/d/Self Project/Skills/scripts/validate.py' ']'
++ grep -n -- client-demo '/d/Self Project/Skills/scripts/validate.py'
++ grep -q -- client-demo '/d/Self Project/Skills/scripts/validate.py'
++ echo 'RESULT PASS (validate.py 不再引假例子):/d/Self Project/Skills/scripts/validate.py 已經不引「client-demo」'
+RESULT PASS (validate.py 不再引假例子):/d/Self Project/Skills/scripts/validate.py 已經不引「client-demo」
++ refute_grep client-demo '/d/Self Project/Skills/AGENTS.md' 'AGENTS.md 不再引假例子'
++ set +e
++ '[' '!' -f '/d/Self Project/Skills/AGENTS.md' ']'
++ grep -n -- client-demo '/d/Self Project/Skills/AGENTS.md'
++ grep -q -- client-demo '/d/Self Project/Skills/AGENTS.md'
++ echo 'RESULT PASS (AGENTS.md 不再引假例子):/d/Self Project/Skills/AGENTS.md 已經不引「client-demo」'
+RESULT PASS (AGENTS.md 不再引假例子):/d/Self Project/Skills/AGENTS.md 已經不引「client-demo」
++ refute_grep '/next 的路由' '/d/Self Project/Skills/scripts/validate.py' 'validate.py 不再引 /next 假例子'
++ set +e
++ '[' '!' -f '/d/Self Project/Skills/scripts/validate.py' ']'
++ grep -n -- '/next 的路由' '/d/Self Project/Skills/scripts/validate.py'
++ grep -q -- '/next 的路由' '/d/Self Project/Skills/scripts/validate.py'
++ echo 'RESULT PASS (validate.py 不再引 /next 假例子):/d/Self Project/Skills/scripts/validate.py 已經不引「/next 的路由」'
+RESULT PASS (validate.py 不再引 /next 假例子):/d/Self Project/Skills/scripts/validate.py 已經不引「/next 的路由」
++ refute_grep 路由表的一列 '/d/Self Project/Skills/AGENTS.md' 'AGENTS.md 不再引 /next 假例子'
++ set +e
++ '[' '!' -f '/d/Self Project/Skills/AGENTS.md' ']'
++ grep -n -- 路由表的一列 '/d/Self Project/Skills/AGENTS.md'
++ grep -q -- 路由表的一列 '/d/Self Project/Skills/AGENTS.md'
++ echo 'RESULT PASS (AGENTS.md 不再引 /next 假例子):/d/Self Project/Skills/AGENTS.md 已經不引「路由表的一列」'
+RESULT PASS (AGENTS.md 不再引 /next 假例子):/d/Self Project/Skills/AGENTS.md 已經不引「路由表的一列」
++ echo '==== QA 第 2 輪:五個繞過方向(code-review lane 打穿過出貨檔的形狀)===='
+==== QA 第 2 輪:五個繞過方向(code-review lane 打穿過出貨檔的形狀)====
++ echo '同一種病 —— 主張換一種寫法就繞過去。改壞的方向 A1–A4 在上面,這五格守的是繞過。'
+同一種病 —— 主張換一種寫法就繞過去。改壞的方向 A1–A4 在上面,這五格守的是繞過。
++ echo '---- B1  judge lane 那一列縮排 3 個空白(GFM 照樣算同一張表的一列)→ 該紅'
+---- B1  judge lane 那一列縮排 3 個空白(GFM 照樣算同一張表的一列)→ 該紅
++ fresh
++ rm -rf /tmp/tmp.BTw0JZ5F2N/qa112/case
++ cp -r /tmp/tmp.BTw0JZ5F2N/qa112/pristine /tmp/tmp.BTw0JZ5F2N/qa112/case
++ mutate B1
++ set +e
++ python - /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ '[' 0 -ne 0 ']'
++ grep -n 逐條判定 /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
+34:   | **judge** | 逐條判定 | pass/fail |
++ gate
++ set +e
++ python /tmp/tmp.BTw0JZ5F2N/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+FAIL skills/qa/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'B1 縮排的 judge lane'
++ local want=red 'what=B1 縮排的 judge lane'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B1 縮排的 judge lane):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (B1 縮排的 judge lane):預期紅、實際紅,且錯誤指名 judge/並行池
++ expect_msg 'lanes are' 'declares no' 'B1 訊息指 lane 集合'
++ local 'want=lanes are' 'nope=declares no' 'what=B1 訊息指 lane 集合'
++ grep -q -- 'lanes are' /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ grep -q -- 'declares no' /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ echo 'RESULT PASS (B1 訊息指 lane 集合):訊息含「lanes are」、不含「declares no」'
+RESULT PASS (B1 訊息指 lane 集合):訊息含「lanes are」、不含「declares no」
++ echo '---- B2  排序約束只寫在 fence 裡 → 該紅'
+---- B2  排序約束只寫在 fence 裡 → 該紅
++ fresh
++ rm -rf /tmp/tmp.BTw0JZ5F2N/qa112/case
++ cp -r /tmp/tmp.BTw0JZ5F2N/qa112/pristine /tmp/tmp.BTw0JZ5F2N/qa112/case
++ mutate B2
++ set +e
++ python - /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ '[' 0 -ne 0 ']'
++ show_mutation '```bash' B2
++ set +e
++ echo '---- 改完的樣子(B2):'
+---- 改完的樣子(B2):
++ grep -n -- '```bash' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
+79:```bash
++ grep -q -- '```bash' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ echo 'RESULT PASS (B2 mutation 有生效):檔案裡看得到「```bash」'
+RESULT PASS (B2 mutation 有生效):檔案裡看得到「```bash」
++ still_there 'walkthrough 之後' B2
++ set +e
++ local n
+++ grep -c -- 'walkthrough 之後' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ n=2
++ echo '---- 「walkthrough 之後」在檔案裡還有 2 處(B2)'
+---- 「walkthrough 之後」在檔案裡還有 2 處(B2)
++ '[' 2 -gt 0 ']'
++ echo 'RESULT PASS (B2 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方'
+RESULT PASS (B2 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方
++ gate
++ set +e
++ python /tmp/tmp.BTw0JZ5F2N/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+FAIL skills/qa/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'B2 排序約束只在 fence 裡'
++ local want=red 'what=B2 排序約束只在 fence 裡'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B2 排序約束只在 fence 裡):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (B2 排序約束只在 fence 裡):預期紅、實際紅,且錯誤指名 judge/並行池
++ echo '---- B3  排序約束只寫在 HTML comment 裡 → 該紅'
+---- B3  排序約束只寫在 HTML comment 裡 → 該紅
++ fresh
++ rm -rf /tmp/tmp.BTw0JZ5F2N/qa112/case
++ cp -r /tmp/tmp.BTw0JZ5F2N/qa112/pristine /tmp/tmp.BTw0JZ5F2N/qa112/case
++ mutate B3
++ set +e
++ python - /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ '[' 0 -ne 0 ']'
++ show_mutation '<!--' B3
++ set +e
++ echo '---- 改完的樣子(B3):'
+---- 改完的樣子(B3):
++ grep -n -- '<!--' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
+79:<!-- **排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。 -->
++ grep -q -- '<!--' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ echo 'RESULT PASS (B3 mutation 有生效):檔案裡看得到「<!--」'
+RESULT PASS (B3 mutation 有生效):檔案裡看得到「<!--」
++ still_there 'walkthrough 之後' B3
++ set +e
++ local n
+++ grep -c -- 'walkthrough 之後' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ n=2
++ echo '---- 「walkthrough 之後」在檔案裡還有 2 處(B3)'
+---- 「walkthrough 之後」在檔案裡還有 2 處(B3)
++ '[' 2 -gt 0 ']'
++ echo 'RESULT PASS (B3 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方'
+RESULT PASS (B3 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方
++ gate
++ set +e
++ python /tmp/tmp.BTw0JZ5F2N/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+FAIL skills/qa/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'B3 排序約束只在 HTML comment 裡'
++ local want=red 'what=B3 排序約束只在 HTML comment 裡'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B3 排序約束只在 HTML comment 裡):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (B3 排序約束只在 HTML comment 裡):預期紅、實際紅,且錯誤指名 judge/並行池
++ echo '---- B4  刪正文 + §3 標題改寫成 setext(底下一行 ---)→ 該紅'
+---- B4  刪正文 + §3 標題改寫成 setext(底下一行 ---)→ 該紅
++ fresh
++ rm -rf /tmp/tmp.BTw0JZ5F2N/qa112/case
++ cp -r /tmp/tmp.BTw0JZ5F2N/qa112/pristine /tmp/tmp.BTw0JZ5F2N/qa112/case
++ mutate B4
++ set +e
++ python - /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ '[' 0 -ne 0 ']'
++ echo '---- 改完的 §3 標題(setext:文字一行 + --- 一行)'
+---- 改完的 §3 標題(setext:文字一行 + --- 一行)
++ grep -n -A 1 '獨立 judge(排在 walkthrough' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
+77:3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+78----
++ still_there 'walkthrough 之後' B4
++ set +e
++ local n
+++ grep -c -- 'walkthrough 之後' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ n=1
++ echo '---- 「walkthrough 之後」在檔案裡還有 1 處(B4)'
+---- 「walkthrough 之後」在檔案裡還有 1 處(B4)
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B4 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方'
+RESULT PASS (B4 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方
++ gate
++ set +e
++ python /tmp/tmp.BTw0JZ5F2N/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+FAIL skills/qa/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'B4 setext 標題'
++ local want=red 'what=B4 setext 標題'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B4 setext 標題):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (B4 setext 標題):預期紅、實際紅,且錯誤指名 judge/並行池
++ echo '---- B5  整張 lane 表包進 fence → 該紅,且訊息指到宣告不見'
+---- B5  整張 lane 表包進 fence → 該紅,且訊息指到宣告不見
++ fresh
++ rm -rf /tmp/tmp.BTw0JZ5F2N/qa112/case
++ cp -r /tmp/tmp.BTw0JZ5F2N/qa112/pristine /tmp/tmp.BTw0JZ5F2N/qa112/case
++ mutate B5
++ set +e
++ python - /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ '[' 0 -ne 0 ']'
++ show_mutation '```markdown' B5
++ set +e
++ echo '---- 改完的樣子(B5):'
+---- 改完的樣子(B5):
++ grep -n -- '```markdown' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
+29:```markdown
++ grep -q -- '```markdown' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ echo 'RESULT PASS (B5 mutation 有生效):檔案裡看得到「```markdown」'
+RESULT PASS (B5 mutation 有生效):檔案裡看得到「```markdown」
++ still_there '| lane | 做什麼' B5
++ set +e
++ local n
+++ grep -c -- '| lane | 做什麼' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
++ n=1
++ echo '---- 「| lane | 做什麼」在檔案裡還有 1 處(B5)'
+---- 「| lane | 做什麼」在檔案裡還有 1 處(B5)
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B5 是搬走不是刪掉):「| lane | 做什麼」還在檔案裡,只是搬到讀不到的地方'
+RESULT PASS (B5 是搬走不是刪掉):「| lane | 做什麼」還在檔案裡,只是搬到讀不到的地方
++ echo '---- 三支 lane 的資料列還在檔案裡(所以不是「表被刪掉」)'
+---- 三支 lane 的資料列還在檔案裡(所以不是「表被刪掉」)
++ grep -c '^| \*\*' /tmp/tmp.BTw0JZ5F2N/qa112/case/skills/qa/SKILL.md
+3
++ gate
++ set +e
++ python /tmp/tmp.BTw0JZ5F2N/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
+FAIL skills/qa/SKILL.md: runs an 獨立 judge but no 並行池 section declares its lane table — the three lanes have to be written down in a table under a 「並行池」 heading, its first header column literally `lane`, where the next agent reads them
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'B5 lane 表包進 fence'
++ local want=red 'what=B5 lane 表包進 fence'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B5 lane 表包進 fence):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (B5 lane 表包進 fence):預期紅、實際紅,且錯誤指名 judge/並行池
++ expect_msg 'declares its lane table' 'lanes are' 'B5 訊息指宣告不見'
++ local 'want=declares its lane table' 'nope=lanes are' 'what=B5 訊息指宣告不見'
++ grep -q -- 'declares its lane table' /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ grep -q -- 'lanes are' /tmp/tmp.BTw0JZ5F2N/qa112/out.txt
++ echo 'RESULT PASS (B5 訊息指宣告不見):訊息含「declares its lane table」、不含「lanes are」'
+RESULT PASS (B5 訊息指宣告不見):訊息含「declares its lane table」、不含「lanes are」
++ echo '==== 完工定義:四格斷言住在 --self-check 的 real-skill layer ===='
+==== 完工定義:四格斷言住在 --self-check 的 real-skill layer ====
++ echo '---- 出貨檔改壞的那幾格,連行號印出來(斷言不是散文宣稱的,是這幾行)'
+---- 出貨檔改壞的那幾格,連行號印出來(斷言不是散文宣稱的,是這幾行)
++ grep -n -e '# A1:' -e '# A2:' -e '# A3:' -e '# A4:' -e '# B1:' -e '# B2:' -e '# B3:' -e '# B4:' -e '# B5:' '/d/Self Project/Skills/scripts/validate.py'
+992:            # A1:插一列**不粗體**的 judge lane。markdown 不要求第一欄粗體,散文
+996:            # A2:排序約束的正文整句刪掉,只留標題。標題自己就同時含 judge 與
+1006:            # A3:並行池整段拿掉,訊息要指到「整段不見」而不是「lanes are []」——
+1024:            # A4:並行池那一段的子段多一張非 lane 表 —— 該綠。資源分配表的第一欄
+1041:            # B1:judge 那一列縮排 3 個空白。GFM 行首 ≤3 空白照樣是同一張表的一列,
+1048:            # B2:排序約束只寫在 ``` fence 裡 —— fence 裡是範例,不是宣告。
+1058:            # B3:排序約束只寫在 HTML comment 裡 —— 讀者根本看不到那句話。
+1068:            # B4:標題改寫成 setext(底下一行 ---)還是標題,一樣餵不飽排序約束。
+1077:            # B5:整張 lane 表包進 ``` fence —— 範例不是宣告,池等於沒宣告。
+++ grep -c -e '# A[1-4]:' -e '# B[1-5]:' '/d/Self Project/Skills/scripts/validate.py'
++ ASSERT_N=9
++ echo '斷言格數: 9'
+斷言格數: 9
++ '[' 9 -ge 9 ']'
++ echo 'RESULT PASS (四格 + 五格斷言在 self-check 裡):9 格'
+RESULT PASS (四格 + 五格斷言在 self-check 裡):9 格
++ echo '==== 完工定義的四條指令 —— 證據跟驗收項放同一份 transcript ===='
+==== 完工定義的四條指令 —— 證據跟驗收項放同一份 transcript ====
++ run_gate python '/d/Self Project/Skills/scripts/validate.py'
++ set +e
++ echo '---- python /d/Self Project/Skills/scripts/validate.py'
+---- python /d/Self Project/Skills/scripts/validate.py
++ python '/d/Self Project/Skills/scripts/validate.py'
++ tail -20
+OK validate green
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/validate.py):exit 0'
+RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/validate.py):exit 0
++ run_gate python '/d/Self Project/Skills/scripts/validate.py' --self-check
++ set +e
++ echo '---- python /d/Self Project/Skills/scripts/validate.py --self-check'
+---- python /d/Self Project/Skills/scripts/validate.py --self-check
++ python '/d/Self Project/Skills/scripts/validate.py' --self-check
++ tail -20
+OK validate self-check green
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/validate.py):exit 0'
+RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/validate.py):exit 0
++ run_gate python '/d/Self Project/Skills/scripts/qa/107-mutate.py' --run
++ set +e
++ echo '---- python /d/Self Project/Skills/scripts/qa/107-mutate.py --run'
+---- python /d/Self Project/Skills/scripts/qa/107-mutate.py --run
++ python '/d/Self Project/Skills/scripts/qa/107-mutate.py' --run
++ tail -20
+咬住  extra_lane_ok          self-check exit=3221225794
+咬住  lane_cell_any_bold     self-check exit=3221225794
+咬住  lane_cell_requires_bold self-check exit=3221225794
+咬住  missing_lane_ok        self-check exit=3221225794
+咬住  ordering_by_keyword    self-check exit=3221225794
+咬住  ordering_never_checked self-check exit=3221225794
+咬住  ordering_scans_headings self-check exit=3221225794
+咬住  pool_declared_by_heading self-check exit=3221225794
+咬住  pool_section_optional  self-check exit=3221225794
+咬住  pool_table_any_header  self-check exit=3221225794
+咬住  read_fenced_examples   self-check exit=3221225794
+咬住  read_html_comments     self-check exit=3221225794
+咬住  setext_not_a_heading   self-check exit=3221225794
+咬住  table_rows_no_indent   self-check exit=3221225794
+咬住  trigger_by_mention     self-check exit=3221225794
+咬住  trigger_off            self-check exit=3221225794
+
+16/16 個 knob 被 self-check 咬住
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/107-mutate.py):exit 0'
+RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/107-mutate.py):exit 0
++ run_gate python '/d/Self Project/Skills/scripts/qa/107-prevdiff.py'
++ set +e
++ echo '---- python /d/Self Project/Skills/scripts/qa/107-prevdiff.py'
+---- python /d/Self Project/Skills/scripts/qa/107-prevdiff.py
++ python '/d/Self Project/Skills/scripts/qa/107-prevdiff.py'
++ tail -20
+
+==== 差額 8 筆 ====
+  [fixture] r01-judge-in-pool: 修前綠 → 修後紅
+      skills/r01-judge-in-pool/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+  [fixture] r02-missing-lane: 修前綠 → 修後紅
+      skills/r02-missing-lane/SKILL.md: 並行池 lanes are ['regression', 'walkthrough'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+  [fixture] r03-ordering-flipped: 修前綠 → 修後紅
+      skills/r03-ordering-flipped/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
+  [fixture] r04-ordering-negated: 修前綠 → 修後紅
+      skills/r04-ordering-negated/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
+  [fixture] r05-no-pool-section: 修前綠 → 修後紅
+      skills/r05-no-pool-section/SKILL.md: runs an 獨立 judge but no 並行池 section declares its lane table — the three lanes have to be written down in a table under a 「並行池」 heading, its first header column literally `lane`, where the next agent reads them
+  [fixture] r06-no-ordering-line: 修前綠 → 修後紅
+      skills/r06-no-ordering-line/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
+  [fixture] r07-judge-lane-not-bold: 修前綠 → 修後紅
+      skills/r07-judge-lane-not-bold/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+  [fixture] r08-ordering-only-in-heading: 修前綠 → 修後紅
+      skills/r08-ordering-only-in-heading/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
+
+母體 31,不合 0
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/107-prevdiff.py):exit 0'
+RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/107-prevdiff.py):exit 0
++ run_gate python '/d/Self Project/Skills/scripts/qa/112-prevdiff.py'
++ set +e
++ echo '---- python /d/Self Project/Skills/scripts/qa/112-prevdiff.py'
+---- python /d/Self Project/Skills/scripts/qa/112-prevdiff.py
++ python '/d/Self Project/Skills/scripts/qa/112-prevdiff.py'
++ tail -20
+r05-missing-lane                紅     紅       紅       OK
+r06-ordering-flipped            紅     紅       紅       OK
+r07-ordering-negated            紅     紅       紅       OK
+r08-no-ordering-line            紅     紅       紅       OK
+
+==== A3 訊息斷言(票面原句:應該是 `no 並行池 section`,不是 `lanes are []`)====
+  r03-a3-no-pool-section
+      修前:skills/r03-a3-no-pool-section/SKILL.md: 並行池 lanes are [] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+      修後:skills/r03-a3-no-pool-section/SKILL.md: runs an 獨立 judge but no 並行池 section declares its lane table — the three lanes have to be written down in a table under a 「並行池」 heading, its first header column literally `lane`, where the next agent reads them
+      判定:OK
+
+==== 差額 4 筆 ====
+  [fixture] g02-a4-extra-non-lane-table: 修前紅 → 修後綠
+  [fixture] g04-lanes-not-bold: 修前紅 → 修後綠
+  [fixture] r01-a1-judge-lane-not-bold: 修前綠 → 修後紅
+      skills/r01-a1-judge-lane-not-bold/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+  [fixture] r02-a2-ordering-only-in-heading: 修前綠 → 修後紅
+      skills/r02-a2-ordering-only-in-heading/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
+
+母體 33,不合 0
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/112-prevdiff.py):exit 0'
+RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/112-prevdiff.py):exit 0
++ run_gate bash '/d/Self Project/Skills/scripts/qa/107-walkthrough.sh' /tmp/tmp.BTw0JZ5F2N/qa112/nested107
++ set +e
++ echo '---- bash /d/Self Project/Skills/scripts/qa/107-walkthrough.sh /tmp/tmp.BTw0JZ5F2N/qa112/nested107'
+---- bash /d/Self Project/Skills/scripts/qa/107-walkthrough.sh /tmp/tmp.BTw0JZ5F2N/qa112/nested107
++ bash '/d/Self Project/Skills/scripts/qa/107-walkthrough.sh' /tmp/tmp.BTw0JZ5F2N/qa112/nested107
++ tail -20
+
+--- (上一段 112-walkthrough 在 2 分鐘 tool timeout 被 SIGTERM 砍掉,輸出不完整;下面是同一支重跑完整版,exit=0) ---
+=== $ bash scripts/qa/112-walkthrough.sh $TMP/qa112 ===
++ echo '==== 出貨版散文原文(所有判定倚賴的行號)===='
+==== 出貨版散文原文(所有判定倚賴的行號)====
++ echo '---- §2 並行池:三線同時開(含 lane 表與『這張表就是池的宣告』)'
+---- §2 並行池:三線同時開(含 lane 表與『這張表就是池的宣告』)
++ sed -n 24,50p '/d/Self Project/Skills/skills/qa/SKILL.md'
++ cat -n
+     1	## 2. 並行池:三線同時開
+     2	
+     3	這三件事之間沒有資料依賴 — regression 不吃 walkthrough 的結果,walkthrough 也不吃 regression 的結果,
+     4	code-review 讀的是 diff。三支各開一個 sub-agent,**同時開始**,不排隊:
+     5	
+     6	| lane | 做什麼 | 產出 |
+     7	| --- | --- | --- |
+     8	| **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
+     9	| **walkthrough** | 照驗收原句實測切片 | 每條驗收項一份 a11y snapshot + demo 實錄 |
+    10	| **code-review** | 對本票的最終 diff 跑 `/code-review` | findings 清單與處置 |
+    11	
+    12	**這張表就是池的宣告**:表頭第一欄寫 `lane`,底下每一列的第一欄就是一支 lane 的名字。
+    13	粗體只是排版,不是宣告 —— 加不加都算數。要增減 lane 就改這張表,別在散文裡多寫一支。
+    14	守門讀的就是這張表:表頭那個字被改掉、或表整張不見,它會當成池沒被宣告而紅。
+    15	
+    16	**同時開始 = 三個 sub-agent 在同一則訊息裡一次發出去**。一支一支發,讀起來每支都是
+    17	sub-agent,實際還是排隊,而且報告長得跟真的並行一模一樣。
+    18	
+    19	**lane 之間不共用資源**:各自的 port、暫存目錄、QA artifacts 子目錄分開;真的共用
+    20	(同一個 dev server、同一份 fixture DB)就把撞到的那兩支序列化,寧可慢也不要搶。
+    21	搶資源的失敗會長得像 flaky,查起來比省下的時間貴。
+    22	
+    23	三支都回來才收斂成一份報告 — 有一支先紅也照樣等完另外兩支,一次跑完、一份完整報告。
+    24	
+    25	**任一支失敗要指名道姓**:報告寫明是哪一支 lane 失敗、失敗內容是什麼,其他兩支綠不能
+    26	蓋過它 — 三支的判定是 AND,不是多數決。lane 自己爆掉(sub-agent 掛了、環境起不來)跟
+    27	lane 判 fail 同級:照樣寫進報告當紅,不准當成「沒跑到」略過。
++ echo '---- §3 標題自己就含 judge 與『walkthrough 之後』,正文那句才是 load-bearing 的約束'
+---- §3 標題自己就含 judge 與『walkthrough 之後』,正文那句才是 load-bearing 的約束
++ sed -n 77,86p '/d/Self Project/Skills/skills/qa/SKILL.md'
++ cat -n
+     1	## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+     2	
+     3	**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。
+     4	
+     5	理由:judge 的證據來源就是 walkthrough 產出的 a11y snapshot。提早開,它拿到空證據,然後把每一條
+     6	都判 pass — 而「證據是空的所以全過」跟「真的全過」在報告上長得一模一樣:沒有紅字、沒有
+     7	例外、每條 pass。
+     8	
+     9	開一個乾淨 subagent 當 judge:只餵 spec 驗收原句 + walkthrough 證據(snapshots),不餵實作脈絡與本 session 的判斷。judge 逐條判 pass / fail / **works-but-wrong**(功能會動但不是 spec 說的那件事)— works-but-wrong 一律算 fail。
+    10	
++ echo '---- 絕對行號版'
+---- 絕對行號版
++ grep -n -e '^## 2\.' -e '^| lane' -e '^## 3\.' -e 排序約束 '/d/Self Project/Skills/skills/qa/SKILL.md'
+24:## 2. 並行池:三線同時開
+29:| lane | 做什麼 | 產出 |
+77:## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+79:**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。
++ echo '==== A1  票上原句:「並行池 lane 表插一列 `| judge | 逐條判定 | pass/fail |`(第一欄不粗體)」現況 OK validate green exit 0 → 應該 red ===='
+==== A1  票上原句:「並行池 lane 表插一列 `| judge | 逐條判定 | pass/fail |`(第一欄不粗體)」現況 OK validate green exit 0 → 應該 red ====
++ fresh
++ rm -rf /tmp/tmp.1QjzMHZiMC/qa112/case
++ cp -r /tmp/tmp.1QjzMHZiMC/qa112/pristine /tmp/tmp.1QjzMHZiMC/qa112/case
++ python - /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ sed -n 29,35p /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ cat -n
+     1	| lane | 做什麼 | 產出 |
+     2	| --- | --- | --- |
+     3	| **regression** | 跑既有 regression suite | 紅的每一條記為 blocking |
+     4	| **walkthrough** | 照驗收原句實測切片 | 每條驗收項一份 a11y snapshot + demo 實錄 |
+     5	| **code-review** | 對本票的最終 diff 跑 `/code-review` | findings 清單與處置 |
+     6	| judge | 逐條判定 | pass/fail |
+     7	
++ gate
++ set +e
++ python /tmp/tmp.1QjzMHZiMC/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+FAIL skills/qa/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'A1 不粗體的 judge lane'
++ local want=red 'what=A1 不粗體的 judge lane'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (A1 不粗體的 judge lane):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (A1 不粗體的 judge lane):預期紅、實際紅,且錯誤指名 judge/並行池
++ expect_msg '並行池 lanes are' 'no 並行池 section' 'A1 訊息指到 lane 集合不對'
++ local 'want=並行池 lanes are' 'nope=no 並行池 section' 'what=A1 訊息指到 lane 集合不對'
++ grep -q -- '並行池 lanes are' /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ grep -q -- 'no 並行池 section' /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ echo 'RESULT PASS (A1 訊息指到 lane 集合不對):訊息含「並行池 lanes are」、不含「no 並行池 section」'
+RESULT PASS (A1 訊息指到 lane 集合不對):訊息含「並行池 lanes are」、不含「no 並行池 section」
++ echo '==== A2  票上原句:「正文 `**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。` 整句刪掉,只留 §3 標題」現況 OK validate green exit 0 → 應該 red ===='
+==== A2  票上原句:「正文 `**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。` 整句刪掉,只留 §3 標題」現況 OK validate green exit 0 → 應該 red ====
++ fresh
++ rm -rf /tmp/tmp.1QjzMHZiMC/qa112/case
++ cp -r /tmp/tmp.1QjzMHZiMC/qa112/pristine /tmp/tmp.1QjzMHZiMC/qa112/case
++ python - /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ echo '--- §3 標題還在(它自己就含 judge 與 walkthrough 之後),正文那句沒了'
+--- §3 標題還在(它自己就含 judge 與 walkthrough 之後),正文那句沒了
++ sed -n 77,82p /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ cat -n
+     1	## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+     2	
+     3	
+     4	理由:judge 的證據來源就是 walkthrough 產出的 a11y snapshot。提早開,它拿到空證據,然後把每一條
+     5	都判 pass — 而「證據是空的所以全過」跟「真的全過」在報告上長得一模一樣:沒有紅字、沒有
+     6	例外、每條 pass。
++ set +e
++ grep -n 排序約束 /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ set -e
++ gate
++ set +e
++ python /tmp/tmp.1QjzMHZiMC/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+FAIL skills/qa/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'A2 刪正文、留標題'
++ local want=red 'what=A2 刪正文、留標題'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (A2 刪正文、留標題):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (A2 刪正文、留標題):預期紅、實際紅,且錯誤指名 judge/並行池
++ expect_msg 'never states that the 獨立 judge runs walkthrough' '並行池 lanes are' 'A2 訊息指到排序約束沒寫在正文'
++ local 'want=never states that the 獨立 judge runs walkthrough' 'nope=並行池 lanes are' 'what=A2 訊息指到排序約束沒寫在正文'
++ grep -q -- 'never states that the 獨立 judge runs walkthrough' /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ grep -q -- '並行池 lanes are' /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ echo 'RESULT PASS (A2 訊息指到排序約束沒寫在正文):訊息含「never states that the 獨立 judge runs walkthrough」、不含「並行池 lanes are」'
+RESULT PASS (A2 訊息指到排序約束沒寫在正文):訊息含「never states that the 獨立 judge runs walkthrough」、不含「並行池 lanes are」
++ echo '==== A3  票上原句:「整段 `## 2. 並行池` 拿掉」現況 red 但訊息是 `並行池 lanes are []` → 應該 `runs an 獨立 judge but declares no 並行池 section` ===='
+==== A3  票上原句:「整段 `## 2. 並行池` 拿掉」現況 red 但訊息是 `並行池 lanes are []` → 應該 `runs an 獨立 judge but declares no 並行池 section` ====
++ fresh
++ rm -rf /tmp/tmp.1QjzMHZiMC/qa112/case
++ cp -r /tmp/tmp.1QjzMHZiMC/qa112/pristine /tmp/tmp.1QjzMHZiMC/qa112/case
++ python - /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ set +e
++ grep -n 並行池 /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
+24:## 3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+26:**排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。
++ set -e
++ gate
++ set +e
++ python /tmp/tmp.1QjzMHZiMC/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+FAIL skills/qa/SKILL.md: runs an 獨立 judge but no 並行池 section declares its lane table — the three lanes have to be written down in a table under a 「並行池」 heading, its first header column literally `lane`, where the next agent reads them
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'A3 並行池整段消失'
++ local want=red 'what=A3 並行池整段消失'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (A3 並行池整段消失):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (A3 並行池整段消失):預期紅、實際紅,且錯誤指名 judge/並行池
++ expect_msg 'no 並行池 section declares its lane' 'lanes are \[\]' 'A3 訊息指到宣告整個不見,不是 lanes are []'
++ local 'want=no 並行池 section declares its lane' 'nope=lanes are \[\]' 'what=A3 訊息指到宣告整個不見,不是 lanes are []'
++ grep -q -- 'no 並行池 section declares its lane' /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ grep -q -- 'lanes are \[\]' /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ echo 'RESULT PASS (A3 訊息指到宣告整個不見,不是 lanes are []):訊息含「no 並行池 section declares its lane」、不含「lanes are \[\]」'
+RESULT PASS (A3 訊息指到宣告整個不見,不是 lanes are []):訊息含「no 並行池 section declares its lane」、不含「lanes are \[\]」
++ echo '==== A4  票上原句:「§2 的 `###` 子段裡加一張非 lane 表(第一欄粗體,例如資源分配表)」現況 red(`lanes are [...,port]`)→ 應該 green,這是要消失的假陽性 ===='
+==== A4  票上原句:「§2 的 `###` 子段裡加一張非 lane 表(第一欄粗體,例如資源分配表)」現況 red(`lanes are [...,port]`)→ 應該 green,這是要消失的假陽性 ====
++ fresh
++ rm -rf /tmp/tmp.1QjzMHZiMC/qa112/case
++ cp -r /tmp/tmp.1QjzMHZiMC/qa112/pristine /tmp/tmp.1QjzMHZiMC/qa112/case
++ python - /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ sed -n 52,64p /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ cat -n
+     1	### regression lane
+     2	
+     3	資源分配(不是 lane 宣告,只是同一段裡的另一張表):
+     4	
+     5	| 資源 | 誰用 | 備註 |
+     6	| --- | --- | --- |
+     7	| **port** | regression | 5173 |
+     8	| **暫存目錄** | walkthrough | mktemp -d |
+     9	
+    10	跑既有 regression suite,紅的每一條記為 blocking。
+    11	
+    12	**改判準的票要跑修前對照**:這張票動的是判斷邏輯(守門規則、篩選條件、分類判準)時,除了
+    13	跑現況,還要用**修之前那個 commit** 跑同一份母體,列出差額。新出現的誤判一律當成「本輪
++ gate
++ set +e
++ python /tmp/tmp.1QjzMHZiMC/qa112/case/scripts/validate.py
++ GATE_EXIT=0
++ cat /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+OK validate green
++ echo 'exit 0'
+exit 0
+++ grep -c -e judge -e 並行池 /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+++ true
++ GATE_JUDGE=0
++ echo 'judge/並行池 錯誤行數: 0'
+judge/並行池 錯誤行數: 0
++ expect green 'A4 §2 子段多一張非 lane 表'
++ local want=green 'what=A4 §2 子段多一張非 lane 表'
++ '[' green = red ']'
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (A4 §2 子段多一張非 lane 表):預期綠、實際綠'
+RESULT PASS (A4 §2 子段多一張非 lane 表):預期綠、實際綠
++ echo '==== pristine  出貨檔原封不動 → 該綠 ===='
+==== pristine  出貨檔原封不動 → 該綠 ====
++ fresh
++ rm -rf /tmp/tmp.1QjzMHZiMC/qa112/case
++ cp -r /tmp/tmp.1QjzMHZiMC/qa112/pristine /tmp/tmp.1QjzMHZiMC/qa112/case
++ gate
++ set +e
++ python /tmp/tmp.1QjzMHZiMC/qa112/case/scripts/validate.py
++ GATE_EXIT=0
++ cat /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+OK validate green
++ echo 'exit 0'
+exit 0
+++ grep -c -e judge -e 並行池 /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+++ true
++ GATE_JUDGE=0
++ echo 'judge/並行池 錯誤行數: 0'
+judge/並行池 錯誤行數: 0
++ expect green pristine
++ local want=green what=pristine
++ '[' green = red ']'
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (pristine):預期綠、實際綠'
+RESULT PASS (pristine):預期綠、實際綠
++ echo '==== 完工定義:「順手一併修 —— scripts/validate.py:201 與 AGENTS.md:72 舉的假陽性例子(client-demo / next 的散文)repo 裡根本不存在,真正的例子是 skills/build-batch/SKILL.md:243「QA 第 6 輪 judge 實測」」 ===='
+==== 完工定義:「順手一併修 —— scripts/validate.py:201 與 AGENTS.md:72 舉的假陽性例子(client-demo / next 的散文)repo 裡根本不存在,真正的例子是 skills/build-batch/SKILL.md:243「QA 第 6 輪 judge 實測」」 ====
++ echo '---- 真的例子要在 repo 裡存在'
+---- 真的例子要在 repo 裡存在
++ assert_grep 'QA 第 6 輪 judge 實測' '/d/Self Project/Skills/skills/build-batch/SKILL.md' 真例子存在
++ set +e
++ grep -n -- 'QA 第 6 輪 judge 實測' '/d/Self Project/Skills/skills/build-batch/SKILL.md'
+243:  `--contains` 印出來的東西**只認候選名單裡的那一條** — 它問的是「哪些 branch 含這顆 commit」,上一批殘留的 branch 也會被列出來。衝突區塊還常常把沒人動過的舊行一起包進去,那時候 blame 回的是這批之前的 commit,`--contains` 就會吐出一整排 branch(QA 第 6 輪 judge 實測),那不是答案。
++ echo 'RESULT PASS (真例子存在):/d/Self Project/Skills/skills/build-batch/SKILL.md 找得到「QA 第 6 輪 judge 實測」'
+RESULT PASS (真例子存在):/d/Self Project/Skills/skills/build-batch/SKILL.md 找得到「QA 第 6 輪 judge 實測」
++ echo '---- 守門與 AGENTS.md 現在引的就是這個例子'
+---- 守門與 AGENTS.md 現在引的就是這個例子
++ assert_grep 'QA 第 6 輪 judge' '/d/Self Project/Skills/scripts/validate.py' 'validate.py 引真例子'
++ set +e
++ grep -n -- 'QA 第 6 輪 judge' '/d/Self Project/Skills/scripts/validate.py'
+241:# (`skills/build-batch/SKILL.md` 引用「QA 第 6 輪 judge 實測」當出處)一支 judge 都沒跑,
++ echo 'RESULT PASS (validate.py 引真例子):/d/Self Project/Skills/scripts/validate.py 找得到「QA 第 6 輪 judge」'
+RESULT PASS (validate.py 引真例子):/d/Self Project/Skills/scripts/validate.py 找得到「QA 第 6 輪 judge」
++ assert_grep 'QA 第 6 輪 judge' '/d/Self Project/Skills/AGENTS.md' 'AGENTS.md 引真例子'
++ set +e
++ grep -n -- 'QA 第 6 輪 judge' '/d/Self Project/Skills/AGENTS.md'
+94:judge`。散文裡光提到 judge 的(`skills/build-batch/SKILL.md` 引「QA 第 6 輪 judge
++ echo 'RESULT PASS (AGENTS.md 引真例子):/d/Self Project/Skills/AGENTS.md 找得到「QA 第 6 輪 judge」'
+RESULT PASS (AGENTS.md 引真例子):/d/Self Project/Skills/AGENTS.md 找得到「QA 第 6 輪 judge」
++ echo '---- 舊的假例子(client-demo / next)不能再被引'
+---- 舊的假例子(client-demo / next)不能再被引
++ selfcheck_refute 'QA 第 6 輪 judge' '/d/Self Project/Skills/AGENTS.md'
++ local before=0
++ FAILED=0
++ refute_grep 'QA 第 6 輪 judge' '/d/Self Project/Skills/AGENTS.md' '儀器自檢(預期 FAIL)'
++ '[' 1 -eq 1 ']'
++ echo 'RESULT PASS (儀器自檢):refute_grep 對確實存在的「QA 第 6 輪 judge」有判 FAIL,斷言不是空的'
+RESULT PASS (儀器自檢):refute_grep 對確實存在的「QA 第 6 輪 judge」有判 FAIL,斷言不是空的
++ FAILED=0
++ refute_grep client-demo '/d/Self Project/Skills/scripts/validate.py' 'validate.py 不再引假例子'
++ set +e
++ '[' '!' -f '/d/Self Project/Skills/scripts/validate.py' ']'
++ grep -n -- client-demo '/d/Self Project/Skills/scripts/validate.py'
++ grep -q -- client-demo '/d/Self Project/Skills/scripts/validate.py'
++ echo 'RESULT PASS (validate.py 不再引假例子):/d/Self Project/Skills/scripts/validate.py 已經不引「client-demo」'
+RESULT PASS (validate.py 不再引假例子):/d/Self Project/Skills/scripts/validate.py 已經不引「client-demo」
++ refute_grep client-demo '/d/Self Project/Skills/AGENTS.md' 'AGENTS.md 不再引假例子'
++ set +e
++ '[' '!' -f '/d/Self Project/Skills/AGENTS.md' ']'
++ grep -n -- client-demo '/d/Self Project/Skills/AGENTS.md'
++ grep -q -- client-demo '/d/Self Project/Skills/AGENTS.md'
++ echo 'RESULT PASS (AGENTS.md 不再引假例子):/d/Self Project/Skills/AGENTS.md 已經不引「client-demo」'
+RESULT PASS (AGENTS.md 不再引假例子):/d/Self Project/Skills/AGENTS.md 已經不引「client-demo」
++ refute_grep '/next 的路由' '/d/Self Project/Skills/scripts/validate.py' 'validate.py 不再引 /next 假例子'
++ set +e
++ '[' '!' -f '/d/Self Project/Skills/scripts/validate.py' ']'
++ grep -n -- '/next 的路由' '/d/Self Project/Skills/scripts/validate.py'
++ grep -q -- '/next 的路由' '/d/Self Project/Skills/scripts/validate.py'
++ echo 'RESULT PASS (validate.py 不再引 /next 假例子):/d/Self Project/Skills/scripts/validate.py 已經不引「/next 的路由」'
+RESULT PASS (validate.py 不再引 /next 假例子):/d/Self Project/Skills/scripts/validate.py 已經不引「/next 的路由」
++ refute_grep 路由表的一列 '/d/Self Project/Skills/AGENTS.md' 'AGENTS.md 不再引 /next 假例子'
++ set +e
++ '[' '!' -f '/d/Self Project/Skills/AGENTS.md' ']'
++ grep -n -- 路由表的一列 '/d/Self Project/Skills/AGENTS.md'
++ grep -q -- 路由表的一列 '/d/Self Project/Skills/AGENTS.md'
++ echo 'RESULT PASS (AGENTS.md 不再引 /next 假例子):/d/Self Project/Skills/AGENTS.md 已經不引「路由表的一列」'
+RESULT PASS (AGENTS.md 不再引 /next 假例子):/d/Self Project/Skills/AGENTS.md 已經不引「路由表的一列」
++ echo '==== QA 第 2 輪:五個繞過方向(code-review lane 打穿過出貨檔的形狀)===='
+==== QA 第 2 輪:五個繞過方向(code-review lane 打穿過出貨檔的形狀)====
++ echo '同一種病 —— 主張換一種寫法就繞過去。改壞的方向 A1–A4 在上面,這五格守的是繞過。'
+同一種病 —— 主張換一種寫法就繞過去。改壞的方向 A1–A4 在上面,這五格守的是繞過。
++ echo '---- B1  judge lane 那一列縮排 3 個空白(GFM 照樣算同一張表的一列)→ 該紅'
+---- B1  judge lane 那一列縮排 3 個空白(GFM 照樣算同一張表的一列)→ 該紅
++ fresh
++ rm -rf /tmp/tmp.1QjzMHZiMC/qa112/case
++ cp -r /tmp/tmp.1QjzMHZiMC/qa112/pristine /tmp/tmp.1QjzMHZiMC/qa112/case
++ mutate B1
++ set +e
++ python - /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ '[' 0 -ne 0 ']'
++ grep -n 逐條判定 /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
+34:   | **judge** | 逐條判定 | pass/fail |
++ gate
++ set +e
++ python /tmp/tmp.1QjzMHZiMC/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+FAIL skills/qa/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'B1 縮排的 judge lane'
++ local want=red 'what=B1 縮排的 judge lane'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B1 縮排的 judge lane):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (B1 縮排的 judge lane):預期紅、實際紅,且錯誤指名 judge/並行池
++ expect_msg 'lanes are' 'declares no' 'B1 訊息指 lane 集合'
++ local 'want=lanes are' 'nope=declares no' 'what=B1 訊息指 lane 集合'
++ grep -q -- 'lanes are' /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ grep -q -- 'declares no' /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ echo 'RESULT PASS (B1 訊息指 lane 集合):訊息含「lanes are」、不含「declares no」'
+RESULT PASS (B1 訊息指 lane 集合):訊息含「lanes are」、不含「declares no」
++ echo '---- B2  排序約束只寫在 fence 裡 → 該紅'
+---- B2  排序約束只寫在 fence 裡 → 該紅
++ fresh
++ rm -rf /tmp/tmp.1QjzMHZiMC/qa112/case
++ cp -r /tmp/tmp.1QjzMHZiMC/qa112/pristine /tmp/tmp.1QjzMHZiMC/qa112/case
++ mutate B2
++ set +e
++ python - /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ echo 'RESULT PASS (失敗指名道姓):只有 regression 紅,兩支綠沒有蓋過它,錯誤原文指得出是哪一條判準'
+RESULT PASS (失敗指名道姓):只有 regression 紅,兩支綠沒有蓋過它,錯誤原文指得出是哪一條判準
++ echo '==== AC5  本輪改動到的 SKILL.md 段落(交給 /writing-for-agents 判準逐條審)===='
+==== AC5  本輪改動到的 SKILL.md 段落(交給 /writing-for-agents 判準逐條審)====
++ git -C '/d/Self Project/Skills' diff --stat 84ab07d..HEAD -- skills/
+ skills/build-batch/batch.py   | 238 +++++++++++++++++++++++++++++++++++++++++-
+ skills/build/SKILL.md         |  27 +++--
+ skills/qa/SKILL.md            |  57 ++++++++--
+ skills/slice-tickets/SKILL.md |  46 ++++++--
+ 4 files changed, 345 insertions(+), 23 deletions(-)
++ wc -l '/d/Self Project/Skills/skills/qa/SKILL.md' '/d/Self Project/Skills/skills/build/SKILL.md'
+  107 /d/Self Project/Skills/skills/qa/SKILL.md
+   43 /d/Self Project/Skills/skills/build/SKILL.md
+  150 total
++ grep -c . '/d/Self Project/Skills/skills/qa/SKILL.md'
+69
++ set +x
+
+==== walkthrough 走完 ====
+所有格子符合預期
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:bash /d/Self Project/Skills/scripts/qa/107-walkthrough.sh):exit 0'
+RESULT PASS (完工定義:bash /d/Self Project/Skills/scripts/qa/107-walkthrough.sh):exit 0
++ set +x
+
+==== walkthrough 走完 ====
+所有格子符合預期
+EXIT=0
++ '[' 0 -ne 0 ']'
++ show_mutation '```bash' B2
++ set +e
++ echo '---- 改完的樣子(B2):'
+---- 改完的樣子(B2):
++ grep -n -- '```bash' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
+79:```bash
++ grep -q -- '```bash' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ echo 'RESULT PASS (B2 mutation 有生效):檔案裡看得到「```bash」'
+RESULT PASS (B2 mutation 有生效):檔案裡看得到「```bash」
++ still_there 'walkthrough 之後' B2
++ set +e
++ local n
+++ grep -c -- 'walkthrough 之後' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ n=2
++ echo '---- 「walkthrough 之後」在檔案裡還有 2 處(B2)'
+---- 「walkthrough 之後」在檔案裡還有 2 處(B2)
++ '[' 2 -gt 0 ']'
++ echo 'RESULT PASS (B2 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方'
+RESULT PASS (B2 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方
++ gate
++ set +e
++ python /tmp/tmp.1QjzMHZiMC/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+FAIL skills/qa/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'B2 排序約束只在 fence 裡'
++ local want=red 'what=B2 排序約束只在 fence 裡'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B2 排序約束只在 fence 裡):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (B2 排序約束只在 fence 裡):預期紅、實際紅,且錯誤指名 judge/並行池
++ echo '---- B3  排序約束只寫在 HTML comment 裡 → 該紅'
+---- B3  排序約束只寫在 HTML comment 裡 → 該紅
++ fresh
++ rm -rf /tmp/tmp.1QjzMHZiMC/qa112/case
++ cp -r /tmp/tmp.1QjzMHZiMC/qa112/pristine /tmp/tmp.1QjzMHZiMC/qa112/case
++ mutate B3
++ set +e
++ python - /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ '[' 0 -ne 0 ']'
++ show_mutation '<!--' B3
++ set +e
++ echo '---- 改完的樣子(B3):'
+---- 改完的樣子(B3):
++ grep -n -- '<!--' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
+79:<!-- **排序約束**:獨立 judge 排在 walkthrough 之後才開,不進 §2 的並行池。 -->
++ grep -q -- '<!--' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ echo 'RESULT PASS (B3 mutation 有生效):檔案裡看得到「<!--」'
+RESULT PASS (B3 mutation 有生效):檔案裡看得到「<!--」
++ still_there 'walkthrough 之後' B3
++ set +e
++ local n
+++ grep -c -- 'walkthrough 之後' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ n=2
++ echo '---- 「walkthrough 之後」在檔案裡還有 2 處(B3)'
+---- 「walkthrough 之後」在檔案裡還有 2 處(B3)
++ '[' 2 -gt 0 ']'
++ echo 'RESULT PASS (B3 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方'
+RESULT PASS (B3 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方
++ gate
++ set +e
++ python /tmp/tmp.1QjzMHZiMC/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+FAIL skills/qa/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'B3 排序約束只在 HTML comment 裡'
++ local want=red 'what=B3 排序約束只在 HTML comment 裡'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B3 排序約束只在 HTML comment 裡):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (B3 排序約束只在 HTML comment 裡):預期紅、實際紅,且錯誤指名 judge/並行池
++ echo '---- B4  刪正文 + §3 標題改寫成 setext(底下一行 ---)→ 該紅'
+---- B4  刪正文 + §3 標題改寫成 setext(底下一行 ---)→ 該紅
++ fresh
++ rm -rf /tmp/tmp.1QjzMHZiMC/qa112/case
++ cp -r /tmp/tmp.1QjzMHZiMC/qa112/pristine /tmp/tmp.1QjzMHZiMC/qa112/case
++ mutate B4
++ set +e
++ python - /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ '[' 0 -ne 0 ']'
++ echo '---- 改完的 §3 標題(setext:文字一行 + --- 一行)'
+---- 改完的 §3 標題(setext:文字一行 + --- 一行)
++ grep -n -A 1 '獨立 judge(排在 walkthrough' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
+77:3. 獨立 judge(排在 walkthrough 之後,不進並行池)
+78----
++ still_there 'walkthrough 之後' B4
++ set +e
++ local n
+++ grep -c -- 'walkthrough 之後' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ n=1
++ echo '---- 「walkthrough 之後」在檔案裡還有 1 處(B4)'
+---- 「walkthrough 之後」在檔案裡還有 1 處(B4)
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B4 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方'
+RESULT PASS (B4 是搬走不是刪掉):「walkthrough 之後」還在檔案裡,只是搬到讀不到的地方
++ gate
++ set +e
++ python /tmp/tmp.1QjzMHZiMC/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+FAIL skills/qa/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'B4 setext 標題'
++ local want=red 'what=B4 setext 標題'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B4 setext 標題):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (B4 setext 標題):預期紅、實際紅,且錯誤指名 judge/並行池
++ echo '---- B5  整張 lane 表包進 fence → 該紅,且訊息指到宣告不見'
+---- B5  整張 lane 表包進 fence → 該紅,且訊息指到宣告不見
++ fresh
++ rm -rf /tmp/tmp.1QjzMHZiMC/qa112/case
++ cp -r /tmp/tmp.1QjzMHZiMC/qa112/pristine /tmp/tmp.1QjzMHZiMC/qa112/case
++ mutate B5
++ set +e
++ python - /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ '[' 0 -ne 0 ']'
++ show_mutation '```markdown' B5
++ set +e
++ echo '---- 改完的樣子(B5):'
+---- 改完的樣子(B5):
++ grep -n -- '```markdown' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
+29:```markdown
++ grep -q -- '```markdown' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ echo 'RESULT PASS (B5 mutation 有生效):檔案裡看得到「```markdown」'
+RESULT PASS (B5 mutation 有生效):檔案裡看得到「```markdown」
++ still_there '| lane | 做什麼' B5
++ set +e
++ local n
+++ grep -c -- '| lane | 做什麼' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
++ n=1
++ echo '---- 「| lane | 做什麼」在檔案裡還有 1 處(B5)'
+---- 「| lane | 做什麼」在檔案裡還有 1 處(B5)
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B5 是搬走不是刪掉):「| lane | 做什麼」還在檔案裡,只是搬到讀不到的地方'
+RESULT PASS (B5 是搬走不是刪掉):「| lane | 做什麼」還在檔案裡,只是搬到讀不到的地方
++ echo '---- 三支 lane 的資料列還在檔案裡(所以不是「表被刪掉」)'
+---- 三支 lane 的資料列還在檔案裡(所以不是「表被刪掉」)
++ grep -c '^| \*\*' /tmp/tmp.1QjzMHZiMC/qa112/case/skills/qa/SKILL.md
+3
++ gate
++ set +e
++ python /tmp/tmp.1QjzMHZiMC/qa112/case/scripts/validate.py
++ GATE_EXIT=1
++ cat /tmp/tmp.1QjzMHZiMC/qa112/out.txt
+FAIL skills/qa/SKILL.md: runs an 獨立 judge but no 並行池 section declares its lane table — the three lanes have to be written down in a table under a 「並行池」 heading, its first header column literally `lane`, where the next agent reads them
++ echo 'exit 1'
+exit 1
+++ grep -c -e judge -e 並行池 /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ GATE_JUDGE=1
++ echo 'judge/並行池 錯誤行數: 1'
+judge/並行池 錯誤行數: 1
++ expect red 'B5 lane 表包進 fence'
++ local want=red 'what=B5 lane 表包進 fence'
++ '[' red = red ']'
++ '[' 1 -ne 0 ']'
++ '[' 1 -gt 0 ']'
++ echo 'RESULT PASS (B5 lane 表包進 fence):預期紅、實際紅,且錯誤指名 judge/並行池'
+RESULT PASS (B5 lane 表包進 fence):預期紅、實際紅,且錯誤指名 judge/並行池
++ expect_msg 'declares its lane table' 'lanes are' 'B5 訊息指宣告不見'
++ local 'want=declares its lane table' 'nope=lanes are' 'what=B5 訊息指宣告不見'
++ grep -q -- 'declares its lane table' /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ grep -q -- 'lanes are' /tmp/tmp.1QjzMHZiMC/qa112/out.txt
++ echo 'RESULT PASS (B5 訊息指宣告不見):訊息含「declares its lane table」、不含「lanes are」'
+RESULT PASS (B5 訊息指宣告不見):訊息含「declares its lane table」、不含「lanes are」
++ echo '==== 完工定義:四格斷言住在 --self-check 的 real-skill layer ===='
+==== 完工定義:四格斷言住在 --self-check 的 real-skill layer ====
++ echo '---- 出貨檔改壞的那幾格,連行號印出來(斷言不是散文宣稱的,是這幾行)'
+---- 出貨檔改壞的那幾格,連行號印出來(斷言不是散文宣稱的,是這幾行)
++ grep -n -e '# A1:' -e '# A2:' -e '# A3:' -e '# A4:' -e '# B1:' -e '# B2:' -e '# B3:' -e '# B4:' -e '# B5:' '/d/Self Project/Skills/scripts/validate.py'
+992:            # A1:插一列**不粗體**的 judge lane。markdown 不要求第一欄粗體,散文
+996:            # A2:排序約束的正文整句刪掉,只留標題。標題自己就同時含 judge 與
+1006:            # A3:並行池整段拿掉,訊息要指到「整段不見」而不是「lanes are []」——
+1024:            # A4:並行池那一段的子段多一張非 lane 表 —— 該綠。資源分配表的第一欄
+1041:            # B1:judge 那一列縮排 3 個空白。GFM 行首 ≤3 空白照樣是同一張表的一列,
+1048:            # B2:排序約束只寫在 ``` fence 裡 —— fence 裡是範例,不是宣告。
+1058:            # B3:排序約束只寫在 HTML comment 裡 —— 讀者根本看不到那句話。
+1068:            # B4:標題改寫成 setext(底下一行 ---)還是標題,一樣餵不飽排序約束。
+1077:            # B5:整張 lane 表包進 ``` fence —— 範例不是宣告,池等於沒宣告。
+++ grep -c -e '# A[1-4]:' -e '# B[1-5]:' '/d/Self Project/Skills/scripts/validate.py'
++ ASSERT_N=9
++ echo '斷言格數: 9'
+斷言格數: 9
++ '[' 9 -ge 9 ']'
++ echo 'RESULT PASS (四格 + 五格斷言在 self-check 裡):9 格'
+RESULT PASS (四格 + 五格斷言在 self-check 裡):9 格
++ echo '==== 完工定義的四條指令 —— 證據跟驗收項放同一份 transcript ===='
+==== 完工定義的四條指令 —— 證據跟驗收項放同一份 transcript ====
++ run_gate python '/d/Self Project/Skills/scripts/validate.py'
++ set +e
++ echo '---- python /d/Self Project/Skills/scripts/validate.py'
+---- python /d/Self Project/Skills/scripts/validate.py
++ python '/d/Self Project/Skills/scripts/validate.py'
++ tail -20
+OK validate green
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/validate.py):exit 0'
+RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/validate.py):exit 0
++ run_gate python '/d/Self Project/Skills/scripts/validate.py' --self-check
++ set +e
++ echo '---- python /d/Self Project/Skills/scripts/validate.py --self-check'
+---- python /d/Self Project/Skills/scripts/validate.py --self-check
++ python '/d/Self Project/Skills/scripts/validate.py' --self-check
++ tail -20
+OK validate self-check green
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/validate.py):exit 0'
+RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/validate.py):exit 0
++ run_gate python '/d/Self Project/Skills/scripts/qa/107-mutate.py' --run
++ set +e
++ echo '---- python /d/Self Project/Skills/scripts/qa/107-mutate.py --run'
+---- python /d/Self Project/Skills/scripts/qa/107-mutate.py --run
++ python '/d/Self Project/Skills/scripts/qa/107-mutate.py' --run
++ tail -20
+咬住  extra_lane_ok          self-check exit=1
+咬住  lane_cell_any_bold     self-check exit=1
+咬住  lane_cell_requires_bold self-check exit=1
+咬住  missing_lane_ok        self-check exit=1
+咬住  ordering_by_keyword    self-check exit=1
+咬住  ordering_never_checked self-check exit=1
+咬住  ordering_scans_headings self-check exit=1
+咬住  pool_declared_by_heading self-check exit=1
+咬住  pool_section_optional  self-check exit=1
+咬住  pool_table_any_header  self-check exit=1
+咬住  read_fenced_examples   self-check exit=1
+咬住  read_html_comments     self-check exit=1
+咬住  setext_not_a_heading   self-check exit=1
+咬住  table_rows_no_indent   self-check exit=1
+咬住  trigger_by_mention     self-check exit=1
+咬住  trigger_off            self-check exit=1
+
+16/16 個 knob 被 self-check 咬住
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/107-mutate.py):exit 0'
+RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/107-mutate.py):exit 0
++ run_gate python '/d/Self Project/Skills/scripts/qa/107-prevdiff.py'
++ set +e
++ echo '---- python /d/Self Project/Skills/scripts/qa/107-prevdiff.py'
+---- python /d/Self Project/Skills/scripts/qa/107-prevdiff.py
++ python '/d/Self Project/Skills/scripts/qa/107-prevdiff.py'
++ tail -20
+
+==== 差額 8 筆 ====
+  [fixture] r01-judge-in-pool: 修前綠 → 修後紅
+      skills/r01-judge-in-pool/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+  [fixture] r02-missing-lane: 修前綠 → 修後紅
+      skills/r02-missing-lane/SKILL.md: 並行池 lanes are ['regression', 'walkthrough'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+  [fixture] r03-ordering-flipped: 修前綠 → 修後紅
+      skills/r03-ordering-flipped/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
+  [fixture] r04-ordering-negated: 修前綠 → 修後紅
+      skills/r04-ordering-negated/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
+  [fixture] r05-no-pool-section: 修前綠 → 修後紅
+      skills/r05-no-pool-section/SKILL.md: runs an 獨立 judge but no 並行池 section declares its lane table — the three lanes have to be written down in a table under a 「並行池」 heading, its first header column literally `lane`, where the next agent reads them
+  [fixture] r06-no-ordering-line: 修前綠 → 修後紅
+      skills/r06-no-ordering-line/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
+  [fixture] r07-judge-lane-not-bold: 修前綠 → 修後紅
+      skills/r07-judge-lane-not-bold/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+  [fixture] r08-ordering-only-in-heading: 修前綠 → 修後紅
+      skills/r08-ordering-only-in-heading/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
+
+母體 31,不合 0
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/107-prevdiff.py):exit 0'
+RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/107-prevdiff.py):exit 0
++ run_gate python '/d/Self Project/Skills/scripts/qa/112-prevdiff.py'
++ set +e
++ echo '---- python /d/Self Project/Skills/scripts/qa/112-prevdiff.py'
+---- python /d/Self Project/Skills/scripts/qa/112-prevdiff.py
++ python '/d/Self Project/Skills/scripts/qa/112-prevdiff.py'
++ tail -20
+r05-missing-lane                紅     紅       紅       OK
+r06-ordering-flipped            紅     紅       紅       OK
+r07-ordering-negated            紅     紅       紅       OK
+r08-no-ordering-line            紅     紅       紅       OK
+
+==== A3 訊息斷言(票面原句:應該是 `no 並行池 section`,不是 `lanes are []`)====
+  r03-a3-no-pool-section
+      修前:skills/r03-a3-no-pool-section/SKILL.md: 並行池 lanes are [] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+      修後:skills/r03-a3-no-pool-section/SKILL.md: runs an 獨立 judge but no 並行池 section declares its lane table — the three lanes have to be written down in a table under a 「並行池」 heading, its first header column literally `lane`, where the next agent reads them
+      判定:OK
+
+==== 差額 4 筆 ====
+  [fixture] g02-a4-extra-non-lane-table: 修前紅 → 修後綠
+  [fixture] g04-lanes-not-bold: 修前紅 → 修後綠
+  [fixture] r01-a1-judge-lane-not-bold: 修前綠 → 修後紅
+      skills/r01-a1-judge-lane-not-bold/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+  [fixture] r02-a2-ordering-only-in-heading: 修前綠 → 修後紅
+      skills/r02-a2-ordering-only-in-heading/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written in the prose the next agent reads: not carried by a heading, a code fence, or an HTML comment
+
+母體 33,不合 0
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/112-prevdiff.py):exit 0'
+RESULT PASS (完工定義:python /d/Self Project/Skills/scripts/qa/112-prevdiff.py):exit 0
++ run_gate bash '/d/Self Project/Skills/scripts/qa/107-walkthrough.sh' /tmp/tmp.1QjzMHZiMC/qa112/nested107
++ set +e
++ echo '---- bash /d/Self Project/Skills/scripts/qa/107-walkthrough.sh /tmp/tmp.1QjzMHZiMC/qa112/nested107'
+---- bash /d/Self Project/Skills/scripts/qa/107-walkthrough.sh /tmp/tmp.1QjzMHZiMC/qa112/nested107
++ bash '/d/Self Project/Skills/scripts/qa/107-walkthrough.sh' /tmp/tmp.1QjzMHZiMC/qa112/nested107
++ tail -20
++ echo 'RESULT PASS (失敗指名道姓):只有 regression 紅,兩支綠沒有蓋過它,錯誤原文指得出是哪一條判準'
+RESULT PASS (失敗指名道姓):只有 regression 紅,兩支綠沒有蓋過它,錯誤原文指得出是哪一條判準
++ echo '==== AC5  本輪改動到的 SKILL.md 段落(交給 /writing-for-agents 判準逐條審)===='
+==== AC5  本輪改動到的 SKILL.md 段落(交給 /writing-for-agents 判準逐條審)====
++ git -C '/d/Self Project/Skills' diff --stat 84ab07d..HEAD -- skills/
+ skills/build-batch/batch.py   | 238 +++++++++++++++++++++++++++++++++++++++++-
+ skills/build/SKILL.md         |  27 +++--
+ skills/qa/SKILL.md            |  57 ++++++++--
+ skills/slice-tickets/SKILL.md |  46 ++++++--
+ 4 files changed, 345 insertions(+), 23 deletions(-)
++ wc -l '/d/Self Project/Skills/skills/qa/SKILL.md' '/d/Self Project/Skills/skills/build/SKILL.md'
+  107 /d/Self Project/Skills/skills/qa/SKILL.md
+   43 /d/Self Project/Skills/skills/build/SKILL.md
+  150 total
++ grep -c . '/d/Self Project/Skills/skills/qa/SKILL.md'
+69
++ set +x
+
+==== walkthrough 走完 ====
+所有格子符合預期
++ local rc=0
++ echo 'exit 0'
+exit 0
++ '[' 0 -eq 0 ']'
++ echo 'RESULT PASS (完工定義:bash /d/Self Project/Skills/scripts/qa/107-walkthrough.sh):exit 0'
+RESULT PASS (完工定義:bash /d/Self Project/Skills/scripts/qa/107-walkthrough.sh):exit 0
++ set +x
+
+==== walkthrough 走完 ====
+所有格子符合預期
+EXIT=0
+--- exit=0 ---
+
+=== $ bash scripts/qa/97-walkthrough.sh $TMP/qa97 ===
++ echo '==== STEP 1  regression suite(validate + 五支 self-check)===='
+==== STEP 1  regression suite(validate + 五支 self-check)====
++ python '/d/Self Project/Skills/scripts/validate.py'
+OK validate green
++ python '/d/Self Project/Skills/scripts/validate.py' --self-check
+OK validate self-check green
++ python '/d/Self Project/Skills/scripts/batch.py' --self-check
+OK batch self-check green
+OK §8a/§8c conflict scenarios green
++ python '/d/Self Project/Skills/skills/build-batch/batch.py' --self-check
+OK batch self-check green
++ python '/d/Self Project/Skills/scripts/install.py' --self-check
+[fixture] FAIL skills/bad: missing SKILL.md
+OK install self-check green
++ python '/d/Self Project/Skills/scripts/hooks/triage-to-maintain.py' --self-check
+OK triage-to-maintain self-check green
++ echo '==== STEP 2  client 看得到的那張表,逐格真的跑一次 ===='
+==== STEP 2  client 看得到的那張表,逐格真的跑一次 ====
++ echo '---- 2a  pin 在 __main__ 第一層 → 綠(現況,不動任何東西)'
+---- 2a  pin 在 __main__ 第一層 → 綠(現況,不動任何東西)
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+OK validate green
++ echo 'exit 0'
+exit 0
++ set -e
++ echo '---- 2b  把 pin 從 __main__ 搬進 main() → 吵(#97 驗收項 2)'
+---- 2b  把 pin 從 __main__ 搬進 main() → 吵(#97 驗收項 2)
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ python - /tmp/tmp.osaF9ogPmG/qa97/case/scripts/hooks/triage-to-maintain.py
++ sed -n '/^def main/,+3p;/^if __name__/,+8p' /tmp/tmp.osaF9ogPmG/qa97/case/scripts/hooks/triage-to-maintain.py
+def main():
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stdin.reconfigure(encoding="utf-8")
+    try:
+if __name__ == "__main__":
+    # #97: the pin is a convention now, not an inference — every file with a
+    # `__main__` block writes both lines at its first level, whether or not it
+    # ever prints. The `.buffer` write in `main()` stays exactly as it was:
+    # bytes carry no encoding, so these two lines are a harmless no-op for it.
+    if "--self-check" in sys.argv:
+        self_check()
+        sys.exit(0)
+    sys.exit(main())
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+FAIL scripts/hooks/triage-to-maintain.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block — its 中文 output is mojibake on a cp950 console (#58)
+FAIL scripts/hooks/triage-to-maintain.py: runnable script does not pin stdin to UTF-8 at the first level of its `if __name__ == "__main__"` block — 中文 input is mojibake or UnicodeDecodeError on a cp950 console (#58)
++ echo 'exit 1'
+exit 1
++ set -e
++ echo '---- 2b2  pin 只寫在模組層 → 吵(驗收原句列的第三種,#97 驗收項 2)'
+---- 2b2  pin 只寫在模組層 → 吵(驗收原句列的第三種,#97 驗收項 2)
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ cat
++ cat /tmp/tmp.osaF9ogPmG/qa97/case/scripts/qa/zz-case-module-level.py
+import sys
+sys.stdout.reconfigure(encoding="utf-8")
+if __name__ == "__main__":
+    print("中文")
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+FAIL scripts/qa/zz-case-module-level.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block — its 中文 output is mojibake on a cp950 console (#58)
++ echo 'exit 1'
+exit 1
++ set -e
++ echo '---- 2c  pin 巢狀進 __main__ 裡的 if → 吵(死碼裡的 pin 不算數)'
+---- 2c  pin 巢狀進 __main__ 裡的 if → 吵(死碼裡的 pin 不算數)
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ python - /tmp/tmp.osaF9ogPmG/qa97/case/scripts/hooks/triage-to-maintain.py
++ sed -n '/^if __name__/,+8p' /tmp/tmp.osaF9ogPmG/qa97/case/scripts/hooks/triage-to-maintain.py
+if __name__ == "__main__":
+    # #97: the pin is a convention now, not an inference — every file with a
+    # `__main__` block writes both lines at its first level, whether or not it
+    # ever prints. The `.buffer` write in `main()` stays exactly as it was:
+    # bytes carry no encoding, so these two lines are a harmless no-op for it.
+    if True:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdin.reconfigure(encoding="utf-8")
+    if "--self-check" in sys.argv:
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+FAIL scripts/hooks/triage-to-maintain.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block — its 中文 output is mojibake on a cp950 console (#58)
+FAIL scripts/hooks/triage-to-maintain.py: runnable script does not pin stdin to UTF-8 at the first level of its `if __name__ == "__main__"` block — 中文 input is mojibake or UnicodeDecodeError on a cp950 console (#58)
++ echo 'exit 1'
+exit 1
++ set -e
++ echo '---- 2d  一支只寫 bytes、沒有 pin 的腳本 → 吵(.buffer 不再是免死金牌)'
+---- 2d  一支只寫 bytes、沒有 pin 的腳本 → 吵(.buffer 不再是免死金牌)
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ cat
++ cat /tmp/tmp.osaF9ogPmG/qa97/case/scripts/qa/zz-case-buffer.py
+import sys
+if __name__ == "__main__":
+    sys.stdout.buffer.write("中文".encode("utf-8"))
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+FAIL scripts/qa/zz-case-buffer.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block — its 中文 output is mojibake on a cp950 console (#58)
++ echo 'exit 1'
+exit 1
++ set -e
++ echo '---- 2e  有 __main__、一行 print 都沒有 → 吵(print 豁免下架)'
+---- 2e  有 __main__、一行 print 都沒有 → 吵(print 豁免下架)
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ cat
++ cat /tmp/tmp.osaF9ogPmG/qa97/case/scripts/qa/zz-case-noprint.py
+import sys
+if __name__ == "__main__":
+    pass
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+FAIL scripts/qa/zz-case-noprint.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block — its 中文 output is mojibake on a cp950 console (#58)
++ echo 'exit 1'
+exit 1
++ set -e
++ echo '---- 2f  碰了 stdin 但只 pin stdout → 吵(碰 stdin 看 AST,不看字串)'
+---- 2f  碰了 stdin 但只 pin stdout → 吵(碰 stdin 看 AST,不看字串)
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ cat
++ cat /tmp/tmp.osaF9ogPmG/qa97/case/scripts/qa/zz-case-stdin.py
+import sys
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    print(sys.stdin.read())
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+FAIL scripts/qa/zz-case-stdin.py: runnable script does not pin stdin to UTF-8 at the first level of its `if __name__ == "__main__"` block — 中文 input is mojibake or UnicodeDecodeError on a cp950 console (#58)
++ echo 'exit 1'
+exit 1
++ set -e
++ echo '---- 2g  只在字串裡「提到」sys.stdin 的檔,不欠 stdin pin → 綠(2f 的反面)'
+---- 2g  只在字串裡「提到」sys.stdin 的檔,不欠 stdin pin → 綠(2f 的反面)
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ cat
++ cat /tmp/tmp.osaF9ogPmG/qa97/case/scripts/qa/zz-case-stdin-prose.py
+import sys
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    print("記得寫 sys.stdin.reconfigure(encoding='utf-8')")
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+OK validate green
++ echo 'exit 0'
+exit 0
++ set -e
++ echo '---- 2h  兩個 __main__ 只釘一個 → 吵'
+---- 2h  兩個 __main__ 只釘一個 → 吵
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ cat
++ cat /tmp/tmp.osaF9ogPmG/qa97/case/scripts/qa/zz-case-two-mains.py
+import sys
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    print("一")
+if __name__ == "__main__":
+    print("二")
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+FAIL scripts/qa/zz-case-two-mains.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block — its 中文 output is mojibake on a cp950 console (#58)
++ echo 'exit 1'
+exit 1
++ set -e
++ echo '---- 2i  宣告過的天花板(#67):反著寫 __name__ 不認 → 綠,不吵'
+---- 2i  宣告過的天花板(#67):反著寫 __name__ 不認 → 綠,不吵
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ cat
++ cat /tmp/tmp.osaF9ogPmG/qa97/case/scripts/qa/zz-case-reversed.py
+import sys
+if "__main__" == __name__:
+    print("要開")
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+OK validate green
++ echo 'exit 0'
+exit 0
++ set -e
++ echo '---- 2i2  天花板的對照組:同一份 fixture 只把寫法換成正規的 → 吵'
+---- 2i2  天花板的對照組:同一份 fixture 只把寫法換成正規的 → 吵
++ echo '         沒有這格,2i 的綠分不出「不認這種寫法」還是「認了但剛好有 pin」'
+         沒有這格,2i 的綠分不出「不認這種寫法」還是「認了但剛好有 pin」
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ cat
++ cat /tmp/tmp.osaF9ogPmG/qa97/case/scripts/qa/zz-case-canonical.py
+import sys
+if __name__ == "__main__":
+    print("要開")
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+FAIL scripts/qa/zz-case-canonical.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block — its 中文 output is mojibake on a cp950 console (#58)
++ echo 'exit 1'
+exit 1
++ set -e
++ echo '---- 2i3  天花板的另一半:in (...) 這種等價寫法也不認 → 綠'
+---- 2i3  天花板的另一半:in (...) 這種等價寫法也不認 → 綠
++ fresh
++ rm -rf /tmp/tmp.osaF9ogPmG/qa97/case
++ cp -r /tmp/tmp.osaF9ogPmG/qa97/pristine /tmp/tmp.osaF9ogPmG/qa97/case
++ cat
++ cat /tmp/tmp.osaF9ogPmG/qa97/case/scripts/qa/zz-case-in-tuple.py
+import sys
+if __name__ in ("__main__",):
+    print("要開")
++ gate
++ set +e
++ python /tmp/tmp.osaF9ogPmG/qa97/case/scripts/validate.py
+OK validate green
++ echo 'exit 0'
+exit 0
++ set -e
++ echo '==== STEP 3  修前對照:同一份母體,舊判準(5e3646c)vs 新判準 ===='
+==== STEP 3  修前對照:同一份母體,舊判準(5e3646c)vs 新判準 ====
++ git -C '/d/Self Project/Skills' show 5e3646c:scripts/validate.py
++ python - '/d/Self Project/Skills' /tmp/tmp.osaF9ogPmG/qa97
+5e3646c  舊判準: 0 紅
+5e3646c  新判準: 2 紅
+      scripts/hooks/triage-to-maintain.py: runnable script does not pin stdout to UTF-8 at the first level of its `if __name__ == "__main__"` block
+      scripts/hooks/triage-to-maintain.py: runnable script does not pin stdin to UTF-8 at the first level of its `if __name__ == "__main__"` block
+39109fe  舊判準: 0 紅
+39109fe  新判準: 0 紅
+5675b1a  舊判準: 0 紅
+5675b1a  新判準: 0 紅
++ echo '==== STEP 3b  修前對照:QA 照驗收原句寫的兩面母體 18 格,新舊判準各跑一次 ===='
+==== STEP 3b  修前對照:QA 照驗收原句寫的兩面母體 18 格,新舊判準各跑一次 ====
++ python '/d/Self Project/Skills/scripts/qa/97-prevdiff.py'
+fixture                           QA 期望    新   舊    判定
+__main__.py                       天花板      紅   綠    OK  差額 舊綠→新紅
+c1_syntax_error.py                天花板      紅   綠    OK  差額 舊綠→新紅
+g1_pin_first_level.py             綠        綠   綠    OK
+g2_stdin_both_pinned.py           綠        綠   綠    OK
+g3_no_main.py                     綠        綠   綠    OK
+g4_stdin_only_prose.py            綠        綠   綠    OK
+g5_reversed_spelling.py           綠        綠   綠    OK
+g6_main_nested_under_try.py       綠        綠   綠    OK
+g7_two_mains_both_pinned.py       綠        綠   綠    OK
+g8_in_tuple_spelling.py           綠        綠   綠    OK
+r1_pin_inside_main_func.py        紅        紅   紅    OK
+r2_pin_module_level.py            紅        紅   紅    OK
+r3_pin_nested_in_if.py            紅        紅   綠    OK  差額 舊綠→新紅
+r4_buffer_only_no_pin.py          紅        紅   綠    OK  差額 舊綠→新紅
+r5_main_no_print.py               紅        紅   綠    OK  差額 舊綠→新紅
+r6_stdin_only_stdout_pinned.py    紅        紅   紅    OK
+r7_two_mains_first_only.py        紅        紅   綠    OK  差額 舊綠→新紅
+r8_pin_nested_in_try.py           紅        紅   綠    OK  差額 舊綠→新紅
+
+母體 18,不合 0
++ echo '==== STEP 4  第二把尺:刻意寫寬、不套受測規則的獨立掃描 ===='
+==== STEP 4  第二把尺:刻意寫寬、不套受測規則的獨立掃描 ====
++ python '/d/Self Project/Skills/scripts/qa/97-wide.py' '/d/Self Project/Skills'
+scripts/batch.py
+   main 行:[205]
+   stdout pin:['L206(main@L205 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/hooks/triage-to-maintain.py
+   main 行:[49]
+   stdout pin:['L54(main@L49 第一層)']
+   stdin  pin:['L55(main@L49 第一層)']（原始碼提到 sys.stdin:True）
+scripts/install.py
+   main 行:[249]
+   stdout pin:['L250(main@L249 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/102-walkthrough.py
+   main 行:[77]
+   stdout pin:['L78(main@L77 第一層)']
+   stdin  pin:['L79(main@L77 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/107-mutate.py
+   main 行:[141]
+   stdout pin:['L142(main@L141 第一層)']
+   stdin  pin:['L143(main@L141 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/107-prevdiff.py
+   main 行:[261]
+   stdout pin:['L262(main@L261 第一層)']
+   stdin  pin:['L263(main@L261 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/107-wide.py
+   main 行:[99]
+   stdout pin:['L100(main@L99 第一層)']
+   stdin  pin:['L101(main@L99 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/112-prevdiff.py
+   main 行:[275]
+   stdout pin:['L276(main@L275 第一層)']
+   stdin  pin:['L277(main@L275 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/112-wide.py
+   main 行:[115]
+   stdout pin:['L116(main@L115 第一層)']
+   stdin  pin:['L117(main@L115 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/113-wide.py
+   main 行:[176]
+   stdout pin:['L177(main@L176 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/114-paste.py
+   main 行:[118]
+   stdout pin:['L119(main@L118 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/57-guard-sweep.py
+   main 行:[118]
+   stdout pin:['L119(main@L118 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/60-mention-sweep.py
+   main 行:[188, 195, 204, 213, 229, 238, 248, 257, 266, 276, 322]
+   stdout pin:['L323(main@L322 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/65-nesting-sweep.py
+   main 行:[162]
+   stdout pin:['L163(main@L162 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/73-reach-sweep.py
+   main 行:[74]
+   stdout pin:['L75(main@L74 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/75-binding-sweep.py
+   main 行:[120]
+   stdout pin:['L121(main@L120 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/79-return-sweep.py
+   main 行:[107]
+   stdout pin:['L108(main@L107 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/81-lambda-sweep.py
+   main 行:[65]
+   stdout pin:['L66(main@L65 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/83-deferred-sweep.py
+   main 行:[12, 72]
+   stdout pin:['L73(main@L72 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/84-generator-sweep.py
+   main 行:[13, 78]
+   stdout pin:['L79(main@L78 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/86-async-sweep.py
+   main 行:[10, 159]
+   stdout pin:['L160(main@L159 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/86-mutate.py
+   main 行:[80]
+   stdout pin:['L81(main@L80 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/87-drive-sweep.py
+   main 行:[162]
+   stdout pin:['L163(main@L162 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/87-mutate.py
+   main 行:[58]
+   stdout pin:['L59(main@L58 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/87-oracle.py
+   main 行:[79]
+   stdout pin:['L80(main@L79 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/87-prevdiff.py
+   main 行:[56]
+   stdout pin:['L57(main@L56 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/91-graph-sweep.py
+   main 行:[164]
+   stdout pin:['L165(main@L164 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/91-mutate.py
+   main 行:[67]
+   stdout pin:['L68(main@L67 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:False）
+scripts/qa/96-newrule-probe.py
+   main 行:[74]
+   stdout pin:['L75(main@L74 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:True）
+scripts/qa/97-mutate.py
+   main 行:[183]
+   stdout pin:['L184(main@L183 第一層)']
+   stdin  pin:['L185(main@L183 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/97-prevdiff.py
+   main 行:[83]
+   stdout pin:['L84(main@L83 第一層)']
+   stdin  pin:['L85(main@L83 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/97-wide.py
+   main 行:[43, 75]
+   stdout pin:['L76(main@L75 第一層)']
+   stdin  pin:['L77(main@L75 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/98-mutate-control.py
+   main 行:[49]
+   stdout pin:['L50(main@L49 第一層)']
+   stdin  pin:['L51(main@L49 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/98-prevdiff.py
+   main 行:[148]
+   stdout pin:['L149(main@L148 第一層)']
+   stdin  pin:['L150(main@L148 第一層)']（原始碼提到 sys.stdin:True）
+scripts/qa/98-wide.py
+   main 行:[81]
+   stdout pin:['L82(main@L81 第一層)']
+   stdin  pin:['L83(main@L81 第一層)']（原始碼提到 sys.stdin:True）
+scripts/validate.py
+   main 行:[1545]
+   stdout pin:['L1546(main@L1545 第一層)']
+   stdin  pin:無（原始碼提到 sys.stdin:True）
+skills/build-batch/batch.py
+   main 行:[1570]
+   stdout pin:['L1573(main@L1570 第一層)']
+   stdin  pin:['L1583(main@L1570 第一層)']（原始碼提到 sys.stdin:True）
+
+共 37 個檔提到 __main__;受測物判紅 0 個
+
+==== 差額(寬尺 vs 受測物)—— 每一筆要人判讀 ====
+  scripts/qa/96-newrule-probe.py:寬尺判紅,受測物判綠
+  scripts/validate.py:寬尺判紅,受測物判綠
+  差額 2 筆
++ echo '==== STEP 5  mutation 台(進 repo 的那份):11 個 knob 逐一改壞 ===='
+==== STEP 5  mutation 台(進 repo 的那份):11 個 knob 逐一改壞 ====
++ python '/d/Self Project/Skills/scripts/qa/97-mutate.py' --run
+咬住  buffer_exempt          self-check exit=1
+咬住  decode_error_uncaught  self-check exit=1
+咬住  filter_off             self-check exit=1
+咬住  first_main_only        self-check exit=1
+咬住  grade_colon_any        self-check exit=1
+咬住  grade_guard_off        self-check exit=1
+咬住  grade_no_example_ok    self-check exit=1
+咬住  grade_not_wired        self-check exit=1
+咬住  grade_reason_optional  self-check exit=1
+咬住  grade_scan_narrow      self-check exit=1
+咬住  grade_word_any         self-check exit=1
+咬住  guard_off              self-check exit=1
+咬住  main_body_only         self-check exit=1
+咬住  no_norm                self-check exit=1
+咬住  pin_anywhere_in_file   self-check exit=1
+咬住  pin_anywhere_in_main   self-check exit=1
+咬住  print_exempt           self-check exit=1
+咬住  stdin_always           self-check exit=1
+咬住  stdin_by_text          self-check exit=1
+咬住  stdin_never            self-check exit=1
+咬住  underscore_filter      self-check exit=1
+咬住  unreadable_skip        self-check exit=1
+
+22/22 個 knob 被 self-check 咬住
++ echo '==== STEP 6  票上其餘 AC:原型 probe + 12 個 function 真的不在了 ===='
+==== STEP 6  票上其餘 AC:原型 probe + 12 個 function 真的不在了 ====
++ python '/d/Self Project/Skills/scripts/qa/96-newrule-probe.py' '/d/Self Project/Skills'
+OK 新規則下全綠
+
+不合 0
++ set +e
++ grep -nE '^def (live_nodes|consumes|asyncio_graph|binds|nodes_in|runs|free_in|names_in|bindings_in|from_asyncio|own_scope|drives)\b' '/d/Self Project/Skills/scripts/validate.py'
++ echo 'exit 1  <- 1 是要的:12 個 function 一個都不在了'
+exit 1  <- 1 是要的:12 個 function 一個都不在了
++ set -e
++ wc -l '/d/Self Project/Skills/scripts/validate.py'
+1550 /d/Self Project/Skills/scripts/validate.py
++ set +x
+
+==== walkthrough 走完 ====
+--- exit=0 ---
+
+=== $ python scripts/qa/102-walkthrough.py ===
+修前：mutation 表 exit=0；未套 knob 控制組 exit=1
+修後 phase A：control_exit=1；mutations_started=0；第一格前中止
+修後 phase B：另起綠控制組，執行有效 mutation 表
+咬住  buffer_exempt          self-check exit=1
+
+咬住  decode_error_uncaught  self-check exit=1
+
+咬住  filter_off             self-check exit=1
+
+咬住  first_main_only        self-check exit=1
+
+咬住  grade_colon_any        self-check exit=1
+
+咬住  grade_guard_off        self-check exit=1
+
+咬住  grade_no_example_ok    self-check exit=1
+
+咬住  grade_not_wired        self-check exit=1
+
+咬住  grade_reason_optional  self-check exit=1
+
+咬住  grade_scan_narrow      self-check exit=1
+
+咬住  grade_word_any         self-check exit=1
+
+咬住  guard_off              self-check exit=1
+
+咬住  main_body_only         self-check exit=1
+
+咬住  no_norm                self-check exit=1
+
+咬住  pin_anywhere_in_file   self-check exit=1
+
+咬住  pin_anywhere_in_main   self-check exit=1
+
+咬住  print_exempt           self-check exit=1
+
+咬住  stdin_always           self-check exit=1
+
+咬住  stdin_by_text          self-check exit=1
+
+咬住  stdin_never            self-check exit=1
+
+咬住  underscore_filter      self-check exit=1
+
+咬住  unreadable_skip        self-check exit=1
+
+
+
+22/22 個 knob 被 self-check 咬住
+判定：修前假綠已重現；修後控制組綠、紅控制組在第一格前中止、15/15 mutation 全紅
+--- exit=0 ---
+
+=== $ python scripts/qa/108-prevdiff.py ===
+修前 = 8b91db1^ = e643c09(#108 動判準之前的那個 commit)
+修後 = 工作區的 scripts/validate.py
+修前有 grade_line_issues:False
+修後有 grade_line_issues:True
+
+==== (a) 真實母體 —— repo 裡 16 支 SKILL.md ====
+項目                                修後    修前      判定
+build                             綠     綠     
+build-batch                       綠     綠     
+client-demo                       綠     綠     
+close                             綠     綠     
+implement                         綠     綠     
+maintain                          綠     綠     
+next                              綠     綠     
+pm-intake                         綠     綠     
+qa                                綠     綠     
+retro                             綠     綠     
+slice-tickets                     綠     綠     
+to-spec                           綠     綠     
+to-tickets                        綠     綠     
+tracking-viz                      綠     綠     
+triage                            綠     綠     
+ui-mockup                         綠     綠     
+
+==== (a2) repo-wide(handoff / pasteable / stream-encoding)====
+修前 0 條、修後 0 條
+  差額 0 —— 這張票沒有動到這三支
+
+==== (b) fixture 母體 —— 17 格 ====
+項目                                修後    修前      QA 期望   判定
+g01-good-slow                     綠     綠       綠       OK
+g02-good-fast                     綠     綠       綠       OK
+g03-no-grade-at-all               綠     綠       綠       OK
+g04-classify-with-demo            綠     綠       綠       OK
+g05-long-reason                   綠     綠       綠       OK
+g06-indented-3-spaces             綠     綠       綠       OK
+g07-prose-mentions-grade          綠     綠       綠       OK
+r01-fullwidth-colon               紅     綠       紅       OK  差額 修前綠→修後紅
+r01b-presentation-colon           紅     綠       紅       OK  差額 修前綠→修後紅
+r02-third-lane                    紅     綠       紅       OK  差額 修前綠→修後紅
+r03-no-dash                       紅     綠       紅       OK  差額 修前綠→修後紅
+r04-hyphen-not-emdash             紅     綠       紅       OK  差額 修前綠→修後紅
+r05-no-space-around-dash          紅     綠       紅       OK  差額 修前綠→修後紅
+r06-empty-reason                  紅     綠       紅       OK  差額 修前綠→修後紅
+r07-english-lane                  紅     綠       紅       OK  差額 修前綠→修後紅
+r08-classify-without-demo         紅     綠       紅       OK  差額 修前綠→修後紅
+r09-good-plus-bad                 紅     綠       紅       OK  差額 修前綠→修後紅
+
+==== 訊息斷言(兩個方向要指得出是哪一種)====
+  r02-third-lane
+      修前:(綠)
+      修後:skills/r02-third-lane/SKILL.md: 分級行格式不對:'分級:中 — 說不準' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+      判定:OK
+  r08-classify-without-demo
+      修前:(綠)
+      修後:skills/r08-classify-without-demo/SKILL.md: 呼叫 batch.py 的 classify 卻沒有示範過一行分級行 — 貼上票的那一行會由 agent 現場發明,發明出來的跟 batch.py 印的不會一樣
+      判定:OK
+
+==== 差額 10 筆(逐筆)====
+  [fixture] r01-fullwidth-colon: 修前綠 → 修後紅
+      skills/r01-fullwidth-colon/SKILL.md: 分級行格式不對:'分級：慢 — 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r01b-presentation-colon: 修前綠 → 修後紅
+      skills/r01b-presentation-colon/SKILL.md: 分級行格式不對:'分級︰慢 — 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r02-third-lane: 修前綠 → 修後紅
+      skills/r02-third-lane/SKILL.md: 分級行格式不對:'分級:中 — 說不準' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r03-no-dash: 修前綠 → 修後紅
+      skills/r03-no-dash/SKILL.md: 分級行格式不對:'分級:慢 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r04-hyphen-not-emdash: 修前綠 → 修後紅
+      skills/r04-hyphen-not-emdash/SKILL.md: 分級行格式不對:'分級:慢 - 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r05-no-space-around-dash: 修前綠 → 修後紅
+      skills/r05-no-space-around-dash/SKILL.md: 分級行格式不對:'分級:慢—覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r06-empty-reason: 修前綠 → 修後紅
+      skills/r06-empty-reason/SKILL.md: 分級行格式不對:'分級:慢 —' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r07-english-lane: 修前綠 → 修後紅
+      skills/r07-english-lane/SKILL.md: 分級行格式不對:'分級:slow — 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r08-classify-without-demo: 修前綠 → 修後紅
+      skills/r08-classify-without-demo/SKILL.md: 呼叫 batch.py 的 classify 卻沒有示範過一行分級行 — 貼上票的那一行會由 agent 現場發明,發明出來的跟 batch.py 印的不會一樣
+  [fixture] r09-good-plus-bad: 修前綠 → 修後紅
+      skills/r09-good-plus-bad/SKILL.md: 分級行格式不對:'分級:中 — x' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+
+母體 33,不合 0
+--- exit=0 ---
+
+=== $ python scripts/qa/108-wide.py . ===
+母體:D:\Self Project\Skills/skills/**/*.md,共 28 份
+受測物黑箱:python scripts/validate.py → exit 0
+  它印的:OK validate green
+
+==== 寬尺撈到的「分級:…」形狀的行 ====
+2 份檔、3 行
+  [形狀 OK ] skills/slice-tickets/SKILL.md:57: 分級:慢 — 覆蓋 2 條驗收項
+  [形狀可疑] skills/slice-tickets/SKILL.md:60: 格式固定是「分級:<快或慢> — 一句理由」。它由 `batch.py` 印出來、守門釘著,不要自己改寫措辭 —— 下游要拿這一行認車道,漂掉就認不出來。
+  [形狀可疑] skills/ui-mockup/SKILL.md:17: 呼叫 `/prototype` 走 UI branch 出可點 prototype,commit 到 `prototype/<name>` branch,資產放 docs/prototypes/(沿 tracking-viz 慣例)。份量按 variant 分級:
+
+==== 寬尺撈到的「宣稱要呼叫 classify」的行 ====
+1 份檔、3 行
+  skills/slice-tickets/SKILL.md:32: 每張票填完「覆蓋驗收項」之後,整批一起判快慢。判準是可計算的,所以由 `build-batch` skill 目錄底下的 `batch.py` 算與印 —— 不要自己判、也不要自己排版那份清單,client 是照那份清單點頭的:
+  skills/slice-tickets/SKILL.md:36: {"mode": "classify",
+  skills/slice-tickets/SKILL.md:52: 印出來的清單直接給 client 看,然後問:**這批的快慢分級,有要改的嗎?** 要改就照他說的改 —— 把那張的 `override` 填進去重跑一次,照你說的改,改完的才是寫進票裡的那個。點頭之前不要寫進票,也不要發佈。
+
+==== 寬尺自己的判定(不看受測物)====
+  [寬] skills/slice-tickets/SKILL.md :60 分級行形狀可疑 — 格式固定是「分級:<快或慢> — 一句理由」。它由 `batch.py` 印出來、守門釘著,不要自己改寫措辭 —— 下游要拿這一行認車道,漂掉就認不出來。
+  [寬] skills/ui-mockup/SKILL.md :17 分級行形狀可疑 — 呼叫 `/prototype` 走 UI branch 出可點 prototype,commit 到 `prototype/<name>` branch,資產放 docs/prototypes/(沿 tracking-viz 慣例)。份量按 variant 分級:
+
+==== 差額:寬尺撈到、受測物放行的(逐筆判讀)====
+受測物現在對這份母體的 FAIL:0 條
+
+寬尺多撈 2 筆 —— 每一筆都要在報告裡判讀:
+  [多撈] skills/slice-tickets/SKILL.md :60 分級行形狀可疑 — 格式固定是「分級:<快或慢> — 一句理由」。它由 `batch.py` 印出來、守門釘著,不要自己改寫措辭 —— 下游要拿這一行認車道,漂掉就認不出來。
+  [多撈] skills/ui-mockup/SKILL.md :17 分級行形狀可疑 — 呼叫 `/prototype` 走 UI branch 出可點 prototype,commit 到 `prototype/<name>` branch,資產放 docs/prototypes/(沿 tracking-viz 慣例)。份量按 variant 分級:
+
+==== 差額:受測物咬到、寬尺沒撈到的 ====
+  (無)
+--- exit=0 ---

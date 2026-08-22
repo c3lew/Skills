@@ -1,0 +1,81 @@
+修前 = 8b91db1^ = e643c09(#108 動判準之前的那個 commit)
+修後 = 工作區的 scripts/validate.py
+修前有 grade_line_issues:False
+修後有 grade_line_issues:True
+
+==== (a) 真實母體 —— repo 裡 16 支 SKILL.md ====
+項目                                修後    修前      判定
+build                             綠     綠     
+build-batch                       綠     綠     
+client-demo                       綠     綠     
+close                             綠     綠     
+implement                         綠     綠     
+maintain                          綠     綠     
+next                              綠     綠     
+pm-intake                         綠     綠     
+qa                                綠     綠     
+retro                             綠     綠     
+slice-tickets                     綠     綠     
+to-spec                           綠     綠     
+to-tickets                        綠     綠     
+tracking-viz                      綠     綠     
+triage                            綠     綠     
+ui-mockup                         綠     綠     
+
+==== (a2) repo-wide(handoff / pasteable / stream-encoding)====
+修前 0 條、修後 0 條
+  差額 0 —— 這張票沒有動到這三支
+
+==== (b) fixture 母體 —— 17 格 ====
+項目                                修後    修前      QA 期望   判定
+g01-good-slow                     綠     綠       綠       OK
+g02-good-fast                     綠     綠       綠       OK
+g03-no-grade-at-all               綠     綠       綠       OK
+g04-classify-with-demo            綠     綠       綠       OK
+g05-long-reason                   綠     綠       綠       OK
+g06-indented-3-spaces             綠     綠       綠       OK
+g07-prose-mentions-grade          綠     綠       綠       OK
+r01-fullwidth-colon               紅     綠       紅       OK  差額 修前綠→修後紅
+r01b-presentation-colon           紅     綠       紅       OK  差額 修前綠→修後紅
+r02-third-lane                    紅     綠       紅       OK  差額 修前綠→修後紅
+r03-no-dash                       紅     綠       紅       OK  差額 修前綠→修後紅
+r04-hyphen-not-emdash             紅     綠       紅       OK  差額 修前綠→修後紅
+r05-no-space-around-dash          紅     綠       紅       OK  差額 修前綠→修後紅
+r06-empty-reason                  紅     綠       紅       OK  差額 修前綠→修後紅
+r07-english-lane                  紅     綠       紅       OK  差額 修前綠→修後紅
+r08-classify-without-demo         紅     綠       紅       OK  差額 修前綠→修後紅
+r09-good-plus-bad                 紅     綠       紅       OK  差額 修前綠→修後紅
+
+==== 訊息斷言(兩個方向要指得出是哪一種)====
+  r02-third-lane
+      修前:(綠)
+      修後:skills/r02-third-lane/SKILL.md: 分級行格式不對:'分級:中 — 說不準' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+      判定:OK
+  r08-classify-without-demo
+      修前:(綠)
+      修後:skills/r08-classify-without-demo/SKILL.md: 呼叫 batch.py 的 classify 卻沒有示範過一行分級行 — 貼上票的那一行會由 agent 現場發明,發明出來的跟 batch.py 印的不會一樣
+      判定:OK
+
+==== 差額 10 筆(逐筆)====
+  [fixture] r01-fullwidth-colon: 修前綠 → 修後紅
+      skills/r01-fullwidth-colon/SKILL.md: 分級行格式不對:'分級：慢 — 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r01b-presentation-colon: 修前綠 → 修後紅
+      skills/r01b-presentation-colon/SKILL.md: 分級行格式不對:'分級︰慢 — 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r02-third-lane: 修前綠 → 修後紅
+      skills/r02-third-lane/SKILL.md: 分級行格式不對:'分級:中 — 說不準' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r03-no-dash: 修前綠 → 修後紅
+      skills/r03-no-dash/SKILL.md: 分級行格式不對:'分級:慢 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r04-hyphen-not-emdash: 修前綠 → 修後紅
+      skills/r04-hyphen-not-emdash/SKILL.md: 分級行格式不對:'分級:慢 - 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r05-no-space-around-dash: 修前綠 → 修後紅
+      skills/r05-no-space-around-dash/SKILL.md: 分級行格式不對:'分級:慢—覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r06-empty-reason: 修前綠 → 修後紅
+      skills/r06-empty-reason/SKILL.md: 分級行格式不對:'分級:慢 —' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r07-english-lane: 修前綠 → 修後紅
+      skills/r07-english-lane/SKILL.md: 分級行格式不對:'分級:slow — 覆蓋 2 條驗收項' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+  [fixture] r08-classify-without-demo: 修前綠 → 修後紅
+      skills/r08-classify-without-demo/SKILL.md: 呼叫 batch.py 的 classify 卻沒有示範過一行分級行 — 貼上票的那一行會由 agent 現場發明,發明出來的跟 batch.py 印的不會一樣
+  [fixture] r09-good-plus-bad: 修前綠 → 修後紅
+      skills/r09-good-plus-bad/SKILL.md: 分級行格式不對:'分級:中 — x' — 要寫成「分級:快 — 一句理由」(半形冒號、快或慢、破折號前後各一個空白、理由不留白)
+
+母體 33,不合 0
