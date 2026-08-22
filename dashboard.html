@@ -59,11 +59,11 @@
 <div class="sub">專案儀表板 · 更新於 8/22 · 資料來自工作紀錄 · 目前用的版本沒有變動:這批工作改的是專案自己的說明書與自動檢查,不是會裝到你電腦上的東西。</div>
 
 <div class="hero">
-  <div class="where">現在在哪:<strong>「一張單子裡能同時做的事就同時做」這個功能本身已經測完,但排驗收會之前先冒出三個要修的問題 —— 現在三張都修完、驗完、也結案了</strong>。三張分別是:守門的自動檢查認錯了它該盯的東西、說明書有兩處指錯地方、還有一條「叫你照抄的指令」貼下去根本跑不動。<strong>接下來就是把「同時做」這個功能演給你看、請你點頭</strong>。</div>
-  <div class="release"><strong>這次不用換裝:</strong>這批改的是專案自己的說明書與自動檢查,不是會裝到你電腦上的東西,所以你機器上沒有任何變動。<span class="rb">反悔的話</span>:這三張都是各自獨立的小修正,單獨退掉任何一張都不影響其他功能。</div>
+  <div class="where">現在在哪:<strong>「一張單子裡能同時做的事就同時做」已經驗收會過關、也正式結案了</strong>。驗收會上五條標準你全部點頭,五個小毛病也整批定了處置。結案前又補了一件事:這功能的<strong>整套實測腳本</strong>之前只是「跑得動」,沒有被列進「每次都要跑」的清單裡 —— 現在列進去了,以後說明書被改壞會當場被抓到。<strong>「讓產線跑快一點」這包工作的第一個功能到此收工</strong>,接著是第二個:切單子的時候先標「快 / 慢」。</div>
+  <div class="release"><strong>已換裝:</strong>改到的兩份助理說明書(測試那關、實作那關)已經裝到你機器上,已核對過裝上去的內容跟專案裡的完全一致。你不用做任何事。<span class="rb">反悔的話</span>:退回上一版說明書就好,不影響其他功能。</div>
   <div class="next">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <div><strong>下一步:</strong>排「一張單子裡能同時做的事就同時做」的驗收會 — 走<code>/client-demo #107</code>(Codex:<code>$client-demo #107</code>)。會上逐條演給你看,你點頭才算過。</div>
+    <div><strong>下一步:</strong>做「讓產線跑快一點」的第二個功能 —— 切單子時先標「快 / 慢」,整批給你點頭 — 走<code>/build #108</code>(Codex:<code>$build #108</code>)。這是目前唯一沒被卡住的一張,#109 / #110 / #111 都要等它做完。</div>
   </div>
 </div>
 
@@ -96,10 +96,11 @@
     <h2><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>品質現況</h2>
     <div class="qa-tiles">
       <div class="tile"><div class="num" style="color:var(--ok)">0</div><div class="lbl">必須先修</div></div>
-      <div class="tile"><div class="num" style="color:var(--warn)">14</div><div class="lbl">小毛病(帶著走)</div></div>
+      <div class="tile"><div class="num" style="color:var(--warn)">16</div><div class="lbl">小毛病(帶著走)</div></div>
       <div class="tile"><div class="num" style="color:var(--ok)">11</div><div class="lbl">既有功能全數正常</div></div>
     </div>
     <ul class="list" style="margin-top:14px">
+      <li><span class="when">今天 · 已結案</span><span>「一張單子裡能同時做的事就同時做」正式收工。驗收會五條標準你全部點頭,五個小毛病整批定了處置(兩個之後修、兩個不修留紀錄、一個當場已修)。收尾時發現一個<strong>會慢慢爛掉的死角</strong>:這功能有一整套實測腳本,會拿<strong>真正出貨的那份說明書</strong>跑 16 種情況,但它<strong>沒有被寫進「每次都要跑」的清單</strong> —— 跑得動、也是綠的,可是下一輪根本不會有人想到要跑它,說明書哪天被改壞就會靜靜地爛。已經列進清單了。順手也把清單開頭「還在用的四支」改掉 —— 底下其實列了五支,寫死的數字遲早會過期。收尾重跑<strong>10 道自動檢查全綠</strong>。</span></li>
       <li><span class="when">今天 · 已結案</span><span>說明書裡有一行是<strong>叫人照抄去貼的指令</strong>,用來確認一件工作有沒有真的做完。那行寫壞了 —— 它把單號寫成 <code>#</code> 開頭,而在終端機裡 <code>#</code> 的意思是「這行後面別看了」。所以照抄的人貼下去,實際跑到的是一條<strong>沒帶單號的空指令</strong>,而畫面回的錯誤看起來像工具壞了、不像指令抄錯,人只會去查工具。已經修好,而且這次<strong>不只修那一行</strong>:把「叫人照抄的指令,貼下去要真的能跑」變成<strong>電腦會自動盯的規矩</strong>,以後誰再寫壞,檢查當場變紅。驗的方式是把那行<strong>從說明書裡原地挖出來、真的貼進兩種終端機各跑一次</strong>(不是用手打一次測自己),再拿修之前那版走同一條路,確認它真的會壞。</span></li>
       <li><span class="when">今天 · 已結案</span><span>同一份說明書另外兩處指錯地方 —— 一處指到隔壁章節(照著讀會跑去錯的段落找收尾步驟)、一處自我介紹說「只補一個」但內文其實有三個。兩處都修好了。這張還特地驗了一件事:<strong>當初那份「文件有沒有寫好」的檢查,跑的是舊版、不是真正出貨的那版</strong> —— 現在兩份說明書的檢查紀錄都用檔案指紋比對過,確認就是出貨的那一版。</span></li>
       <li><span class="when">8/21 · 已結案</span><span>守門的自動檢查<strong>認錯了它該盯的東西</strong>:它靠「這段字有沒有加粗、排版長不長那樣」來認,而不是靠「這句話有沒有在」。所以只要有人改個排版,檢查就看不到它該守的東西了,四個同一種形狀的缺口全部通行。已經改成<strong>盯那句宣告本身</strong>,不看排版。驗收那輪還額外打穿了<strong>五種「換個寫法就繞過去」</strong>的情況(縮排、改標點之類),也一併補上了。</span></li>
@@ -204,8 +205,8 @@
       <li><span class="when">已結案</span><span>「照抄的指令貼下去跑不動」這張 —— 這是<strong>助理自己撿到的</strong>問題(不是你回報的),照約定<strong>不用排驗收會</strong>:測試全綠 + 一段白話回報就收掉。白話回報就是上面品質那格第一條。</span></li>
       <li><span class="when">已結案</span><span>「說明書指錯地方」這張 —— 一樣是<strong>助理自己撿到的</strong>,照約定<strong>不用排驗收會</strong>:測試全綠 + 一段白話回報就收掉。白話回報就是上面品質那格第二條。</span></li>
       <li><span class="when">已結案</span><span>「守門認錯東西」這張 —— 一樣是<strong>助理自己撿到的</strong>,照約定<strong>不用排驗收會</strong>:測試全綠 + 一段白話回報就收掉。白話回報就是上面品質那格第三條。</span></li>
-      <li><span class="when">接下來</span><span><strong>「一張單子裡能同時做的事就同時做」的驗收會</strong> —— 這是「讓產線跑快一點」那包工作的第一個功能。擋在前面的三張修正單都清掉了,可以開了。</span></li>
-      <li><span class="when">再接下來</span><span>收完之後就排<strong>「一張單子裡能同時做的事就同時做」的驗收會</strong> —— 那是這包「讓產線跑快一點」工作的第一個功能,會逐條演給你看再請你點頭。</span></li>
+      <li><span class="when">已結案</span><span><strong>「一張單子裡能同時做的事就同時做」</strong> —— 這張<strong>有排驗收會</strong>:五條標準逐條演給你看,你全部點頭,零回流。五個小毛病當場整批定處置。過關後又把整套實測腳本列進「每次都要跑」的清單才收單。</span></li>
+      <li><span class="when">接下來</span><span><strong>「切單子時先標快 / 慢,整批給你點頭」</strong> —— 「讓產線跑快一點」那包工作的第二個功能,也是目前唯一沒被別張卡住的一張;後面三張都在等它。</span></li>
     </ul>
   </div>
 </div>
