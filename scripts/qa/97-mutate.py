@@ -105,6 +105,35 @@ KNOBS = {
     "decode_error_uncaught": (
         "        except (SyntaxError, UnicodeDecodeError) as exc:",
         "        except SyntaxError as exc:"),
+    # ---- #108 分級行的格式 --------------------------------------------
+    # 快/慢那個字不再限定 —— 「分級:中」這種寫法重新過關,而下游認不出車道
+    "grade_word_any": (
+        'GRADE_LINE_OK_RE = re.compile(r"^ {0,3}分級:(?:快|慢) — \\S")',
+        'GRADE_LINE_OK_RE = re.compile(r"^ {0,3}分級:.+ — \\S")'),
+    # 理由可以留白 —— 「分級:慢 — 」貼上票,client 看到的是一行沒講完的話
+    "grade_reason_optional": (
+        'GRADE_LINE_OK_RE = re.compile(r"^ {0,3}分級:(?:快|慢) — \\S")',
+        'GRADE_LINE_OK_RE = re.compile(r"^ {0,3}分級:(?:快|慢) —")'),
+    # 冒號全形半形都收 —— batch.py 印的是半形,收兩種就是兩種寫法並存
+    "grade_colon_any": (
+        'GRADE_LINE_OK_RE = re.compile(r"^ {0,3}分級:(?:快|慢)',
+        'GRADE_LINE_OK_RE = re.compile(r"^ {0,3}分級[:︰：](?:快|慢)'),
+    # 掃描母體只認半形冒號 —— 寫成全形的那行根本沒被看到,漏咬那面
+    "grade_scan_narrow": (
+        'GRADE_LINE_RE = re.compile(r"^ {0,3}分級[:︰：].*$", re.M)',
+        'GRADE_LINE_RE = re.compile(r"^ {0,3}分級:.*$", re.M)'),
+    # 呼叫 classify 卻沒示範過分級行的那一半關掉 —— agent 回去現場發明一個寫法
+    "grade_no_example_ok": (
+        "    if CLASSIFY_CALL_RE.search(text) and not lines:",
+        "    if False and CLASSIFY_CALL_RE.search(text) and not lines:"),
+    # 守門沒接進 validate() —— 函式自己綠,lint 跑一遍卻永遠碰不到它
+    "grade_not_wired": (
+        "        for issue in grade_line_issues(text):",
+        "        for issue in []:"),
+    # 分級行守門整條關掉 —— 對照組
+    "grade_guard_off": (
+        "    issues = []\n    lines = GRADE_LINE_RE.findall(text)",
+        "    return []\n    issues = []\n    lines = GRADE_LINE_RE.findall(text)"),
     # 守門整條關掉 —— 對照組:確認 self-check 真的在量這支,不是在量別的
     "guard_off": (
         "    errors = []\n"

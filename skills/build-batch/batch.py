@@ -503,6 +503,81 @@ def format_batch_summary(spec, numbers, titles, coverage, fixing=()):
     return "\n".join(lines)
 
 
+GRADE_FAST, GRADE_SLOW = "快", "慢"
+
+# 「無 — 由後續票的驗收項間接驗證」是「這張沒有覆蓋驗收項」的寫法,不是一條驗收項。
+# agent 把那段原封不動餵進來時它會變成 coverage 裡唯一一筆,於是一張純基礎工程的票
+# 被判成慢 —— 方向是安全的,但快車道就等於沒有。所以在這裡認掉。
+NO_COVERAGE_RE = re.compile(r"^無\s*[—–-]")
+
+
+def classify_one(coverage, judgement=False, override=None):
+    """一張票判快或慢,連理由一起回。
+
+    三條規則,列出來的順序就是優先序:
+
+    - **動到判斷邏輯 / 篩選條件 / 分類判準 / 資料寫入 -> 一律慢**。硬規則,蓋過
+      `coverage`,也蓋過 client 的 override —— 驗收清單第 4 條就是它:那種改動
+      表面上看不出來、錯了最慘,放行一次就是拿掉這條線唯一的防護。想改快的時候
+      當場停,不靜靜忽略 override(靜靜忽略的畫面跟改成功一模一樣)。
+    - **client 當場改 -> 照他改的**。否決權是驗收清單第 1 條,所以它是資料,
+      不是留給 agent 在文件上記得要照做的一句話。
+    - **有覆蓋驗收項 -> 慢;沒有 -> 快**。
+
+    `judgement` 是 agent 讀 diff 判的,一定會判錯 —— 這裡不為了判準而加規則,
+    判錯的代價由降級回路關住(spec #106 決策 3)。
+    """
+    items = [c for c in coverage if not NO_COVERAGE_RE.match(str(c).strip())]
+    # 認不得的 override 先擋 —— 擺在硬規則前面,因為硬規則那條路的結果剛好也是慢:
+    # 打錯字被靜靜吃掉跟 client 根本沒改長得一模一樣,他下次還是會那樣打。
+    if override is not None and override not in (GRADE_FAST, GRADE_SLOW):
+        raise SystemExit(f"override 只能是「快」或「慢」,拿到 {override!r} —— "
+                         "打錯一個字就靜靜照原判寫進票,不猜")
+    if judgement:
+        if override == GRADE_FAST:
+            raise SystemExit(
+                "這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。"
+                "驗收清單第 4 條就是它,要改請先改 judgement 旗標")
+        return GRADE_SLOW, "動到判斷邏輯或資料寫入,硬規則一律慢"
+    if override is not None:
+        return override, f"你當場改成「{override}」"
+    if items:
+        return GRADE_SLOW, f"覆蓋 {len(items)} 條驗收項"
+    return GRADE_FAST, "沒有覆蓋驗收項,不會有你看得到的行為"
+
+
+def classify_tickets(tickets):
+    """整批票 -> [(票號, 快/慢, 理由)],保序。"""
+    return [(t["number"],
+             *classify_one(t.get("coverage", []), t.get("judgement", False),
+                           t.get("override")))
+            for t in tickets]
+
+
+def format_grade_line(grade, reason):
+    """寫進票 body「覆蓋驗收項」段下方的那一行。
+
+    格式由這裡定、由守門釘著:下游要拿這一行認車道,措辭漂掉就認不出來,而
+    「認不出來」跟「這張是慢的」在票面上長得一樣。
+    """
+    return f"分級:{grade} — {reason}"
+
+
+def format_classify(rows, titles):
+    """client 看的整批分級清單 + 逐張要貼進票的那幾行。
+
+    印在這裡而不是留給 agent 現場排版:client 是照這份清單點頭的,而他點頭的
+    對象跟真的寫進票裡的那幾行必須是同一份 —— 分開排版就會有一天不一樣。
+    """
+    lines = [f"分級({len(rows)} 張)— 標「慢」的會演給你看,標「快」的不會:"]
+    lines += [f"  {grade}  {_titled(n, titles)} — {reason}"
+              for n, grade, reason in rows] or ["  (無)"]
+    lines += ["", "點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:"]
+    lines += [f"  #{n}  {format_grade_line(grade, reason)}"
+              for n, grade, reason in rows] or ["  (無)"]
+    return "\n".join(lines)
+
+
 def main():
     """stdin JSON -> the three sections the client reads.
 
@@ -520,6 +595,10 @@ def main():
     merged, fixing = split_lanes(numbers, data.get("fixing", []))
     if mode == "plan":
         print(format_plan(plan_batch(data["tickets"]), titles))
+    elif mode == "classify":
+        # 不進 MODES:那份表咬的是 build-batch 自己的 SKILL.md,而 classify 的
+        # 呼叫端是 slice-tickets。它由 classify_command_issue 對著那支檔咬。
+        print(format_classify(classify_tickets(data["tickets"]), titles))
     elif mode == "start":
         print(format_lane_start(numbers, titles, data.get("running", [])))
     elif mode == "done":
@@ -553,7 +632,7 @@ def main():
                                       data.get("merged", []),
                                       data.get("pending", [])))
     else:
-        raise SystemExit(f"unknown mode: {mode!r} (want one of plan, "
+        raise SystemExit(f"unknown mode: {mode!r} (want one of plan, classify, "
                          + ", ".join(MODES) + ")")
 
 
@@ -645,6 +724,53 @@ def conflict_lines_issue(text):
     for pattern, message in CONFLICT_LINES:
         if not pattern.search(text):
             return message
+    return None
+
+
+# #108 固化:分級的判準是可計算的(classify),但它旁邊有四句只有散文講得出來的東西
+# —— 問點頭那句、否決權怎麼兌現、那支檔不在時的退路、以及這條判準的天花板。四句都
+# 刪掉 batch.py 照樣全綠,而 agent 會回去做它出廠時的事:自己判、自己排版、判錯了
+# 也沒人有否決權。所以在 slice-tickets 的 SKILL.md 上逐句咬。
+CLASSIFY_LINES = (
+    (re.compile(re.escape("這批的快慢分級,有要改的嗎?")),
+     "slice-tickets SKILL.md: 印完分級清單問 client 點頭的那句不見了 —— 沒有那一問"
+     "就沒有否決權,而驗收清單第 1 條要的就是否決權"),
+    (re.compile(re.escape("照你說的改,改完的才是寫進票裡的那個")),
+     "slice-tickets SKILL.md: client 改完之後以他改的為準那句不見了 —— 少了它,"
+     "agent 會問完點頭卻照自己原本判的寫進票"),
+    (re.compile(re.escape("`batch.py` 不在 → 這批整批判慢車道")),
+     "slice-tickets SKILL.md: batch.py 不在時的退路那句不見了 —— 借來的判斷本來"
+     "就可能沒裝,而現場重寫一份比沒有更糟(兩份會各說各話)"),
+    (re.compile(re.escape("判錯必然會發生")),
+     "slice-tickets SKILL.md: 這條判準的天花板那句不見了 —— judgement 是 agent 讀"
+     "diff 判的,不明講就變成隱含假設,下一個人會去加規則而不是靠降級回路兜底"),
+)
+
+
+def classify_lines_issue(text):
+    """呼叫 classify 的那支 SKILL.md 還有沒有講那四句(#108)。"""
+    for pattern, message in CLASSIFY_LINES:
+        if not pattern.search(text):
+            return message
+    return None
+
+
+def classify_command_issue(text):
+    """分級清單有沒有走進這支檔(#108,跟 #58 同一種形狀)。
+
+    `skill_command_issue` 守的是 build-batch 自己那幾段;這條守 slice-tickets ——
+    分級清單同樣全是中文、同樣印在 cp950 的主控台上,而且 client 是照它點頭的。
+    在文件裡 echo 一行中文就等於印在所有測試與所有 pin 的外面。
+    """
+    blocks = BASH_BLOCK_RE.findall(text)
+    if not any("batch.py" in b and '"mode": "classify"' in b and "<<" in b
+               for b in blocks):
+        return ("slice-tickets SKILL.md: no bash block feeds the ticket JSON "
+                "into batch.py with \"mode\": \"classify\" — 分級清單印在沒有"
+                "測試、沒有 UTF-8 pin 碰得到的地方(#58 的形狀)")
+    if any(INLINE_PYTHON_RE.search(b) for b in blocks):
+        return ("slice-tickets SKILL.md: an inline `python -c` prints for the "
+                "client — outside this self-check and outside the __main__ pin")
     return None
 
 
@@ -1327,6 +1453,116 @@ JSON''')
                           "files": ["a.py"], "how": "x"}).encode(),
         capture_output=True)
     assert child.returncode != 0 and not child.stdout.strip(), child.stdout
+
+    # ---- #108 分級:切票時標快/慢,整批給 client 點頭 ------------------------
+    # 三條規則,優先序就是這個順序
+    assert classify_one([]) == (GRADE_FAST, "沒有覆蓋驗收項,不會有你看得到的行為")
+    assert classify_one(["1. 登入頁", "2. 導向"]) == (GRADE_SLOW, "覆蓋 2 條驗收項")
+    # 硬規則蓋過覆蓋驗收項:沒有可看的行為也照樣慢(驗收清單第 4 條)
+    assert classify_one([], judgement=True) == (
+        GRADE_SLOW, "動到判斷邏輯或資料寫入,硬規則一律慢")
+    assert classify_one(["1. 登入頁"], judgement=True)[0] == GRADE_SLOW
+
+    # 「無 — 由後續票…」是「沒有覆蓋驗收項」的寫法,不是一條驗收項 —— 整段原封不動
+    # 餵進來也要判快,不然快車道等於沒有
+    for sentinel in ("無 — 由後續票的驗收項間接驗證",
+                     "無 —— 由後續票的驗收項間接驗證",
+                     "  無 - 由後續票的驗收項間接驗證  "):
+        assert classify_one([sentinel])[0] == GRADE_FAST, sentinel
+    # 「無」開頭但真的是一條驗收項的不誤殺(沒有破折號)
+    assert classify_one(["無障礙:鍵盤走得完整個表單"])[0] == GRADE_SLOW
+
+    # client 當場改 -> 照他改的,而且理由講明是他改的
+    assert classify_one([], override=GRADE_SLOW) == (GRADE_SLOW, "你當場改成「慢」")
+    assert classify_one(["1. 登入頁"], override=GRADE_FAST) == (
+        GRADE_FAST, "你當場改成「快」")
+    # 硬規則連 client 都蓋不過 —— 但要當場停,不是靜靜忽略(靜靜忽略的畫面跟改成功一樣)
+    try:
+        classify_one([], judgement=True, override=GRADE_FAST)
+    except SystemExit as e:
+        assert "硬規則" in str(e), e
+    else:
+        raise AssertionError("hard rule silently overridden")
+    # 硬規則票改成慢是同一個結果,不用停
+    assert classify_one([], judgement=True, override=GRADE_SLOW)[0] == GRADE_SLOW
+    # override 打錯字 -> 當場停,不靜靜照原判寫進票。硬規則那條路也一樣要停:
+    # 它的結果剛好也是慢,吃掉之後的畫面跟「client 根本沒改」一模一樣。
+    for bad in ("fast", "快車道", ""):
+        for judgement in (False, True):
+            try:
+                classify_one([], judgement=judgement, override=bad)
+            except SystemExit as e:
+                assert "override" in str(e), e
+            else:
+                raise AssertionError(f"bad override swallowed: {bad!r} "
+                                     f"(judgement={judgement})")
+
+    # 整批保序,而且純函式
+    rows = classify_tickets([
+        {"number": 47, "coverage": ["1. 分級", "4. 硬規則"]},
+        {"number": 48, "coverage": []},
+        {"number": 49, "coverage": [], "judgement": True},
+    ])
+    assert rows == [(47, GRADE_SLOW, "覆蓋 2 條驗收項"),
+                    (48, GRADE_FAST, "沒有覆蓋驗收項,不會有你看得到的行為"),
+                    (49, GRADE_SLOW, "動到判斷邏輯或資料寫入,硬規則一律慢")], rows
+
+    # 印給 client 的那份清單 + 逐張要貼進票的那幾行,是同一份判斷排出來的
+    listed = format_classify(rows, {47: "分級", 48: "骨架", 49: "算票"})
+    assert listed.splitlines() == [
+        "分級(3 張)— 標「慢」的會演給你看,標「快」的不會:",
+        "  慢  #47 分級 — 覆蓋 2 條驗收項",
+        "  快  #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為",
+        "  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢",
+        "",
+        "點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:",
+        "  #47  分級:慢 — 覆蓋 2 條驗收項",
+        "  #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為",
+        "  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢",
+    ], listed
+    # 沒有 title 也印得出來;空的一批兩段都印得出「(無)」
+    assert "  快  #48 — 沒有覆蓋驗收項" in format_classify(rows[1:2], {})
+    assert format_classify([], {}).count("  (無)") == 2, format_classify([], {})
+    # 寫進票的那一行格式固定 —— 守門(scripts/validate.py)咬的就是這個形狀
+    assert format_grade_line(GRADE_FAST, "沒有覆蓋驗收項") == "分級:快 — 沒有覆蓋驗收項"
+
+    # #108:分級清單同樣全是中文、同樣印在 cp950 的主控台上 —— 自己走一次
+    payload = {"mode": "classify",
+               "tickets": [{"number": 47, "coverage": ["登入頁 → 🔑"]},
+                           {"number": 48, "coverage": []}],
+               "titles": {"47": "登入頁 → 🔑", "48": "骨架"}}
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        capture_output=True,
+        env=dict(os.environ, PYTHONIOENCODING="cp950"))
+    assert child.returncode == 0, child.stderr.decode("utf-8", "replace")
+    assert (child.stdout.decode("utf-8").splitlines()
+            == format_classify(classify_tickets(payload["tickets"]),
+                               {47: "登入頁 → 🔑", 48: "骨架"}).splitlines())
+
+    # 呼叫端是 slice-tickets,不是這支 skill 自己 —— 對著那支出貨檔咬。裝單一
+    # skill 的機器上它根本不在,那時候這一段沒有母體可比,跳過(宣告過的天花板)。
+    sibling = Path(__file__).resolve().parent.parent / "slice-tickets" / "SKILL.md"
+    if sibling.is_file():
+        slicing = sibling.read_text(encoding="utf-8")
+        assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
+        for pattern, _ in CLASSIFY_LINES:
+            m = pattern.search(slicing)
+            assert m, pattern.pattern
+            assert classify_lines_issue(slicing.replace(m.group(0), "")), m.group(0)
+
+        assert classify_command_issue(slicing) is None, classify_command_issue(slicing)
+        # 改壞:那段不再把 JSON 餵進 batch.py
+        for original in ('"mode": "classify"', "batch.py <<'JSON'"):
+            assert original in slicing, original
+            got = classify_command_issue(slicing.replace(original, "nope"))
+            assert got and "classify" in got, original
+        # 繞過:那段留著,另外多一段自己 inline 印
+        got = classify_command_issue(slicing + fence("python3 -c 'print(1)'"))
+        assert got and "python -c" in got, got
+        # 文件示範的那一行分級行,跟這支檔印出來的是同一個形狀
+        assert format_grade_line(GRADE_SLOW, "覆蓋 2 條驗收項") in slicing, sibling
 
     print("OK batch self-check green")
 

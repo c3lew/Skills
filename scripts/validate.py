@@ -10,6 +10,10 @@ exempt — operating this repo is their job, so repo-root refs are correct.
 Bundled discipline copies (skills/*/references/<name> sharing a filename with
 docs/disciplines/<name>) must byte-match the docs original — the docs file is
 the source of truth; skills carry verbatim copies so they survive install.
+A 分級行 (the fast/slow lane a ticket is stamped with) must keep its fixed shape
+「分級:快 — 一句理由」, and a skill that calls batch.py's `classify` must show one
+— that line is how downstream tells the two lanes apart, and an invented wording
+reads exactly like a slow ticket.
 Handoff lines (「下一步:`/x #N`」) must dual-write the Codex form on the same
 line (`$x #N`) — Codex calls skills with `$name`, so a slash-only handoff is a
 comment the client cannot paste there. Repo-wide (main() only, not validate()):
@@ -190,6 +194,41 @@ def missing_blocking_audit_issue(text):
         any(unnegated(ASK_CLIENT_RE, span))
         for span in ZERO_EDGE_SPAN_RE.findall(text)
     )
+
+
+# #108 固化:切票那關把每張票的快/慢分級寫成票 body 裡的一行。那一行是下游認車道的
+# 唯一依據 —— 慢的要演給 client 看,快的不會 —— 而它是 agent 貼上去的散文,措辭漂掉
+# 之後「認不出來」跟「這張是慢的」在票面上長得一模一樣,沒有任何東西會當場紅。所以
+# 格式釘在這裡:`分級:<快或慢> — <一句理由>`,半形冒號、破折號前後各一個空白。
+#
+# 兩個方向都要咬:寫出來的分級行格式不對是一種;呼叫了 `batch.py` 的 classify 卻整份
+# 文件沒示範過那一行是另一種 —— 後者的 agent 只好自己發明一個寫法,而發明出來的那個
+# 一定跟 batch.py 印的不一樣。
+#
+# 宣告過的天花板:這條是行首的字面比對,不是語意檢查。理由那半段只要求「非空」——
+# 寫得對不對讀不出來,那條靠 review 與 client 的否決權擋。fence 裡的示範照樣受檢,
+# 因為文件示範的就是要被照抄的那一行。
+GRADE_LINE_RE = re.compile(r"^ {0,3}分級[:︰：].*$", re.M)
+GRADE_LINE_OK_RE = re.compile(r"^ {0,3}分級:(?:快|慢) — \S")
+CLASSIFY_CALL_RE = re.compile(r'"mode": "classify"')
+
+
+def grade_line_issues(text):
+    """Return complaints about 分級行 shape in one skill's SKILL.md."""
+    issues = []
+    lines = GRADE_LINE_RE.findall(text)
+    for line in lines:
+        if not GRADE_LINE_OK_RE.match(line):
+            issues.append(
+                f"分級行格式不對:{line.strip()!r} — 要寫成「分級:快 — 一句理由」"
+                f"(半形冒號、快或慢、破折號前後各一個空白、理由不留白)"
+            )
+    if CLASSIFY_CALL_RE.search(text) and not lines:
+        issues.append(
+            "呼叫 batch.py 的 classify 卻沒有示範過一行分級行 — 貼上票的那一行"
+            "會由 agent 現場發明,發明出來的跟 batch.py 印的不會一樣"
+        )
+    return issues
 
 
 # #107 固化:`/qa` 的並行池是三線 —— regression / walkthrough / code-review 同時開,彼此沒有
@@ -567,6 +606,8 @@ def validate(skills_dir, repo):
                 f"/build-batch then opens all of them in parallel"
             )
         for issue in judge_ordering_issues(text):
+            errors.append(f"{label}/SKILL.md: {issue}")
+        for issue in grade_line_issues(text):
             errors.append(f"{label}/SKILL.md: {issue}")
         for name in find_slash_only_handoffs(text):
             errors.append(
@@ -1450,6 +1491,53 @@ def self_check():
             errs = pasteable_command_issues(repo)
             assert any(e.startswith(f"{rel}: ") and f"`{mutated_cmd}`" in e
                        for e in errs), (rel, cmd, errs)
+
+    # ---- #108 分級行的格式 ------------------------------------------------
+    good = "分級:慢 — 覆蓋 2 條驗收項"
+    assert grade_line_issues(good) == []
+    assert grade_line_issues("分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為") == []
+    assert grade_line_issues("完全沒提到分級的一份文件") == []
+    # 行首最多 3 個空白(GFM)還算同一行;縮排進 code block 的不是這條在管
+    assert grade_line_issues("   " + good) == []
+    # 每一種寫歪都要指名道姓地紅
+    for bad in ("分級：慢 — 覆蓋 2 條驗收項",          # 全形冒號
+                "分級:中 — 覆蓋 2 條驗收項",           # 不是快也不是慢
+                "分級:慢 — ",                          # 理由留白
+                "分級:慢 - 覆蓋 2 條驗收項",           # 半形連字號
+                "分級:慢—覆蓋 2 條驗收項",             # 破折號沒留空白
+                "分級:慢"):                            # 只有一個字
+        issues = grade_line_issues(bad)
+        assert issues and "分級行格式不對" in issues[0], bad
+    # 一份文件裡有好有壞 -> 只咬壞的那行
+    mixed = grade_line_issues(good + "\n分級:中 — x")
+    assert len(mixed) == 1 and "中" in mixed[0], mixed
+
+    # 呼叫 classify 卻整份文件沒示範過那一行 -> 紅(agent 只好自己發明一個寫法)
+    caller = 'python <build-batch skill dir>/batch.py\n{"mode": "classify"}'
+    assert grade_line_issues(caller) and "發明" in grade_line_issues(caller)[0]
+    assert grade_line_issues(caller + "\n" + good) == []
+
+    # 守門要真的接進 validate() —— 只有這裡的直呼綠不代表 lint 跑得到它
+    with tempfile.TemporaryDirectory() as td:
+        repo = Path(td)
+        skills = repo / "skills"
+        (skills / "graded").mkdir(parents=True)
+        (skills / "graded" / "SKILL.md").write_text(
+            "---\nname: graded\ndescription: d\n---\n分級:中 — x",
+            encoding="utf-8")
+        errs = validate(skills, repo)
+        assert any("分級行格式不對" in e for e in errs), errs
+
+    # real-skill layer:出貨的 SKILL.md 過,而且把那一行改壞要紅
+    real = REPO / "skills" / "slice-tickets" / "SKILL.md"
+    if real.is_file():
+        text = real.read_text(encoding="utf-8")
+        assert CLASSIFY_CALL_RE.search(text), real   # 母體不空
+        assert grade_line_issues(text) == [], grade_line_issues(text)
+        line = GRADE_LINE_RE.search(text).group(0)
+        assert grade_line_issues(text.replace(line, "分級:中 — x")), line
+        # 整行拿掉 -> 呼叫端沒示範,另一半咬住
+        assert grade_line_issues(text.replace(line, "")), line
 
     print("OK validate self-check green")
 

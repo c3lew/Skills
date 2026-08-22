@@ -46,7 +46,7 @@ ui-mockup #8、技術決策層 #9、維護流程 #10、接線圖 #11、組裝 #1
 | 1 | 大模糊 idea | `/wayfinder` | **原件**;map Notes 引用 PM 訪談紀律 | map + decision tickets |
 | 2 | 需求訪談 + spec | `pm-intake`(同 session 呼叫 `/to-spec`) | **自建**;to-spec 原件 | spec(Implementation Decisions + 驗收清單 + 拍板 prototype link) |
 | 2a | 長相分岔(訪談中 inline) | `ui-mockup` | **自建薄層** wrap `/prototype` | 拍板 prototype → 入 spec、當 QA 視覺 oracle |
-| 3 | 切票 | `slice-tickets` | **自建薄層** wrap `/to-tickets` | vertical slice tickets,每張標注覆蓋的驗收項 |
+| 3 | 切票 | `slice-tickets` | **自建薄層** wrap `/to-tickets` | vertical slice tickets,每張標注覆蓋的驗收項與快/慢分級 |
 | 4 | 實作(每張 ticket) | `build`(wrap `/implement`:tdd + code-review,補交棒);**快車道**:一份 spec 有多張彼此不卡的票時走 `build-batch` — 算名單等 client 點頭,點頭後每張各自一個 git worktree 平行跑 build + QA(最多 3 張,做完一張補一張),綠的依序合回主線、整批再驗一次 | **薄層 wrap**;快車道 **自建**(名單/點頭 HITL,跑起來 AFK) | 單張:完成 comment +「下一步:/qa #N($qa #N)」;批次:spec 票上一則批次總結 +「下一步:/client-demo #<spec>($client-demo #<spec>)」 |
 | 5 | QA | `qa` | **自建**(AFK) | 綠 →「下一步:demo」;fail → 開 ticket 回 4(blocking 修完才 demo) |
 | 6 | 驗收 | `client-demo` | **自建**(HITL) | 過關 → regression 固化 + **過關即發**(build + 換裝 + release note);「不對」四分類回流 |
@@ -143,6 +143,6 @@ injected fakes 在瀏覽器跑**(前提:UI 為 pure reducer + injected seams),�
 |------------------|------|
 | wayfinder / tdd / code-review / prototype / research / improve-codebase-architecture / domain-modeling | **照用不改**(部分被自建層呼叫或 wrap) |
 | to-tickets / to-spec / triage / implement | **fork 收編進本 repo**(拿掉 disable-model-invocation,wrap/自建層直接呼叫;upstream 更新手動 port) |
-| to-tickets | **薄層 wrap** by `slice-tickets`(補驗收項標注) |
+| to-tickets | **薄層 wrap** by `slice-tickets`(補驗收項標注 + 快/慢分級) |
 | implement | **薄層 wrap** by `build`(補交棒 comment) |
 | grilling(對 client) | **被 pm-intake 取代**;保留給 engineer-mode 與 wayfinder 建圖 |
