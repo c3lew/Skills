@@ -1,0 +1,33 @@
+==== A1  交付版 skills/build/SKILL.md:37 的指令,代換後照字面貼進 bash ====
+抽出的指令(代換 <N> -> 113):gh issue view 113 --comments
+OK   A1 貼進 bash 跑得動 (0)
+author:	c3lew
+association:	owner
+
+==== A2  對照組:修前那版同一行,照同一條路貼進 bash ====
+抽出的指令:gh issue view #113 --comments
+OK   A2 修前那版參數被 # 吃掉(accepts 1 arg(s), received 0)—— 這就是 #114 的 bug
+accepts 1 arg(s), received 0
+
+==== A3  完工定義 3:regression suite ====
+OK   validate (0)
+OK   validate --self-check (0)
+OK   97-mutate (0)
+OK   107-mutate (0)
+OK   96-newrule-probe (0)
+
+==== A4  修前對照:新守門對修之前那份母體咬不咬得到 ====
+修前: 1 筆
+    skills/build/SKILL.md: pasteable command `gh issue view #N --comments` has a `#`-prefixed argument — bash and PowerShell both read it as a comment, so the pasted line runs without it
+交付版: 0 筆
+OK   A4 修前對照跑完 (0)
+
+==== A5  第二把尺(不讀守門判準,問 bash 自己)====
+OK   A5 寬尺在修前樹撈到 :37 (1)
+OK   A5 寬尺在交付版沒撈到 :37 (0)
+== shell 吃掉 token 的 span(70 筆)==
+
+==== A6  完工定義 4:#113 的三條 finding 還在修好的狀態 ====
+OK   A6 113-wide 對 skills/build/SKILL.md 零筆 (0)
+
+ALL GREEN
