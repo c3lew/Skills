@@ -526,7 +526,9 @@ def classify_one(coverage, judgement=False, override=None):
 
     `judgement` 是 agent 讀 diff 判的,一定會判錯 —— 這裡不為了判準而加規則。
     判錯的代價要靠降級回路兜(spec #106 決策 3:標快的票對驗收清單有一條沒過
-    就當場降級),而那個回路還沒出貨 —— repo 裡沒有任何一支 skill 實作它。就算
+    就當場降級),而那個回路還沒出貨 —— `grep -rn 降級回路 skills/` 在 #120 當下
+    7 個 hit 全在那句散文與這裡的註解,沒有一支 skill 在做那件事。這句沒有 pin
+    守著,回路出貨那天要回來改(#123 那張票要補的就是這種形狀)。就算
     出了,它接得住的也只有 `coverage` 非空的那半:`coverage` 是空的那半一條驗收
     項都沒有,回路不會被觸發,`judgement` 就是那半唯一的一道。這是宣告過的
     天花板,不是這裡要補的規則。
