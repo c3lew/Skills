@@ -72,6 +72,8 @@ P_MID='{"mode":"classify","tickets":[{"number":47,"coverage":["1. x"],"judgement
 # 一批全部合法、而且**快慢兩種標籤同時出現**的批次:
 # #51 沒有覆蓋驗收項 -> 快;#52 寫「無 —…」的那種寫法 -> 也是快;#47 有覆蓋 -> 慢
 P_BOTH='{"mode":"classify","tickets":[{"number":47,"coverage":["1. x"],"judgement":false},{"number":51,"coverage":[],"judgement":false},{"number":52,"coverage":["無 — 由後續票的驗收項間接驗證"],"judgement":false}],"titles":{"47":"a","51":"e","52":"f"}}'
+# client 把一張「預設會判慢」的票當場改成「快」:#53 有覆蓋驗收項、judgement false
+P_TOFAST='{"mode":"classify","tickets":[{"number":47,"coverage":["1. x"],"judgement":false},{"number":53,"coverage":["2. y"],"judgement":false,"override":"快"}],"titles":{"47":"a","53":"g"}}'
 P_CLEAN='{"mode":"classify","tickets":[{"number":47,"coverage":["1. x"],"judgement":false},{"number":48,"coverage":[],"judgement":false,"override":"慢"},{"number":49,"coverage":[],"judgement":true}],"titles":{"47":"a","48":"b","49":"c"}}'
 P_TWO='{"mode":"classify","tickets":[{"number":47,"coverage":["1. x"],"judgement":false},{"number":49,"coverage":[],"judgement":true,"override":"快"},{"number":50,"coverage":[],"override":"fast"}],"titles":{"47":"a","49":"c","50":"d"}}'
 
@@ -184,6 +186,15 @@ classify "$P_BOTH"
   && grep -q '^  #51  分級:快 — ' "$QA/out.txt"; }
 ok $? "同一批裡快、慢兩種標籤都印得出來,貼票行也跟著是「分級:快」"
 
+echo "---- 4e 「當場改任何一張」的另一個方向:預設判慢的票,client 改成「快」要生效"
+echo "     #53 有覆蓋驗收項(不改的話是慢),client 填 override=快"
+classify "$P_TOFAST"
+{ [ "$CL_EXIT" = 0 ] \
+  && grep -q '^  快 *#53 g — 你當場改成「快」$' "$QA/out.txt" \
+  && grep -q '^  慢 *#47 a — 覆蓋 1 條驗收項$' "$QA/out.txt" \
+  && grep -q '^  #53  分級:快 — 你當場改成「快」$' "$QA/out.txt"; }
+ok $? "改成「快」真的生效,理由講明是他改的,同批沒改的那張不受影響"
+
 echo "==================================================================="
 echo "==== AC5/AC6  反向:mutation 台有這幾個 knob,改壞後 --self-check 轉紅"
 echo "==================================================================="
@@ -242,14 +253,12 @@ echo "==================================================================="
 echo "==== 收尾:repo 本體一個字沒動"
 echo "==================================================================="
 
-echo "---- 7a  git status 只剩本輪新增的那兩支未追蹤檔"
+echo "---- 7a  改壞的都只在副本上,repo 本體一個字沒動"
 git -C "$ROOT" status --porcelain -- skills scripts
-DIRTY="$(git -C "$ROOT" status --porcelain -- skills scripts \
-         | grep -v '^?? scripts/qa/118-walkthrough.sh$' \
-         | grep -v '^?? scripts/qa/118-wide.py$')"
-echo "扣掉那兩支之後剩:[$DIRTY]"
+DIRTY="$(git -C "$ROOT" status --porcelain -- skills scripts)"
+echo "剩:[$DIRTY]"
 [ -z "$DIRTY" ]
-ok $? "skills/ 與 scripts/ 除了新增的兩支 QA 檔以外一個字都沒動"
+ok $? "skills/ 與 scripts/ 一個字都沒動"
 
 set +x
 echo
