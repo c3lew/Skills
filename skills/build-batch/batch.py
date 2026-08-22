@@ -20,6 +20,7 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 
 CAP = 3  # 平行上限,client 拍板寫死
@@ -614,10 +615,19 @@ def format_grade_line(grade, reason):
     return f"分級:{grade} — {reason}"
 
 
+def _cols(text):
+    """`text` 印在等寬主控台上佔幾欄。
+
+    中日韓文字與全形符號佔兩欄,其餘一欄。不能用 `len()` 代替:`慢(改不了)`
+    的括號是**半形**,一個字佔一欄,拿字數當欄寬那一列就會少補兩欄(#121 的
+    左欄歪掉就是這麼來的),而歪掉的剛好是清單上最需要被讀到的那一列。
+    """
+    return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
+
+
 def _grade_cell(grade, width):
-    """分級清單左欄那一格 —— 中文一個字佔兩欄,少一個字補兩個空白。"""
-    label = grade
-    return label + "  " * (width - len(label))
+    """分級清單左欄那一格,補空白到 `width` 欄寬。"""
+    return grade + " " * (width - _cols(grade))
 
 
 def format_classify(rows, titles):
@@ -631,9 +641,9 @@ def format_classify(rows, titles):
     if rejected:
         head += f",其中 {len(rejected)} 張改不了"
     lines = [head + ")— 標「慢」的會演給你看,標「快」的不會:"]
-    # 左欄補到同寬:中文一個字佔兩欄,所以少一個字補兩個空白。沒有被拒的那批
-    # 寬度就是 1,印出來跟 #108 凍結的那份逐 byte 相同。
-    width = max([len(g) for _, g, _ in rows] or [1])
+    # 左欄補到同寬,量的是顯示欄寬不是字數(見 `_cols`)。沒有被拒的那批
+    # 寬度就是 2(一個「快」或「慢」),印出來跟 #108 凍結的那份逐 byte 相同。
+    width = max([_cols(g) for _, g, _ in rows] or [2])
     lines += [f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}"
               for n, grade, reason in rows] or ["  (無)"]
     if rejected:
@@ -680,7 +690,7 @@ def main():
             raise SystemExit(
                 "停在這裡 —— "
                 + "、".join(f"#{n}" for n, _ in rejected)
-                + " 的分級改不了,上面那份清單寫了要改什麼")
+                + " 的分級改不了,理由跟著各自那一列")
     elif mode == "start":
         print(format_lane_start(numbers, titles, data.get("running", [])))
     elif mode == "done":
@@ -1587,6 +1597,13 @@ JSON''')
         # #121:印給 client 的話裡不准出現他不是說話對象的第三人稱
         assert "client" not in str(e), e
         assert e.cell == GRADE_REJECTED_SLOW, e.cell
+        # #121 AC3 要的是「咬新的措辭」。上面那幾條是關鍵字,擋得住方向卻擋不住
+        # 措辭漂移 —— 把「你說了也一樣」改回「client 說了也一樣」它們全都照樣綠。
+        assert str(e) == (
+            "動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。"
+            "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"
+            "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"
+            "票的內容沒變就是慢,你說了也一樣"), e
     else:
         raise AssertionError("hard rule silently overridden")
     # 硬規則票改成慢是同一個結果,不用停
@@ -1638,9 +1655,18 @@ JSON''')
 
     # client 那份清單:三張全印,被拒的那張標出來是哪一張、為什麼
     shown = format_classify(mixed, {47: "a", 48: "b", 49: "c"})
-    for want in ("  慢            #47 a", "  慢            #48 b",
-                 f"  {GRADE_REJECTED_SLOW}  #49 c"):
+    for want in ("#47 a", "#48 b", "#49 c"):
         assert want in shown, (want, shown)
+    # 左欄真的對齊:三列在 `#` 之前佔的欄數必須相同。數空白會漏掉半形括號那一格
+    # —— 它字數多、欄數少,補白剛好差兩欄(QA code-review C-1)。
+    # 被拒那張的車道要真的印在紙上。這條刻意咬字面而不是 `GRADE_REJECTED_SLOW`:
+    # 用常數比對的話,常數被改回「改不了」它照樣綠 —— 而那正是 mutation knob
+    # `classify_rejected_lane_dropped` 打的那一格。
+    assert "  慢(改不了)  #49 c — " in shown, shown
+    cells = [ln[:ln.index("#")] for ln in shown.splitlines() if "#" in ln
+             and ln.startswith("  ") and " — " in ln]
+    assert len(cells) == 3, cells
+    assert len({_cols(c) for c in cells}) == 1, [(c, _cols(c)) for c in cells]
     assert "其中 1 張改不了" in shown, shown
     # 貼票那段不印,改印「這批還不能貼」+ 是哪一張
     assert "點頭之後" not in shown, shown
@@ -1693,10 +1719,14 @@ JSON''')
     both = format_classify(two, {47: "a", 48: "b", 49: "c"})
     assert "其中 2 張改不了" in both, both
     assert both.rstrip().endswith("\n  #47 a\n  #49 c"), both
-    # 左欄對齊:被拒那兩張各自的格子,「慢」補到同寬(硬規則那張最長,五個字)
-    assert f"  {GRADE_REJECTED_SLOW}  #47 a — " in both, both
-    assert "  慢            #48 b — " in both, both
-    assert f"  {GRADE_REJECTED}        #49 c — " in both, both
+    # 左欄對齊:兩種被拒的格子 + 一個「慢」混在同一批,三列欄數還是要一樣
+    wide = [ln[:ln.index("#")] for ln in both.splitlines() if "#" in ln
+            and ln.startswith("  ") and " — " in ln]
+    assert len(wide) == 3, wide
+    assert len({_cols(c) for c in wide}) == 1, [(c, _cols(c)) for c in wide]
+    assert wide[0].strip() == GRADE_REJECTED_SLOW, wide
+    assert wide[1].strip() == GRADE_SLOW, wide
+    assert wide[2].strip() == GRADE_REJECTED, wide
     # 沒有被拒的那批左欄一個字都沒動 —— #108 凍結的那份格式原樣
     assert "  慢  #47 分級 — 覆蓋 2 條驗收項" in listed, listed
 

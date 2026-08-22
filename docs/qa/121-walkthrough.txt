@@ -1,0 +1,265 @@
++ echo ===================================================================
+===================================================================
++ echo '==== AC1  硬規則被拒那句:講的是 client 做得到的下一步,不是工程師指路'
+==== AC1  硬規則被拒那句:講的是 client 做得到的下一步,不是工程師指路
++ echo ===================================================================
+===================================================================
++ classify '{"mode":"classify","tickets":[
+  {"number":48,"coverage":[],"judgement":false},
+  {"number":49,"coverage":[],"judgement":true,"override":"快"},
+  {"number":50,"coverage":["1. 登入頁"],"override":"fast"}],
+  "titles":{"48":"骨架","49":"算票","50":"登入頁"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":48,"coverage":[],"judgement":false},
+  {"number":49,"coverage":[],"judgement":true,"override":"快"},
+  {"number":50,"coverage":["1. 登入頁"],"override":"fast"}],
+  "titles":{"48":"骨架","49":"算票","50":"登入頁"}}'
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
++ CL_EXIT=1
++ echo '--- stdout'
+--- stdout
++ cat /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
+分級(3 張,其中 2 張改不了)— 標「慢」的會演給你看,標「快」的不會:
+  快            #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢(改不了)  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
+  改不了        #50 登入頁 — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #49 算票
+  #50 登入頁
++ echo '--- stderr'
+--- stderr
++ cat /tmp/tmp.KLdKxcWsai/wt118/qa121/err.txt
+停在這裡 —— #49、#50 的分級改不了,上面那份清單寫了要改什麼
++ echo 'exit 1'
+exit 1
++ echo '---- 1a  那一列的原文(client 螢幕上實際會看到的那一行)'
+---- 1a  那一列的原文(client 螢幕上實際會看到的那一行)
++ grep -n '#49 算票' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
+3:  慢(改不了)  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
+7:  #49 算票
++ echo '---- 1b  不出現 judgement 旗標 —— 那不是 client 填的欄位,他做不到'
+---- 1b  不出現 judgement 旗標 —— 那不是 client 填的欄位,他做不到
++ grep -q judgement /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ grep -q 旗標 /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ grep -q judgement /tmp/tmp.KLdKxcWsai/wt118/qa121/err.txt
++ grep -q 旗標 /tmp/tmp.KLdKxcWsai/wt118/qa121/err.txt
++ ok 0 '整份輸出(stdout + stderr)沒有 judgement / 旗標'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (整份輸出(stdout + stderr)沒有 judgement / 旗標)'
+RESULT PASS (整份輸出(stdout + stderr)沒有 judgement / 旗標)
++ echo '---- 1c  有一條 client 真的走得到的路:回去改票的內容'
+---- 1c  有一條 client 真的走得到的路:回去改票的內容
++ grep -q 要改快只有一條路:回去改票的內容 /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ ok 0 講得出下一步是什麼,不是只說「不行」
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (講得出下一步是什麼,不是只說「不行」)'
+RESULT PASS (講得出下一步是什麼,不是只說「不行」)
++ echo '---- 1d  說話對象是 client 自己 —— 不用第三人稱叫他 client'
+---- 1d  說話對象是 client 自己 —— 不用第三人稱叫他 client
++ grep -q client /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ grep -q client /tmp/tmp.KLdKxcWsai/wt118/qa121/err.txt
++ ok 0 '印給 client 的字裡沒有「client」這個第三人稱'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (印給 client 的字裡沒有「client」這個第三人稱)'
+RESULT PASS (印給 client 的字裡沒有「client」這個第三人稱)
++ echo ===================================================================
+===================================================================
++ echo '==== AC2  分級打錯字被拒那句:沒有 override,也不解釋設計取捨'
+==== AC2  分級打錯字被拒那句:沒有 override,也不解釋設計取捨
++ echo ===================================================================
+===================================================================
++ echo '---- 2a  那一列的原文'
+---- 2a  那一列的原文
++ grep -n '#50 登入頁' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
+4:  改不了        #50 登入頁 — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
+8:  #50 登入頁
++ echo '---- 2b  不出現英文詞 override'
+---- 2b  不出現英文詞 override
++ grep -q override /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ grep -q override /tmp/tmp.KLdKxcWsai/wt118/qa121/err.txt
++ ok 0 '整份輸出沒有 override'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (整份輸出沒有 override)'
+RESULT PASS (整份輸出沒有 override)
++ echo '---- 2c  講的是他填錯什麼 + 該怎麼修'
+---- 2c  講的是他填錯什麼 + 該怎麼修
++ grep -q '你填的分級只能是「快」或「慢」,你打的是 '\''fast'\'' —— 改一下再重跑' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ ok 0 指名他打的是什麼、要改成什麼
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (指名他打的是什麼、要改成什麼)'
+RESULT PASS (指名他打的是什麼、要改成什麼)
++ echo '---- 2d  解釋設計取捨的那半句拿掉了(對 client 是雜訊)'
+---- 2d  解釋設計取捨的那半句拿掉了(對 client 是雜訊)
++ grep -q 靜靜照原判寫進票 /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ grep -q 不猜 /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ ok 0 沒有「打錯一個字就靜靜照原判寫進票,不猜」那半句
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (沒有「打錯一個字就靜靜照原判寫進票,不猜」那半句)'
+RESULT PASS (沒有「打錯一個字就靜靜照原判寫進票,不猜」那半句)
++ echo ===================================================================
+===================================================================
++ echo '==== AC3  被拒那張也標得出車道 —— 原句是「每張票都標了快或慢」'
+==== AC3  被拒那張也標得出車道 —— 原句是「每張票都標了快或慢」
++ echo ===================================================================
+===================================================================
++ echo '---- 3a  硬規則那張:系統自己算得出是慢,就印出來'
+---- 3a  硬規則那張:系統自己算得出是慢,就印出來
++ grep -q '^  慢(改不了)  #49 算票 — ' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ ok 0 '#49 左欄是「慢(改不了)」,不是只有第三種標籤'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (#49 左欄是「慢(改不了)」,不是只有第三種標籤)'
+RESULT PASS (#49 左欄是「慢(改不了)」,不是只有第三種標籤)
++ echo '---- 3b  打錯字那張:車道算不出來就不猜(#108「不猜」那條)'
+---- 3b  打錯字那張:車道算不出來就不猜(#108「不猜」那條)
++ grep -q '^  改不了 *#50 登入頁 — ' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ grep -qE '^  (快|慢) *#50' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ ok 0 '#50 沒有被替他填一個快/慢'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (#50 沒有被替他填一個快/慢)'
+RESULT PASS (#50 沒有被替他填一個快/慢)
++ echo '---- 3c  左欄還是對齊的(補到同寬,沒被最長那格弄歪)'
+---- 3c  左欄還是對齊的(補到同寬,沒被最長那格弄歪)
++ grep -nE '^  \S+ +#[0-9]+ ' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
+2:  快            #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+3:  慢(改不了)  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
+4:  改不了        #50 登入頁 — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
+++ grep -cE '^  .{2,}#[0-9]+ [^ ]+ — .+$' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ '[' 3 = 3 ']'
++ ok 0 '三列都是「左欄 + 票號 + 標題 — 理由」的同一個形狀'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (三列都是「左欄 + 票號 + 標題 — 理由」的同一個形狀)'
+RESULT PASS (三列都是「左欄 + 票號 + 標題 — 理由」的同一個形狀)
++ echo ===================================================================
+===================================================================
++ echo '==== AC4  同一句話不要 stdout / stderr 各印一次'
+==== AC4  同一句話不要 stdout / stderr 各印一次
++ echo ===================================================================
+===================================================================
++ echo '---- 4a  stderr 只講「停在哪、是哪幾張」'
+---- 4a  stderr 只講「停在哪、是哪幾張」
++ cat /tmp/tmp.KLdKxcWsai/wt118/qa121/err.txt
+停在這裡 —— #49、#50 的分級改不了,上面那份清單寫了要改什麼
++ grep -q '停在這裡 —— #49、#50 的分級改不了' /tmp/tmp.KLdKxcWsai/wt118/qa121/err.txt
+++ wc -l
++ '[' 1 -le 1 ']'
++ ok 0 'stderr 一行,指名兩個票號'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (stderr 一行,指名兩個票號)'
+RESULT PASS (stderr 一行,指名兩個票號)
++ echo '---- 4b  理由只在 stdout 那份清單上出現一次,stderr 不重講'
+---- 4b  理由只在 stdout 那份清單上出現一次,stderr 不重講
++ grep -q 硬規則 /tmp/tmp.KLdKxcWsai/wt118/qa121/err.txt
++ grep -q 你填的分級 /tmp/tmp.KLdKxcWsai/wt118/qa121/err.txt
++ ok 0 'stderr 沒有把 stdout 的理由再抄一遍'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (stderr 沒有把 stdout 的理由再抄一遍)'
+RESULT PASS (stderr 沒有把 stdout 的理由再抄一遍)
++ echo '---- 4c  「還不能貼」那件事也只說一次'
+---- 4c  「還不能貼」那件事也只說一次
+++ grep -c 還不能貼 /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ '[' 1 = 1 ']'
++ ok 0 'stdout 裡「還不能貼」只出現一次'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (stdout 裡「還不能貼」只出現一次)'
+RESULT PASS (stdout 裡「還不能貼」只出現一次)
++ echo ===================================================================
+===================================================================
++ echo '==== AC5  綠色路徑那份清單不夾給 agent 看的內部術語'
+==== AC5  綠色路徑那份清單不夾給 agent 看的內部術語
++ echo ===================================================================
+===================================================================
++ classify '{"mode":"classify","tickets":[
+  {"number":48,"coverage":[],"judgement":false},
+  {"number":49,"coverage":["1. 登入頁"]}],
+  "titles":{"48":"骨架","49":"登入頁"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":48,"coverage":[],"judgement":false},
+  {"number":49,"coverage":["1. 登入頁"]}],
+  "titles":{"48":"骨架","49":"登入頁"}}'
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py'
++ CL_EXIT=0
++ echo '--- stdout'
+--- stdout
++ cat /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
+分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #49 登入頁 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #49  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- stderr'
+--- stderr
++ cat /tmp/tmp.KLdKxcWsai/wt118/qa121/err.txt
++ echo 'exit 0'
+exit 0
++ echo '---- 5a  沒有被拒 -> 正常印完貼票那段'
+---- 5a  沒有被拒 -> 正常印完貼票那段
++ '[' 0 = 0 ']'
++ grep -q 點頭之後,每張票上會多這一行: /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ ok 0 '綠色路徑照印,而且那句是講給 client 聽的'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (綠色路徑照印,而且那句是講給 client 聽的)'
+RESULT PASS (綠色路徑照印,而且那句是講給 client 聽的)
++ echo '---- 5b  票 body / 覆蓋驗收項段 這些內部術語不出現在 client 清單上'
+---- 5b  票 body / 覆蓋驗收項段 這些內部術語不出現在 client 清單上
++ grep -q '票 body' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ grep -q 覆蓋驗收項」段 /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ ok 0 'client 清單上沒有票 body /「覆蓋驗收項」段'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (client 清單上沒有票 body /「覆蓋驗收項」段)'
+RESULT PASS (client 清單上沒有票 body /「覆蓋驗收項」段)
++ echo '---- 5c  貼進票裡的那幾行本身沒變(#108 凍結的格式)'
+---- 5c  貼進票裡的那幾行本身沒變(#108 凍結的格式)
++ grep -nE '^  #[0-9]+  分級:(快|慢) — ' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
+6:  #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+7:  #49  分級:慢 — 覆蓋 1 條驗收項
+++ grep -cE '^  #[0-9]+  分級:(快|慢) — .+$' /tmp/tmp.KLdKxcWsai/wt118/qa121/out.txt
++ '[' 2 = 2 ']'
++ ok 0 兩張票兩行,格式照舊
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (兩張票兩行,格式照舊)'
+RESULT PASS (兩張票兩行,格式照舊)
++ echo '---- 5d  agent 那邊的操作指示還在 —— 搬到 SKILL.md,不是消失'
+---- 5d  agent 那邊的操作指示還在 —— 搬到 SKILL.md,不是消失
++ grep -n 覆蓋驗收項」段下方 '/d/Self Project/Skills/.git/batch-worktrees/118/skills/slice-tickets/SKILL.md'
+63:清單最後那段(「點頭之後,每張票上會多這一行:」底下那幾行)就是要貼的東西 —— 點頭之後逐張貼進票 body 的「覆蓋驗收項」段下方,一張一行,長這樣:
++ grep -q 覆蓋驗收項」段下方 '/d/Self Project/Skills/.git/batch-worktrees/118/skills/slice-tickets/SKILL.md'
++ ok 0 '貼哪裡這件事還寫在 agent 讀的那份文件上'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (貼哪裡這件事還寫在 agent 讀的那份文件上)'
+RESULT PASS (貼哪裡這件事還寫在 agent 讀的那份文件上)
++ echo ===================================================================
+===================================================================
++ echo '==== AC6  守門跟著改 —— 咬的是新措辭,不是放寬成關鍵字'
+==== AC6  守門跟著改 —— 咬的是新措辭,不是放寬成關鍵字
++ echo ===================================================================
+===================================================================
++ echo '---- 6a  batch.py --self-check 綠'
+---- 6a  batch.py --self-check 綠
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/skills/build-batch/batch.py' --self-check
+OK batch self-check green
++ ok 0 'batch.py --self-check exit 0'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (batch.py --self-check exit 0)'
+RESULT PASS (batch.py --self-check exit 0)
++ echo '---- 6b  措辭改回舊版 -> self-check 要紅(在拋棄式副本上)'
+---- 6b  措辭改回舊版 -> self-check 要紅(在拋棄式副本上)
++ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa121/case
++ cp -r '/d/Self Project/Skills/.git/batch-worktrees/118' /tmp/tmp.KLdKxcWsai/wt118/qa121/case
++ python - /tmp/tmp.KLdKxcWsai/wt118/qa121/case/skills/build-batch/batch.py
++ python /tmp/tmp.KLdKxcWsai/wt118/qa121/case/skills/build-batch/batch.py --self-check
++ '[' 1 '!=' 0 ']'
++ ok 0 '換回 override 那個字 -> self-check 紅'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (換回 override 那個字 -> self-check 紅)'
+RESULT PASS (換回 override 那個字 -> self-check 紅)
++ grep -q AssertionError /tmp/tmp.KLdKxcWsai/wt118/qa121/g.txt
++ ok 0 '紅在斷言上(咬的是整句,不是放寬成關鍵字)'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (紅在斷言上(咬的是整句,不是放寬成關鍵字))'
+RESULT PASS (紅在斷言上(咬的是整句,不是放寬成關鍵字))
++ set +x
+
+全部格子符合預期

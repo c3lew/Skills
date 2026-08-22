@@ -101,10 +101,23 @@ echo "---- 3b  打錯字那張:車道算不出來就不猜(#108「不猜」那�
   && ! grep -qE '^  (快|慢) *#50' "$QA/out.txt"; }
 ok $? "#50 沒有被替他填一個快/慢"
 
-echo "---- 3c  左欄還是對齊的(補到同寬,沒被最長那格弄歪)"
-grep -nE '^  \S+ +#[0-9]+ ' "$QA/out.txt"
-[ "$(grep -cE '^  .{2,}#[0-9]+ [^ ]+ — .+$' "$QA/out.txt")" = 3 ]
-ok $? "三列都是「左欄 + 票號 + 標題 — 理由」的同一個形狀"
+echo "---- 3c  左欄真的對齊 —— 量的是顯示欄寬,不是「有幾個字」"
+# 這格原本寫成 `grep -cE '^  .{2,}#...' = 3`,那跟寬度無關:把補白全部拆掉
+# 它照樣數到 3、照樣 PASS。改成把每一列 `#` 之前那段丟去算 east-asian width,
+# 三個值不相等就紅 —— 半形括號那一格字數多、欄數少,只有真的量才抓得到。
+PYTHONIOENCODING=utf-8 python - "$QA/out.txt" <<'PY'
+import io, sys, unicodedata
+cols = lambda s: sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in s)
+rows = [ln[:ln.index("#")] for ln in
+        io.open(sys.argv[1], encoding="utf-8").read().splitlines()
+        if ln.startswith("  ") and "#" in ln and " — " in ln]
+widths = {cols(r) for r in rows}
+for r in rows:
+    print(f"  欄寬 {cols(r):>3}  {r!r}")
+print("列數", len(rows), "不同的欄寬", sorted(widths))
+sys.exit(0 if len(rows) == 3 and len(widths) == 1 else 1)
+PY
+ok $? "三列在票號之前佔的欄數完全相同"
 
 echo "==================================================================="
 echo "==== AC4  同一句話不要 stdout / stderr 各印一次"
@@ -159,7 +172,9 @@ ok $? "batch.py --self-check exit 0"
 echo "---- 6b  措辭改回舊版 -> self-check 要紅(在拋棄式副本上)"
 # 整份 repo 複製一份 —— self-check 會去讀隔壁的 SKILL.md,只搬一支檔的話它會
 # 紅在「檔不見了」而不是紅在斷言上,那就量不到「守門真的咬著這句措辭」。
-rm -rf "$QA/case"; cp -r "$ROOT" "$QA/case"   # .git 是隱藏檔,cp -r 不會帶進來
+# 用 `"$ROOT"/*` 的 glob(不是 `cp -r "$ROOT"`):glob 不展開隱藏檔,所以 `.git`
+# 不會被帶進副本 —— `cp -r "$ROOT" DEST` 會整包收走,包含 `.git`。
+rm -rf "$QA/case"; mkdir -p "$QA/case"; cp -r "$ROOT"/* "$QA/case/"
 python - "$QA/case/$BATCH" <<'PY'
 import pathlib, sys
 p = pathlib.Path(sys.argv[1]); t = p.read_text(encoding="utf-8")

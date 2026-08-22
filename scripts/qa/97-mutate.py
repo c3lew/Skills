@@ -23,6 +23,7 @@
 `--run` 不碰 repo 本體:完整 repo 複製到拋棄式暫存目錄,mutation 全跑在副本上。
 """
 import pathlib
+import ast
 import shutil
 import subprocess
 import sys
@@ -249,8 +250,18 @@ KNOBS = {
         BATCH),
     # 左欄補寬回退成不補 —— client 那份清單左欄歪掉
     "classify_grade_cell_unpadded": (
-        "    return label + \"  \" * (width - len(label))",
-        "    return label",
+        '    return grade + " " * (width - _cols(grade))',
+        "    return grade",
+        BATCH),
+    # 欄寬退回「一個 char 兩欄」—— 半形括號那一格少補兩欄,而歪掉的剛好是
+    # client 最需要讀的那一列(QA code-review C-1)
+    "classify_cell_len_not_cols": (
+        '    return grade + " " * (width - _cols(grade))',
+        '    return grade + "  " * (width - len(grade))',
+        BATCH),
+    "classify_width_len_not_cols": (
+        "    width = max([_cols(g) for _, g, _ in rows] or [2])",
+        "    width = max([len(g) for _, g, _ in rows] or [2])",
         BATCH),
     # 守門整條關掉 —— 對照組:確認 self-check 真的在量這支,不是在量別的
     "guard_off": (
@@ -260,6 +271,29 @@ KNOBS = {
         "    return errors\n"
         "    for py in sorted(repo.rglob(\"*.py\")):"),
 }
+
+def _duplicate_knob_names():
+    """`KNOBS` 這張 dict literal 裡有沒有同名的 key。
+
+    撞名是靜的:後面那個直接蓋掉前面那個,表上少一格,而 `--run` 照樣印
+    「N/N 咬住」。#118 出廠時靠兩張表相加的長度擋這件事,merge 成一張表之後
+    那道守門在 `len()` 上寫不出來(被蓋掉的 key 根本不在 dict 裡),所以改成
+    讀自己的 source 對帳。
+    """
+    tree = ast.parse(pathlib.Path(__file__).read_text(encoding="utf-8"))
+    for node in tree.body:
+        if (isinstance(node, ast.Assign)
+                and any(getattr(t, "id", None) == "KNOBS" for t in node.targets)):
+            names = [k.value for k in node.value.keys]
+            return sorted({n for n in names if names.count(n) > 1})
+    raise SystemExit("97-mutate.py:找不到 KNOBS 這張表 —— 撞名守門自己失效了")
+
+
+_DUPES = _duplicate_knob_names()
+if _DUPES:
+    # 不寫 assert:`python -O` 下 assert 整條被剝掉,而撞名是靜的
+    raise SystemExit("KNOBS 裡有同名的 knob,後面那個會靜靜蓋掉前面那個:"
+                     + "、".join(_DUPES))
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -364,6 +398,13 @@ if __name__ == "__main__":
             copy = pathlib.Path(td) / "repo"
             shutil.copytree(ROOT, copy,
                             ignore=shutil.ignore_patterns(".git", "__pycache__"))
+            # 控制組:一支 gate 本來就紅的話,底下每個 knob 都會「對得上」,
+            # 而歸因表宣稱回答的那個問題一條都沒回答(`--run` 有這道,漏了這邊)
+            control = gate_codes(copy)
+            if any(control.values()):
+                raise SystemExit(
+                    "控制組未套 knob 就已經紅,歸因表不執行:"
+                    + " ".join(f"{g}={c}" for g, c in control.items()))
             pristine = {rel: (copy / rel).read_bytes() for rel in TARGETS}
             for knob in sorted(KNOBS):
                 for rel, blob in pristine.items():
