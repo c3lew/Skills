@@ -192,6 +192,54 @@ def missing_blocking_audit_issue(text):
     )
 
 
+# #107 固化:`/qa` 的並行池是三線 —— regression / walkthrough / code-review 同時開,彼此沒有
+# 資料依賴。獨立 judge 不在池裡:它吃的是 walkthrough 產出的 a11y snapshot,提早開就拿到空證據,
+# 然後把每一條驗收項都判 pass —— 而那份報告跟真的全過長得一模一樣(沒有紅字、沒有例外、
+# 每條 pass),讀報告的人分不出來。這種靠肉眼看不出來的破壞要有守門咬著,所以判準有兩半:
+# 並行池那張表列的 lane 必須**剛好**是這三支(多出一支 judge 就是有人把它丟進池裡,少
+# 一支就是並行沒做滿),而且「judge 排在 walkthrough 之後」這句要在文字裡沒被否定地出現一次。
+# 母體只認**自己開一支 judge** 的 skill —— 光在散文裡提到「獨立 judge」的
+# (client-demo 的收尾、/next 的路由列)一支 judge 都沒跑,要它帶並行池是假陽性。
+# 對照組是 TO_TICKETS_CALL_RE 的「呼叫」那個字(#57)。
+JUDGE_RUNNER_RE = re.compile(r"subagent 當 judge")
+POOL_LANES = ["regression", "walkthrough", "code-review"]
+POOL_SECTION_RE = re.compile(r"^##[^\n]*並行池[^\n]*\n(.*?)(?=^## |\Z)", re.M | re.S)
+# lane 名字只認表格第一欄的粗體 —— 那一欄就是池的宣告,散文裡提到 lane 名字不算
+LANE_CELL_RE = re.compile(r"^\|\s*\*\*([^*|]+)\*\*\s*\|", re.M)
+# 排序約束照 #64 的形狀:span 斷在句號/換行,條件(judge)與動作(walkthrough…之後)要在同一句
+JUDGE_SPAN_RE = re.compile(r"[^。\n]*judge[^。\n]*")
+JUDGE_AFTER_RE = re.compile(r"walkthrough[^。\n]{0,6}之後")
+
+
+def judge_ordering_issues(text):
+    """Return errors for a judge-running skill whose parallel pool lost its guard."""
+    if not JUDGE_RUNNER_RE.search(text):
+        return []
+    issues = []
+    section = POOL_SECTION_RE.search(text)
+    if not section:
+        issues.append(
+            "runs an 獨立 judge but declares no 並行池 section — the three "
+            "lanes have to be written down where the next agent reads them"
+        )
+    else:
+        lanes = [c.strip() for c in LANE_CELL_RE.findall(section.group(1))]
+        if sorted(lanes) != sorted(POOL_LANES):
+            issues.append(
+                f"並行池 lanes are {lanes} — must be exactly {POOL_LANES} "
+                f"(order is free, the set is not); a "
+                f"judge lane in that pool reads an empty a11y snapshot and "
+                f"passes every criterion, which looks identical to a real pass"
+            )
+    if not any(any(unnegated(JUDGE_AFTER_RE, span))
+               for span in JUDGE_SPAN_RE.findall(text)):
+        issues.append(
+            "never states that the 獨立 judge runs walkthrough…之後 — the ordering "
+            "constraint is load-bearing, so it is written, not inferred"
+        )
+    return issues
+
+
 def handoff_target_issues(skills_dir):
     """Every baton must name a skill that exists — repo-wide check.
 
@@ -388,6 +436,8 @@ def validate(skills_dir, repo):
                 f"lost every edge looks exactly like one that has none, and "
                 f"/build-batch then opens all of them in parallel"
             )
+        for issue in judge_ordering_issues(text):
+            errors.append(f"{label}/SKILL.md: {issue}")
         for name in find_slash_only_handoffs(text):
             errors.append(
                 f"{label}/SKILL.md: handoff 「下一步:… `/{name}`」 missing the "
@@ -670,6 +720,86 @@ def self_check():
             assert flipped != text, label
             copy.write_text(flipped, encoding="utf-8")
             got = [e for e in validate(skills.parent, Path(tmp)) if "blocking" in e]
+            assert got and all(e.startswith(label) for e in got), (label, got)
+
+    # #107 固化:並行池的 lane 表 + judge 的排序約束。judge 拿到空證據會把每一條都判
+    # pass,而那份報告跟真的全過長得一模一樣 — 這條靠讀報告發現不了,只能靠守門。
+    POOL_DOC = (
+        "## 2. 並行池:三線同時開\n"
+        "\n"
+        "| lane | 做什麼 |\n"
+        "| --- | --- |\n"
+        "| **regression** | 跑既有 suite |\n"
+        "| **walkthrough** | 照驗收原句實測 |\n"
+        "| **code-review** | 讀 diff |\n"
+        "\n"
+        "## 3. 獨立 judge\n"
+        "\n"
+        "獨立 judge 排在 walkthrough 之後才開,不進並行池。\n"
+        "開一個乾淨 subagent 當 judge,只餵驗收原句與證據。\n"
+    )
+    # 母體只認「自己開一支 judge」的 skill(#57 的教訓)—— 光提到那四個字不上鉤
+    assert judge_ordering_issues("這片提到獨立 judge 抓 works-but-wrong,但自己沒跑") == []
+    assert judge_ordering_issues(POOL_DOC) == []
+    # 把 judge 丟進池裡 —— #107 指名的那個失敗形狀
+    assert judge_ordering_issues(
+        POOL_DOC.replace("| **code-review** | 讀 diff |",
+                         "| **code-review** | 讀 diff |\n| **judge** | 判定 |")
+    ), "judge lane in the pool must redden"
+    # 少一支 lane:並行沒做滿,一樣是紅的
+    assert judge_ordering_issues(
+        POOL_DOC.replace("| **code-review** | 讀 diff |\n", "")
+    ), "a missing lane must redden"
+    # 表上下順序不算數 —— 整張票的主張就是「同時開始」,順序沒有語意
+    assert judge_ordering_issues(
+        POOL_DOC.replace("| **regression** | 跑既有 suite |\n", "")
+        .replace("| **code-review** | 讀 diff |",
+                 "| **code-review** | 讀 diff |\n| **regression** | 跑既有 suite |")
+    ) == [], "lane order carries no meaning when all three start together"
+    # 池整段消失:judge 還在跑,但沒人寫下三線同時開
+    assert judge_ordering_issues(
+        "獨立 judge 排在 walkthrough 之後才開。開一個乾淨 subagent 當 judge。")
+    # 排序約束不見了
+    assert judge_ordering_issues(
+        POOL_DOC.replace("獨立 judge 排在 walkthrough 之後才開,不進並行池。", "獨立 judge 逐條判定。")
+    ), "the ordering constraint has to be written down"
+    # 繞過方向(#64):關鍵詞留著,順序反過來寫
+    assert judge_ordering_issues(
+        POOL_DOC.replace("排在 walkthrough 之後才開", "排在 walkthrough 之前就開")
+    ), "a flipped ordering must redden"
+    assert judge_ordering_issues(
+        POOL_DOC.replace("獨立 judge 排在 walkthrough 之後才開,不進並行池。",
+                         "獨立 judge 不用等 walkthrough 之後,直接進並行池。")
+    ), "a negated ordering must redden"
+
+    # real-skill layer:手寫字串綠不代表出貨的那支綠。拿真的 qa/SKILL.md 改壞,
+    # validate 要指名那個檔 — 母體空掉的話這裡先炸,不會靜靜地 vacuously pass。
+    judges = [
+        src
+        for src in sorted((REPO / "skills").glob("*/SKILL.md"))
+        if JUDGE_RUNNER_RE.search(src.read_text(encoding="utf-8"))
+    ]
+    assert judges, "no skill runs its own judge — mutation has nothing to bite"
+    for src in judges:
+        label = f"skills/{src.parent.name}/SKILL.md"
+        text = src.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as tmp:
+            skills = Path(tmp) / "skills" / src.parent.name
+            skills.mkdir(parents=True)
+            copy = skills / "SKILL.md"
+
+            def reds(body):
+                copy.write_text(body, encoding="utf-8")
+                return [e for e in validate(skills.parent, Path(tmp))
+                        if "judge" in e or "並行池" in e]
+
+            assert reds(text) == [], label
+            lane = "| **code-review** |"
+            assert lane in text, label
+            mutated = text.replace(lane, "| **judge** | 一起跑 | 判定 |\n" + lane, 1)
+            got = reds(mutated)
+            assert got and all(e.startswith(label) for e in got), (label, got)
+            got = reds(JUDGE_AFTER_RE.sub("walkthrough 之前", text))
             assert got and all(e.startswith(label) for e in got), (label, got)
 
     # #41 固化:the baton is a command the client pastes into Codex, so the skill
