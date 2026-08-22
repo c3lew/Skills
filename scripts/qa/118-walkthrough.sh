@@ -206,15 +206,14 @@ echo "$CLASSIFY_KNOBS" | cat -n
 [ "$(echo "$CLASSIFY_KNOBS" | wc -l)" -ge 4 ]
 ok $? "mutation 台上有 $(echo "$CLASSIFY_KNOBS" | wc -l) 個 classify_* knob"
 
-echo "---- 5b  隨機挑 2 個 knob,套到 repo 副本上,batch.py --self-check 要轉紅"
-PICKED="$(echo "$CLASSIFY_KNOBS" | shuf -n 2)"
-echo "本輪抽到:"; echo "$PICKED"
-echo "     控制組:副本原封不動 → 該綠"
+echo "---- 5b  每一個 classify_* knob 都套一次,batch.py --self-check 都要轉紅"
+echo "     不抽樣:抽到的那兩個紅,不代表沒抽到的那幾個也紅(judge 第三輪點名)"
+echo "     控制組:副本原封不動 -> 該綠"
 fresh; selfcheck; expect_gate green "pristine 副本"
-for KNOB in $PICKED; do
+for KNOB in $CLASSIFY_KNOBS; do
   fresh
   python "$ROOT/$MUTATE" "$QA/case" "$KNOB"
-  selfcheck; expect_gate red "隨機 knob $KNOB"
+  selfcheck; expect_gate red "knob $KNOB"
 done
 
 echo "==================================================================="
