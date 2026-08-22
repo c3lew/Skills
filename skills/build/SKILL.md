@@ -34,7 +34,7 @@ commit 裡有什麼,順序反過來就變成「先送出去再說」。tdd 的 r
 
 順序是硬要求:push 沒綠不准貼 commit link — comment 一貼出去,link 就得當場點得開。
 
-完成標準:未 push 的 commit 數是 `0`,`gh issue view #N --comments` 兩則 comment(產出、交棒)都看得到,且 §4 適用時交付物的散文照它走過一次,才結束 session。
+完成標準:未 push 的 commit 數是 `0`,`gh issue view <N> --comments` 兩則 comment(產出、交棒)都看得到,且 §4 適用時交付物的散文照它走過一次,才結束 session。
 
 ## 4. 書面證據(delta)
 
