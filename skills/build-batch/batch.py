@@ -524,8 +524,12 @@ def classify_one(coverage, judgement=False, override=None):
       不是留給 agent 在文件上記得要照做的一句話。
     - **有覆蓋驗收項 -> 慢;沒有 -> 快**。
 
-    `judgement` 是 agent 讀 diff 判的,一定會判錯 —— 這裡不為了判準而加規則,
-    判錯的代價由降級回路關住(spec #106 決策 3)。
+    `judgement` 是 agent 讀 diff 判的,一定會判錯 —— 這裡不為了判準而加規則。
+    判錯的代價要靠降級回路兜(spec #106 決策 3:標快的票對驗收清單有一條沒過
+    就當場降級),而那個回路還沒出貨 —— repo 裡沒有任何一支 skill 實作它。就算
+    出了,它接得住的也只有 `coverage` 非空的那半:`coverage` 是空的那半一條驗收
+    項都沒有,回路不會被觸發,`judgement` 就是那半唯一的一道。這是宣告過的
+    天花板,不是這裡要補的規則。
     """
     items = [c for c in coverage if not NO_COVERAGE_RE.match(str(c).strip())]
     # 認不得的 override 先擋 —— 擺在硬規則前面,因為硬規則那條路的結果剛好也是慢:
@@ -537,7 +541,9 @@ def classify_one(coverage, judgement=False, override=None):
         if override == GRADE_FAST:
             raise SystemExit(
                 "這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。"
-                "驗收清單第 4 條就是它,要改請先改 judgement 旗標")
+                "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"
+                "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"
+                "票的內容沒變就是慢,client 說了也一樣")
         return GRADE_SLOW, "動到判斷邏輯或資料寫入,硬規則一律慢"
     if override is not None:
         return override, f"你當場改成「{override}」"
@@ -727,10 +733,11 @@ def conflict_lines_issue(text):
     return None
 
 
-# #108 固化:分級的判準是可計算的(classify),但它旁邊有四句只有散文講得出來的東西
-# —— 問點頭那句、否決權怎麼兌現、那支檔不在時的退路、以及這條判準的天花板。四句都
-# 刪掉 batch.py 照樣全綠,而 agent 會回去做它出廠時的事:自己判、自己排版、判錯了
-# 也沒人有否決權。所以在 slice-tickets 的 SKILL.md 上逐句咬。
+# #108 固化:分級的判準是可計算的(classify),但它旁邊有幾句只有散文講得出來的
+# 東西 —— 問點頭那句、否決權怎麼兌現、那支檔不在時的退路、硬規則被 client 頂著時
+# 的處置、以及這條判準的天花板蓋到哪。每一句刪掉 batch.py 照樣全綠,而 agent 會
+# 回去做它出廠時的事:自己判、自己排版、判錯了也沒人有否決權。所以在 slice-tickets
+# 的 SKILL.md 上逐句咬。清單長度會長,別在這裡記總數 —— 記了就會過期。
 CLASSIFY_LINES = (
     (re.compile(re.escape("這批的快慢分級,有要改的嗎?")),
      "slice-tickets SKILL.md: 印完分級清單問 client 點頭的那句不見了 —— 沒有那一問"
@@ -743,12 +750,24 @@ CLASSIFY_LINES = (
      "就可能沒裝,而現場重寫一份比沒有更糟(兩份會各說各話)"),
     (re.compile(re.escape("判錯必然會發生")),
      "slice-tickets SKILL.md: 這條判準的天花板那句不見了 —— judgement 是 agent 讀"
-     "diff 判的,不明講就變成隱含假設,下一個人會去加規則而不是靠降級回路兜底"),
+     "diff 判的,不明講就變成隱含假設,下一個人會去加規則而不是把它當宣告過的邊界"),
+    # #120:硬規則蓋過 client 的 override 這件事,散文裡一句都沒有 —— agent 被
+    # client 頂著、batch.py 當場停,文件沒告訴他該怎麼辦,而最短的一條路是把
+    # judgement 改成 false 重跑,一路綠。
+    (re.compile(re.escape("不要自己去改 `judgement` 旗標讓它過")),
+     "slice-tickets SKILL.md: 硬規則被 client 頂著時的處置那句不見了 —— 沒有它,"
+     "agent 會把 judgement 改成 false 重跑,而拆掉的當下沒有任何東西會紅"),
+    # #120:天花板原本寫「判錯的代價由降級回路關住」,對 coverage=[] 的票不成立
+    # —— 那種票一條驗收項都沒有,降級回路永遠不會被觸發。網子的洞剛好就是這條
+    # 判準要守的那一格,寫成「關住」就是過度宣稱。
+    (re.compile(re.escape("接得住的是**有驗收項**的那半")),
+     "slice-tickets SKILL.md: 降級回路只接得住一半那句不見了 —— 少了它天花板就"
+     "回到「關住」那個過度宣稱,而 coverage 是空的那半根本不會觸發降級回路"),
 )
 
 
 def classify_lines_issue(text):
-    """呼叫 classify 的那支 SKILL.md 還有沒有講那四句(#108)。"""
+    """呼叫 classify 的那支 SKILL.md 有沒有逐句講到 CLASSIFY_LINES(#108)。"""
     for pattern, message in CLASSIFY_LINES:
         if not pattern.search(text):
             return message
@@ -1481,6 +1500,14 @@ JSON''')
         classify_one([], judgement=True, override=GRADE_FAST)
     except SystemExit as e:
         assert "硬規則" in str(e), e
+        # #120:訊息本身不准把繞道寫出來。原本那版寫「要改請先改 judgement 旗標」
+        # —— agent 被 client 頂著就照字面把 true 改成 false 重跑,一路綠,而硬規則
+        # 是這條線唯一的防護。訊息只准指向真的那條路:回去改票的內容。
+        assert "回去改票的內容" in str(e), e
+        # 宣告過的天花板:只認「旗標」與「judgement」這兩個字面。同義改寫
+        # (「把 true 改成 false」之類)擋不住 —— 方向是 fail-closed,不是全稱。
+        assert "旗標" not in str(e), e
+        assert "judgement" not in str(e), e
     else:
         raise AssertionError("hard rule silently overridden")
     # 硬規則票改成慢是同一個結果,不用停
@@ -1551,6 +1578,26 @@ JSON''')
             m = pattern.search(slicing)
             assert m, pattern.pattern
             assert classify_lines_issue(slicing.replace(m.group(0), "")), m.group(0)
+
+        # 上面那個迴圈只走 CLASSIFY_LINES 現在有的項:整項被刪掉,pin 跟著它一起
+        # 消失,迴圈照樣全綠 —— 守門自己少一條的那面沒有人在量(#120)。所以這份
+        # 清單是第二份母體,用句子自己的字面再問一次:出貨檔裡有沒有這句、拿掉
+        # 之後守門會不會紅。兩份對不上就紅,不靠下一個人記得同步。
+        #
+        # 宣告過的天花板:這輪只蓋 CLASSIFY_LINES。`FAIL_LANE_LINES` 與
+        # `CLIENT_LINES` 是同一個形狀、同樣沒有 drop-coverage,刻意不在這張票裡改。
+        pinned = ("這批的快慢分級,有要改的嗎?",
+                  "照你說的改,改完的才是寫進票裡的那個",
+                  "`batch.py` 不在 → 這批整批判慢車道",
+                  "判錯必然會發生",
+                  "不要自己去改 `judgement` 旗標讓它過",
+                  "接得住的是**有驗收項**的那半")
+        # CLASSIFY_LINES 每一條都是 re.escape 的字面,所以對帳是機械可導的
+        assert ({p.pattern for p, _ in CLASSIFY_LINES}
+                == {re.escape(s) for s in pinned}), CLASSIFY_LINES
+        for sentence in pinned:
+            assert sentence in slicing, sentence
+            assert classify_lines_issue(slicing.replace(sentence, "")), sentence
 
         assert classify_command_issue(slicing) is None, classify_command_issue(slicing)
         # 改壞:那段不再把 JSON 餵進 batch.py

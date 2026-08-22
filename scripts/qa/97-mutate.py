@@ -6,7 +6,12 @@
 
 新判準只剩語法比對,knob 因此是有限的:每一個都對應 `stream_encoding_issues` /
 `main_blocks` / `reads_stdin` 裡「拿掉就會漏掉一種形狀」的那一行。改壞之後
-`validate.py --self-check` 要轉紅;紅不了就表示那條判準沒有證據住在預設會跑的地方。
+`--self-check` 要轉紅;紅不了就表示那條判準沒有證據住在預設會跑的地方。
+
+`--self-check` 是兩支:`scripts/validate.py --self-check` 與
+`skills/build-batch/batch.py --self-check`,任一支非 0 就算咬住。knob 預設打在
+`scripts/validate.py`,第三個元素填相對路徑就改打別支 —— #120 的分級散文 pin
+住在 `batch.py`,而那支自己少一條規則的那面,validate.py 量不到。
 
 用法:
     python scripts/qa/97-mutate.py --run          # 整張表跑完,每格報 exit code
@@ -21,6 +26,9 @@ import subprocess
 import sys
 import tempfile
 
+DEFAULT_TARGET = "scripts/validate.py"
+BATCH = "skills/build-batch/batch.py"
+# 每個 knob 是 (改壞前, 改壞後) 或 (改壞前, 改壞後, 目標檔相對路徑)。
 KNOBS = {
     # 「第一層」放寬成「__main__ 裡面任何地方」—— #72 的死碼 pin 重新算數
     "pin_anywhere_in_main": (
@@ -134,6 +142,48 @@ KNOBS = {
     "grade_guard_off": (
         "    issues = []\n    lines = GRADE_LINE_RE.findall(text)",
         "    return []\n    issues = []\n    lines = GRADE_LINE_RE.findall(text)"),
+    # ---- #120 硬規則的處置:錯誤訊息 + 散文 pin -----------------------
+    # 錯誤訊息把繞道寫回去 —— agent 被 client 頂著就照字面把 judgement 改成
+    # false 重跑,一路綠,而硬規則是這條線唯一的防護
+    "hardrule_msg_signposts_flag": (
+        '                "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"\n'
+        '                "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"\n'
+        '                "票的內容沒變就是慢,client 說了也一樣")',
+        '                "驗收清單第 4 條就是它,要改請先改 judgement 旗標")',
+        BATCH),
+    # 「回去改票的內容」那半拿掉 —— 只說改不成,不說真的那條路長怎樣
+    "hardrule_msg_no_real_path": (
+        '                "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"\n'
+        '                "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"\n'
+        '                "票的內容沒變就是慢,client 說了也一樣")',
+        '                "驗收清單第 4 條就是它。")',
+        BATCH),
+    # 硬規則處置那句的 pin 整項刪掉 —— 守門自己少一條的那面
+    "hardrule_pin_dropped": (
+        '    (re.compile(re.escape("不要自己去改 `judgement` 旗標讓它過")),\n'
+        '     "slice-tickets SKILL.md: 硬規則被 client 頂著時的處置那句不見了 —— 沒有它,"\n'
+        '     "agent 會把 judgement 改成 false 重跑,而拆掉的當下沒有任何東西會紅"),\n',
+        "",
+        BATCH),
+    # 天花板那句(降級回路只接得住有驗收項的那半)的 pin 整項刪掉
+    "ceiling_half_pin_dropped": (
+        '    (re.compile(re.escape("接得住的是**有驗收項**的那半")),\n'
+        '     "slice-tickets SKILL.md: 降級回路只接得住一半那句不見了 —— 少了它天花板就"\n'
+        '     "回到「關住」那個過度宣稱,而 coverage 是空的那半根本不會觸發降級回路"),\n',
+        "",
+        BATCH),
+    # 散文守門整條放行 —— 對照組:逐句比對真的接在跑得到的地方
+    "classify_lines_never_complains": (
+        "    for pattern, message in CLASSIFY_LINES:\n"
+        "        if not pattern.search(text):\n"
+        "            return message\n"
+        "    return None",
+        "    return None\n"
+        "    for pattern, message in CLASSIFY_LINES:\n"
+        "        if not pattern.search(text):\n"
+        "            return message\n"
+        "    return None",
+        BATCH),
     # 守門整條關掉 —— 對照組:確認 self-check 真的在量這支,不是在量別的
     "guard_off": (
         "    errors = []\n"
@@ -146,18 +196,40 @@ KNOBS = {
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
+def target_of(knob):
+    """這個 knob 打在哪一支檔(沒宣告第三個元素就是 validate.py)。"""
+    spec = KNOBS[knob]
+    return spec[2] if len(spec) > 2 else DEFAULT_TARGET
+
+
+TARGETS = sorted({DEFAULT_TARGET} | {target_of(k) for k in KNOBS})
+# 每個被打的目標檔自己就是一支守門 —— 兩份分開寫的話,新加一支的 knob 會
+# 還原正確但 self-check 永遠不跑它。
+GATES = tuple(TARGETS)
+
+
 def apply(repo, knob):
-    path = pathlib.Path(repo) / "scripts" / "validate.py"
+    path = pathlib.Path(repo) / target_of(knob)
     src = path.read_text(encoding="utf-8")
-    old, new = KNOBS[knob]
+    old, new = KNOBS[knob][0], KNOBS[knob][1]
     assert old in src, f"mutation 目標不在 — 判準被改過了:{knob}"
     path.write_text(src.replace(old, new, 1), encoding="utf-8")
 
 
 def self_check(repo):
-    return subprocess.run(
-        [sys.executable, str(repo / "scripts" / "validate.py"), "--self-check"],
-        cwd=repo, capture_output=True)
+    """兩支守門各跑一次 `--self-check`,回第一支非 0 的;全綠回最後一支。
+
+    回傳形狀維持 `subprocess.CompletedProcess` —— `run_table` 只讀 returncode
+    與 stderr,而 `98-mutate-control.py` 會整支換掉它。
+    """
+    done = None
+    for gate in GATES:
+        done = subprocess.run(
+            [sys.executable, str(repo / gate), "--self-check"],
+            cwd=repo, capture_output=True)
+        if done.returncode:
+            return done
+    return done
 
 
 def run_table():
@@ -171,9 +243,10 @@ def run_table():
             why = (control.stderr or control.stdout).decode("utf-8", "replace").strip()
             raise RuntimeError("控制組未套 knob 就已經紅；儀器壞了，下面的 mutation 表不執行"
                                + (f"\n{why}" if why else ""))
-        pristine = (copy / "scripts" / "validate.py").read_bytes()
+        pristine = {rel: (copy / rel).read_bytes() for rel in TARGETS}
         for knob in sorted(KNOBS):
-            (copy / "scripts" / "validate.py").write_bytes(pristine)
+            for rel, blob in pristine.items():
+                (copy / rel).write_bytes(blob)
             apply(copy, knob)
             r = self_check(copy)
             out.append((knob, r.returncode))
@@ -193,7 +266,7 @@ if __name__ == "__main__":
             print(exc, file=sys.stderr)
             sys.exit(1)
         for knob, code in rows:
-            print(f"{'咬住' if code else '沒咬住'}  {knob:<22} self-check exit={code}")
+            print(f"{'咬住' if code else '沒咬住'}  {knob:<30} self-check exit={code}")
         missed = [k for k, c in rows if c == 0]
         print(f"\n{len(rows) - len(missed)}/{len(rows)} 個 knob 被 self-check 咬住")
         if missed:
