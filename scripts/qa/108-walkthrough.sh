@@ -313,7 +313,7 @@ assert old in t
 p.write_text(t.replace(old, "不要亂改", 1), encoding="utf-8")
 PY
 gate; expect_gate red "硬規則遇到 client 想改快的處置不見"
-grep -m1 '硬規則被 client 頂著' "$QA/g-batch.txt"
+grep -q '硬規則被 client 頂著' "$QA/g-batch.txt"; ok $? "紅在對的地方(batch 的散文 pin,不是別條順便)"
 
 echo "     5c-4c 天花板退回「降級回路全部關住」的過度宣稱(#120)→ 該紅"
 fresh
@@ -325,7 +325,7 @@ assert old in t
 p.write_text(t.replace(old, "把判錯的代價整個關住", 1), encoding="utf-8")
 PY
 gate; expect_gate red "降級回路只接得住一半那句不見"
-grep -m1 '只接得住一半' "$QA/g-batch.txt"
+grep -q '只接得住一半' "$QA/g-batch.txt"; ok $? "紅在對的地方(天花板那條 pin)"
 
 echo "     5c-5  分級行示範改壞(全形冒號那一族:改成「中」)→ 該紅"
 fresh

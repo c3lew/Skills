@@ -15,6 +15,7 @@
 
 用法:
     python scripts/qa/97-mutate.py --run          # 整張表跑完,每格報 exit code
+    python scripts/qa/97-mutate.py --attribute    # 逐 gate 歸因:誰咬住這個 knob
     python scripts/qa/97-mutate.py --list
     python scripts/qa/97-mutate.py <repo 副本> <knob 名稱>
 
@@ -216,6 +217,17 @@ def apply(repo, knob):
     path.write_text(src.replace(old, new, 1), encoding="utf-8")
 
 
+def gate_codes(repo):
+    """每一支守門各自的 exit code,`{相對路徑: returncode}`。
+
+    分開記是因為「咬住」不分辨是誰咬的:一個 knob 打在 batch.py,卻被
+    validate.py 順便咬住的話,batch.py 那條 pin 靜靜失效表上照樣印「咬住」。
+    """
+    return {gate: subprocess.run(
+        [sys.executable, str(repo / gate), "--self-check"],
+        cwd=repo, capture_output=True).returncode for gate in GATES}
+
+
 def self_check(repo):
     """兩支守門各跑一次 `--self-check`,回第一支非 0 的;全綠回最後一支。
 
@@ -233,7 +245,11 @@ def self_check(repo):
 
 
 def run_table():
-    """每個 knob 套上去跑 `--self-check`,回傳 (knob, exit code)。非 0 才是要的。"""
+    """每個 knob 套上去跑 `--self-check`,回傳 (knob, exit code)。非 0 才是要的。
+
+    `--attribute` 另外逐 gate 拆開跑一次,答「是誰咬住的」—— 表本身不拆,
+    因為控制組那條路(`98-mutate-control.py`)換掉的是 `self_check`。
+    """
     out = []
     with tempfile.TemporaryDirectory() as td:
         copy = pathlib.Path(td) / "repo"
@@ -272,5 +288,30 @@ if __name__ == "__main__":
         if missed:
             print("沒咬住:" + ", ".join(missed))
         sys.exit(1 if missed else 0)
+    if "--attribute" in sys.argv:
+        # 逐 gate 歸因:knob 打在哪支檔,就該是那支檔咬住它。對不上代表那條 pin
+        # 其實沒在守,只是被另一支順便判紅 —— 表上看起來一模一樣。
+        bad = []
+        with tempfile.TemporaryDirectory() as td:
+            copy = pathlib.Path(td) / "repo"
+            shutil.copytree(ROOT, copy,
+                            ignore=shutil.ignore_patterns(".git", "__pycache__"))
+            pristine = {rel: (copy / rel).read_bytes() for rel in TARGETS}
+            for knob in sorted(KNOBS):
+                for rel, blob in pristine.items():
+                    (copy / rel).write_bytes(blob)
+                apply(copy, knob)
+                codes = gate_codes(copy)
+                want = target_of(knob)
+                ok = codes.get(want, 0) != 0
+                if not ok:
+                    bad.append(knob)
+                print(f"{'對得上' if ok else '對不上'}  {knob:<30} "
+                      f"目標={want} " + " ".join(f"{g}={c}" for g, c in codes.items()))
+        print()
+        print(f"{len(KNOBS) - len(bad)}/{len(KNOBS)} 個 knob 由它自己的目標守門咬住")
+        if bad:
+            print("對不上:" + ", ".join(bad))
+        sys.exit(1 if bad else 0)
     apply(sys.argv[1], sys.argv[2])
     print("mutation 已套用:", sys.argv[2])
