@@ -80,7 +80,7 @@ QA 環境的啟動做成**一鍵重開**:單一 script / 指令(起 dev server +
 
 理由:judge 的證據來源就是 walkthrough 產出的 a11y snapshot。提早開,它拿到空證據,然後把每一條
 都判 pass — 而「證據是空的所以全過」跟「真的全過」在報告上長得一模一樣:沒有紅字、沒有
-例外、每條 pass。這是本 skill 唯一一條看報告驗不出來的約束,所以寫在這裡當硬約束。
+例外、每條 pass。
 
 開一個乾淨 subagent 當 judge:只餵 spec 驗收原句 + walkthrough 證據(snapshots),不餵實作脈絡與本 session 的判斷。judge 逐條判 pass / fail / **works-but-wrong**(功能會動但不是 spec 說的那件事)— works-but-wrong 一律算 fail。
 

@@ -112,6 +112,35 @@ python <build-batch skill dir>/batch.py
 退路(`/next` 是退回推單張 `/build #N`):借來的判斷可能根本沒裝,而重寫一份判斷比
 沒有更糟 — 兩份會各說各話。
 
+### 給人照抄的指令不帶 `#` 參數
+
+`skills/` 與 `docs/specs/` 底下寫給人照抄的 shell 指令,placeholder 用
+`<N>` 這種形式(`docs/agents/issue-tracker.md` 就是這樣寫的):
+
+```
+gh issue view <N> --comments
+```
+
+不要寫 `gh issue view #N` — `#` 在 bash 跟 PowerShell 都是註解起頭,代換完
+貼下去只剩 `gh issue view`,參數整段被吃掉,而回來的 `accepts 1 arg(s),
+received 0` 跟「指令寫錯」長得不一樣,照抄的人只會以為 gh 壞了(#114)。
+散文裡指涉票號照舊寫 `#N`(`/qa #N`)— 那個慣例只管散文,不管
+shell 指令的參數位置。
+
+`scripts/validate.py` 的 `pasteable_command_issues` 在比這件事。**受檢範圍**:
+`skills/` 與 `docs/specs/` 底下的 `*.md`;`docs/qa/` 不在內 — QA 紀錄本來就要
+逐字引用壞掉的指令當證據。
+
+**宣告過的天花板**:母體只認**單反引號的 span 裡帶 `SHELL_CMD_WORDS`
+命令字**的那種(`gh`/`git`/`python`/`bash`/`sh`/`ls`/`grep`)— 表外的
+(`curl`、`npm`)、以及 ```bash 圍籬區塊裡的指令都看不到,那一類靠 review 擋。
+引號配對是字面比對,不是 shell parser:`git commit -m "fix #113"` 不算(字串),
+而指令裡的單撇號會把後面的 `#` 吞掉 — 少咬一次,不是多咬一次。
+
+改這條判準的時候,`--self-check` 自帶 mutation 層:它把母體裡**每一個**
+真指令的第一個參數推一個 `#` 上去,每一個都要讓守門指名道姓轉紅。
+(數量看它自己跑出來的,不要抄進文件 — 抄了就會過期。)
+
 ### Domain docs
 
 This repository uses a single-context layout. See `docs/agents/domain.md`.

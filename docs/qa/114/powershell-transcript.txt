@@ -1,0 +1,7 @@
+# PowerShell 7 (pwsh) — 同兩條指令,照字面貼
+PS> gh issue view 113 --comments | Select-Object -First 2
+author: c3lew
+association:    owner
+
+PS> gh issue view #113 --comments | Select-Object -First 3
+accepts 1 arg(s), received 0

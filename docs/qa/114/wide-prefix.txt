@@ -1,0 +1,134 @@
+掃過 41 個檔 / 629 個反引號 span
+
+== shell 吃掉 token 的 span(63 筆)==
+skills/build/SKILL.md:3: `/qa #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/build/SKILL.md:12: `/implement #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/build/SKILL.md:33: `/qa #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/build/SKILL.md:37: `gh issue view #N --comments` — 照空白 5 個 token,bash 只看到 3 個
+skills/build-batch/SKILL.md:18: `## Parent` — 照空白 2 個 token,bash 只看到 0 個
+skills/build-batch/SKILL.md:24: `## Blocked by` — 照空白 3 個 token,bash 只看到 0 個
+skills/build-batch/SKILL.md:24: `#<n>` — 照空白 1 個 token,bash 只看到 0 個
+skills/build-batch/SKILL.md:55: `/build #47` — 照空白 2 個 token,bash 只看到 1 個
+skills/build-batch/SKILL.md:127: `/build #47` — 照空白 2 個 token,bash 只看到 1 個
+skills/build-batch/SKILL.md:127: `/qa #47` — 照空白 2 個 token,bash 只看到 1 個
+skills/build-batch/SKILL.md:174: `/build-batch #51` — 照空白 2 個 token,bash 只看到 1 個
+skills/build-batch/SKILL.md:312: `/build #48` — 照空白 2 個 token,bash 只看到 1 個
+skills/build-batch/SKILL.md:312: `/qa #48` — 照空白 2 個 token,bash 只看到 1 個
+skills/build-batch/SKILL.md:321: `## 覆蓋驗收項` — 照空白 2 個 token,bash 只看到 0 個
+skills/client-demo/SKILL.md:17: `/qa #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/client-demo/SKILL.md:64: `/qa #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/client-demo/SKILL.md:76: `/close #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/close/SKILL.md:8: `/skill #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/maintain/SKILL.md:21: `/maintain #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/maintain/SKILL.md:63: `/build #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/maintain/SKILL.md:67: `/close #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:12: `/skill #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:14: `/build #B` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:14: `/close #A` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:28: `/build #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:29: `/build #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:30: `/qa #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:31: `/client-demo #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:32: `/close #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:33: `/maintain #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:52: `## Parent` — 照空白 2 個 token,bash 只看到 0 個
+skills/next/SKILL.md:52: `## Blocked by` — 照空白 3 個 token,bash 只看到 0 個
+skills/next/SKILL.md:52: `#<n>` — 照空白 1 個 token,bash 只看到 0 個
+skills/next/SKILL.md:54: `/build #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:56: `/build-batch #51` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:56: `/build #47` — 照空白 2 個 token,bash 只看到 1 個
+skills/next/SKILL.md:62: `/skill #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/pm-intake/SKILL.md:39: `/slice-tickets #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/qa/SKILL.md:91: `/build #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/qa/SKILL.md:98: `/client-demo #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/qa/SKILL.md:98: `/close #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/qa/SKILL.md:99: `/qa #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/slice-tickets/SKILL.md:44: `/build #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/slice-tickets/SKILL.md:45: `/build #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/tracking-viz/SKILL.md:16: `/skill #N` — 照空白 2 個 token,bash 只看到 1 個
+skills/tracking-viz/SKILL.md:42: `<code>/skill #N</code>` — 照空白 2 個 token,bash 只看到 1 個
+skills/triage/AGENT-BRIEF.md:129: `# Concept Name` — 照空白 3 個 token,bash 只看到 0 個
+skills/triage/SKILL.md:12: `#42` — 照空白 1 個 token,bash 只看到 0 個
+docs/specs/build.md:7: `/qa #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/build.md:11: `/build #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/build.md:15: `/implement #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/build.md:16: `/qa #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/client-demo.md:13: `/client-demo #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/maintain.md:11: `/maintain #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/pm-intake.md:33: `/slice-tickets #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/qa.md:11: `/qa #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/qa.md:33: `/client-demo #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/qa.md:33: `/close #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/slice-tickets.md:11: `/slice-tickets #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/specs/slice-tickets.md:22: `/build #N` — 照空白 2 個 token,bash 只看到 1 個
+docs/agents/issue-tracker.md:25: `Blocked by: #<n>` — 照空白 3 個 token,bash 只看到 2 個
+AGENTS.md:16: `/qa #12` — 照空白 2 個 token,bash 只看到 1 個
+AGENTS.md:89: `/build #N` — 照空白 2 個 token,bash 只看到 1 個
+
+== 沒送進 bash 的 span(66 筆,含 shell 元字元,人工判)==
+skills/build/SKILL.md:3: `$qa #N`
+skills/build/SKILL.md:33: `$qa #N`
+skills/build-batch/SKILL.md:10: `/build-batch #<spec 票號>`
+skills/build-batch/SKILL.md:38: `<skill dir>`
+skills/build-batch/SKILL.md:55: `$build #47`
+skills/build-batch/SKILL.md:174: `$build-batch #51`
+skills/build-batch/SKILL.md:354: `<<'JSON'`
+skills/build-batch/SKILL.md:354: `|`
+skills/build-batch/SKILL.md:367: `2>/dev/null`
+skills/build-batch/SKILL.md:371: `$build-batch`
+skills/build-batch/SKILL.md:371: `$build #A`
+skills/client-demo/SKILL.md:64: `$qa #N`
+skills/client-demo/SKILL.md:76: `$close #N`
+skills/close/SKILL.md:8: `$skill #N`
+skills/maintain/SKILL.md:63: `$build #N`
+skills/maintain/SKILL.md:64: `$pm-intake`
+skills/next/SKILL.md:12: `$skill #N`
+skills/next/SKILL.md:14: `$build #B`
+skills/next/SKILL.md:22: `$setup-matt-pocock-skills`
+skills/next/SKILL.md:23: `$wayfinder`
+skills/next/SKILL.md:24: `$wayfinder`
+skills/next/SKILL.md:25: `$pm-intake`
+skills/next/SKILL.md:26: `$pm-intake`
+skills/next/SKILL.md:27: `$slice-tickets`
+skills/next/SKILL.md:28: `/build-batch #<spec 票號>`
+skills/next/SKILL.md:28: `$build-batch #<spec 票號>`
+skills/next/SKILL.md:28: `$build #N`
+skills/next/SKILL.md:29: `$build #N`
+skills/next/SKILL.md:30: `$qa #N`
+skills/next/SKILL.md:31: `$client-demo #N`
+skills/next/SKILL.md:32: `$close #N`
+skills/next/SKILL.md:33: `$maintain #N`
+skills/next/SKILL.md:34: `$maintain`
+skills/next/SKILL.md:35: `$retro`
+skills/next/SKILL.md:36: `$tracking-viz`
+skills/next/SKILL.md:56: `$build-batch #51`
+skills/next/SKILL.md:56: `$build #47`
+skills/next/SKILL.md:60: `(Recommended)`
+skills/next/SKILL.md:62: `$skill #N`
+skills/pm-intake/SKILL.md:39: `$slice-tickets #N`
+skills/qa/SKILL.md:91: `$build #N`
+skills/qa/SKILL.md:98: `$client-demo #N`
+skills/qa/SKILL.md:98: `$close #N`
+skills/slice-tickets/SKILL.md:16: `/to-tickets <spec ref>`
+skills/slice-tickets/SKILL.md:44: `$build #N`
+skills/slice-tickets/SKILL.md:45: `$build #N`
+skills/tracking-viz/SKILL.md:16: `$skill #N`
+skills/tracking-viz/SKILL.md:42: `<code>$skill #N</code>`
+skills/triage/AGENT-BRIEF.md:57: `functionName()`
+docs/specs/build.md:7: `$qa #N`
+docs/specs/build.md:11: `$build #N`
+docs/specs/build.md:16: `$qa #N`
+docs/specs/client-demo.md:13: `$client-demo #N`
+docs/specs/pm-intake.md:33: `$slice-tickets #N`
+docs/specs/qa.md:11: `$qa #N`
+docs/specs/qa.md:33: `$client-demo #N`
+docs/specs/qa.md:33: `$close #N`
+docs/specs/slice-tickets.md:11: `$slice-tickets #N`
+docs/specs/slice-tickets.md:22: `$build #N`
+AGENTS.md:16: `$qa #12`
+AGENTS.md:19: `$name`
+AGENTS.md:39: `sys.stdout.buffer.write(...)`
+AGENTS.md:39: `sys.stdin.buffer.read()`
+AGENTS.md:43: `main()`
+AGENTS.md:44: `main()`
+AGENTS.md:50: `in (...)`

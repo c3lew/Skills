@@ -316,6 +316,60 @@ def judge_ordering_issues(text):
     return issues
 
 
+# #114 固化:給人照抄的指令是交付物 — placeholder 代換掉之後照字面貼進
+# shell,要跟它寫的一樣跑。`#` 在 bash 跟 PowerShell 都是註解起頭,所以
+# `gh issue view #N --comments` 代換完貼下去只剩 `gh issue view` — 參數整段被
+# 吃掉,而回來的 `accepts 1 arg(s), received 0` 跟「指令寫錯」長得不一樣,
+# 照抄的人只會以為 gh 壞了。#113 就是這樣改壞的:散文裡指涉票號一律寫
+# `#N`(`/qa #N`),而那個慣例被套到 shell 指令的參數位置上 — 判準套錯位置。
+# 母體是 `skills/` 與 `docs/specs/` 底下的 `*.md` — 這兩個地方的指令是給人
+# 照抄的。`docs/qa/` 不在內:QA 紀錄本來就要逐字引用壞掉的指令當證據。
+# 一個 span 算不算指令看 SHELL_CMD_WORDS:散文裡的 `#113`、markdown anchor
+# 不帶命令字,要它們不帶 `#` 是假陽性。
+# 引號裡的 `#` 不算:`git commit -m "fix #113"` 在 shell 裡是字串,不是註解;
+# 貼著 token 的 `#`(`--grep=#113`)同理 — 註解要前面有空白才開得成。
+# ponytail: 這是有界的啟發式,不是 shell parser。宣告過的天花板:
+#   - 命令字只認 SHELL_CMD_WORDS 那張表(repo 現在真的在貼的那幾支);
+#     表外的(`curl`、`npm`)這支看不到,那一類靠 review 擋。
+#   - 只看單反引號的 span,```bash 圍籬區塊不看。
+#   - 引號配對是字面比對:指令裡的單撇號會被當成引號起頭,把後面的
+#     `#` 吞掉 — 少咬一次,不是多咬一次。
+SHELL_CMD_WORDS = ("gh", "git", "python", "bash", "sh", "ls", "grep")
+SHELL_CMD_RE = re.compile(
+    r"`([^`\n]*\b(?:%s)\b[^`\n]*)`" % "|".join(SHELL_CMD_WORDS)
+)
+QUOTED_RE = re.compile(r"'[^']*'|\"[^\"]*\"")
+COMMENTED_ARG_RE = re.compile(r"\s#")
+PASTEABLE_ROOTS = ("skills", "docs/specs")
+
+
+def unpasteable_commands(text):
+    """Return backticked shell commands whose args are eaten by a `#` comment."""
+    return [
+        cmd
+        for cmd in SHELL_CMD_RE.findall(text)
+        if COMMENTED_ARG_RE.search(QUOTED_RE.sub("", cmd))
+    ]
+
+
+def pasteable_command_issues(repo):
+    """Return errors for every pasteable command a `#` turns into a no-op."""
+    issues = []
+    for root in PASTEABLE_ROOTS:
+        base = repo / root
+        if not base.is_dir():
+            continue
+        for md in sorted(base.rglob("*.md")):
+            rel = md.relative_to(repo).as_posix()
+            for cmd in unpasteable_commands(md.read_text(encoding="utf-8")):
+                issues.append(
+                    f"{rel}: pasteable command `{cmd}` has a `#`-prefixed "
+                    f"argument — bash and PowerShell both read it as a "
+                    f"comment, so the pasted line runs without it"
+                )
+    return issues
+
+
 def handoff_target_issues(skills_dir):
     """Every baton must name a skill that exists — repo-wide check.
 
@@ -567,6 +621,7 @@ def validate(skills_dir, repo):
 def main():
     errors = (validate(REPO / "skills", REPO)
               + handoff_target_issues(REPO / "skills")
+              + pasteable_command_issues(REPO)
               + stream_encoding_issues(REPO))
     for e in errors:
         print(f"FAIL {e}")
@@ -1352,6 +1407,49 @@ def self_check():
 
     # and the live repo is clean — every script that can be run pins its streams
     assert stream_encoding_issues(REPO) == [], stream_encoding_issues(REPO)
+
+    # #114: a `#`-prefixed argument turns a pasteable command into a no-op —
+    # both bash and PowerShell start a comment there, so everything after it
+    # is eaten and `gh issue view #113 --comments` runs as bare `gh issue view`.
+    assert unpasteable_commands("`gh issue view #N --comments`") == [
+        "gh issue view #N --comments"
+    ]
+    assert unpasteable_commands("`gh issue view <N> --comments`") == []
+    # prose ticket refs and markdown anchors carry no command word
+    assert unpasteable_commands("跑 `/qa #114`,見 [x](#anchor)") == []
+    # quoted -> a string the shell keeps, not a comment
+    assert unpasteable_commands('`git commit -m "fix #113"`') == []
+    # mid-token `#` never starts a comment either
+    assert unpasteable_commands("`git log --grep=#113`") == []
+
+    # the real-file layer: the cases above are hand-written strings, so they
+    # stay green even if every pasteable command in the repo rotted. This one
+    # walks the live 母體, pushes a `#` onto each real command's first argument,
+    # and asserts the repo-wide check reddens naming that file and that command.
+    live = []
+    for root in PASTEABLE_ROOTS:
+        for md in sorted((REPO / root).rglob("*.md")):
+            text = md.read_text(encoding="utf-8")
+            for cmd in set(SHELL_CMD_RE.findall(text)):
+                live.append((md.relative_to(REPO).as_posix(), text, cmd))
+    assert live, "no pasteable command in the 母體 — mutation has nothing to bite"
+    assert pasteable_command_issues(REPO) == [], pasteable_command_issues(REPO)
+
+    for rel, text, cmd in live:
+        head, _, tail = cmd.partition(" ")
+        mutated_cmd = f"{head} #{tail}"
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            dst = repo / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(text, encoding="utf-8")
+            assert pasteable_command_issues(repo) == [], rel
+            dst.write_text(
+                text.replace(f"`{cmd}`", f"`{mutated_cmd}`", 1), encoding="utf-8"
+            )
+            errs = pasteable_command_issues(repo)
+            assert any(e.startswith(f"{rel}: ") and f"`{mutated_cmd}`" in e
+                       for e in errs), (rel, cmd, errs)
 
     print("OK validate self-check green")
 
