@@ -150,14 +150,14 @@ KNOBS = {
     "hardrule_msg_signposts_flag": (
         '                "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"\n'
         '                "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"\n'
-        '                "票的內容沒變就是慢,client 說了也一樣")',
+        '                "票的內容沒變就是慢,你說了也一樣",',
         '                "驗收清單第 4 條就是它,要改請先改 judgement 旗標")',
         BATCH),
     # 「回去改票的內容」那半拿掉 —— 只說改不成,不說真的那條路長怎樣
     "hardrule_msg_no_real_path": (
         '                "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"\n'
         '                "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"\n'
-        '                "票的內容沒變就是慢,client 說了也一樣")',
+        '                "票的內容沒變就是慢,你說了也一樣",',
         '                "驗收清單第 4 條就是它。")',
         BATCH),
     # 硬規則處置那句的 pin 整項刪掉 —— 守門自己少一條的那面
@@ -193,7 +193,7 @@ KNOBS = {
     # 看不到,連他同一輪改的那幾張也一起消失
     "classify_batch_dies_on_first": (
         "        except OverrideRejected as exc:\n"
-        "            rows.append((t[\"number\"], None, str(exc)))",
+        "            rows.append((t[\"number\"], exc.cell, str(exc)))",
         "        except OverrideRejected as exc:\n"
         "            raise SystemExit(str(exc))",
         BATCH),
@@ -202,7 +202,8 @@ KNOBS = {
         "    lines += [f\"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}\"\n"
         "              for n, grade, reason in rows] or [\"  (無)\"]",
         "    lines += [f\"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}\"\n"
-        "              for n, grade, reason in rows if grade] or [\"  (無)\"]",
+        "              for n, grade, reason in rows if grade in GRADES] "
+        "or [\"  (無)\"]",
         BATCH),
     # 有張被拒還是把貼票那段印出來 —— agent 會照著貼進一份 client 沒點過的清單
     "classify_paste_anyway": (
@@ -217,8 +218,8 @@ KNOBS = {
         BATCH),
     # 訊息退回「這張」—— 停得對,但 client 手上沒有可以動作的票號(#118 第 2 條)
     "classify_reject_unnamed": (
-        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected))",
-        "                + \"\\n\".join(f\"  這張 — {reason}\" for n, reason in rejected))",
+        "                + \"、\".join(f\"#{n}\" for n, _ in rejected)",
+        "                + \"、\".join(\"這張\" for n, _ in rejected)",
         BATCH),
     # 兩張同時被拒時只算第一張 —— 單張的批次上一格都看不出來(review WARN)
     "classify_reject_count_hardcoded": (
@@ -230,8 +231,21 @@ KNOBS = {
         "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected[:1]]",
         BATCH),
     "classify_reject_only_first": (
-        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected))",
-        "                + \"\\n\".join(f\"  #{n} — {reason}\" for n, reason in rejected[:1]))",
+        "                + \"、\".join(f\"#{n}\" for n, _ in rejected)",
+        "                + \"、\".join(f\"#{n}\" for n, _ in rejected[:1])",
+        BATCH),
+    # 被拒那張退回「沒有車道」的第三種標籤 —— 原句是「每張票都標了快或慢」,
+    # 而硬規則那條路系統自己算得出是慢,吞掉就是 #121 那格
+    "classify_rejected_lane_dropped": (
+        'GRADE_REJECTED_SLOW = f"{GRADE_SLOW}(改不了)"',
+        'GRADE_REJECTED_SLOW = GRADE_REJECTED',
+        BATCH),
+    # 打錯字那張反過來被猜了一個車道 —— #108「不猜」那條
+    "classify_typo_lane_guessed": (
+        '            f"你填的分級只能是「快」或「慢」,你打的是 {override!r} —— 改一下再重跑",\n'
+        '            GRADE_REJECTED)',
+        '            f"你填的分級只能是「快」或「慢」,你打的是 {override!r} —— 改一下再重跑",\n'
+        '            GRADE_REJECTED_SLOW)',
         BATCH),
     # 左欄補寬回退成不補 —— client 那份清單左欄歪掉
     "classify_grade_cell_unpadded": (

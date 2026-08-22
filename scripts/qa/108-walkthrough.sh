@@ -113,7 +113,8 @@ echo "---- 1f 「改了但沒生效」不會靜靜發生:認不得的 override �
 for BAD in fast 快車道 Fast '快 ' ''; do
   echo "     override=[$BAD]"
   classify "$(printf '{"mode":"classify","tickets":[{"number":48,"coverage":[],"override":"%s"}]}' "$BAD")"
-  { [ "$CL_EXIT" != 0 ] && grep -q 'override 只能是' "$QA/out.txt" && ! grep -q '分級:' "$QA/out.txt"; }
+  { [ "$CL_EXIT" != 0 ] && grep -q '你填的分級只能是「快」或「慢」' "$QA/out.txt" \
+    && ! grep -q 'override' "$QA/out.txt" && ! grep -q '分級:' "$QA/out.txt"; }
   ok $? "override=[$BAD] 當場停、沒有印出貼票的那一行"
 done
 
@@ -169,7 +170,8 @@ ok $? "同向的 override 不擋"
 echo "---- 4c  硬規則票遇到認不得的 override 一樣當場停(那條路的結果剛好也是慢)"
 for BAD in fast ''; do
   classify "$(printf '{"mode":"classify","tickets":[{"number":49,"coverage":[],"judgement":true,"override":"%s"}]}' "$BAD")"
-  { [ "$CL_EXIT" != 0 ] && grep -q 'override 只能是' "$QA/out.txt"; }
+  { [ "$CL_EXIT" != 0 ] && grep -q '你填的分級只能是「快」或「慢」' "$QA/out.txt" \
+    && ! grep -q 'override' "$QA/out.txt"; }
   ok $? "judgement=true + override=[$BAD] 也停在 override 那關"
 done
 

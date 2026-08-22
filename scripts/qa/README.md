@@ -13,9 +13,15 @@
   應該跟 `validate.py` 對同一份 repo 給一樣的答案。
 - `97-mutate.py` —— mutation 台,`python scripts/qa/97-mutate.py --run`
   要整張表全部咬住(exit 0)。表上橫跨兩支檔:`scripts/validate.py`(UTF-8 pin
-  與分級行格式)與 `skills/build-batch/batch.py`(#118 分級被拒時整批照不照印)。
-  每個 knob 自己宣告要改哪一支,改壞之後跑的就是**那支檔自己的** `--self-check`
-  —— 拿其中一支量另一支,量到的是別的東西。
+  與分級行格式)與 `skills/build-batch/batch.py`(#118 分級被拒時整批照不照印、
+  #120 硬規則處置的散文 pin、#121 那幾句的措辭)。每個 knob 自己宣告要改哪一支
+  —— 拿其中一支量另一支,量到的是別的東西。`--run` 只答「有沒有被咬住」,
+  `python scripts/qa/97-mutate.py --attribute` 再答一次「是誰咬的」:knob 打在
+  哪支檔就該是那支檔紅,對不上代表那條 pin 其實沒在守,只是被另一支順便判紅。
+- `121-walkthrough.sh` —— #121 過關固化進 regression 的那支:
+  `bash scripts/qa/121-walkthrough.sh "$(mktemp -d)/qa121"`,exit 0 = 全格符合預期。
+  它量的是**措辭**:分級被擋下來的時候,client 讀完知不知道下一步按什麼。
+  訊息裡冒出 `judgement 旗標`、`override`、`票 body` 這種工程詞,這支就紅。
 - `107-mutate.py` —— 並行池與 judge 排序約束的 mutation 台,
   `python scripts/qa/107-mutate.py --run` 要整張表全部咬住(exit 0)。
 - `107-walkthrough.sh` —— #107 過關固化進 regression 的那支:
