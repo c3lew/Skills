@@ -1,0 +1,138 @@
+==== 寬尺自己的對照組(過度宣稱偵測器有沒有在動)====
+  [OK ] 預期響 實際響 — 判錯的代價由降級回路關住(標「快」的票對驗收清單有任何一條沒過就當場降級)
+  [OK ] 預期響 實際響 — **這條判準的天花板**:判錯必然會發生,判錯的代價由降級回路關住
+  [OK ] 預期響 實際響 — 實務上判錯的代價已經由降級回路一律接得住,不用擔心
+  [OK ] 預期不響 實際不響 — 就算出了,它接得住的是**有驗收項**的那半
+  [OK ] 預期不響 實際不響 — 而那個回路**還沒出貨**,repo 裡沒有任何一支 skill 實作它
+  [OK ] 預期不響 實際不響 — `coverage` 是空的那半一條驗收項都沒有,回路不會被觸發
+  6/6 條 fixture 對得上,尺可以用
+
+母體:D:\Self Project\Skills\.git\batch-worktrees\120/skills/*/SKILL.md,共 16 支
+
+==== 寬尺:哪幾支宣稱要走 batch.py 的 classify ====
+  skills/build-batch/SKILL.md  (19 行提到)
+      :28: 把純資料餵進 [`batch.py`](batch.py),名單的算與印都在裡面,不要自己心算或自己排版:
+      :31: python <skill dir>/batch.py <<'JSON'
+      :79: 沒有輸出(`grep` 回 exit 1,正常)就是乾淨的一批,直接往 §6.2。有輸出就把那幾行**原封不動**貼進 `worktrees`,票號由 [`batch.py`]
+      … 另外 16 行
+  skills/next/SKILL.md  (2 行提到)
+      :42: 「彼此不卡」不用眼睛看,也不要在這裡另寫一套 — 那份判斷就是 `/build-batch` §3 在跑的那支檔,`build-batch` skill 目錄底下的 `batc
+      :45: python <build-batch skill dir>/batch.py <<'JSON'
+  skills/slice-tickets/SKILL.md  (7 行提到)
+      :32: 每張票填完「覆蓋驗收項」之後,整批一起判快慢。判準是可計算的,所以由 `build-batch` skill 目錄底下的 `batch.py` 算與印 —— 不要自己判、也不要
+      :35: python <build-batch skill dir>/batch.py <<'JSON'
+      :36: {"mode": "classify",
+      … 另外 4 行
+
+==== 寬尺:那幾支的散文有沒有把 #120 三件事講出來 ====
+  檔案                                 (a)硬規則蓋過       (b)不准翻旗標       (c)天花板收邊
+  skills/build-batch/SKILL.md        沒有               沒有               沒有疑似過度宣稱
+  skills/next/SKILL.md               沒有               沒有               沒有疑似過度宣稱
+  skills/slice-tickets/SKILL.md      有                有                沒有疑似過度宣稱
+
+==== 寬尺:整個 repo 對降級回路的疑似過度宣稱(不限 caller)====
+  (一句都沒撈到)
+
+==== 寬尺:整個 repo 還有沒有『去改 judgement 旗標』的指路殘留 ====
+  [寬] docs/qa/108-report.md:43: stderr: 這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它,要改請先改 judgement 旗標
+  [寬] docs/qa/108-report.md:79: 2. **錯誤訊息自己把繞道寫出來**:「要改請先改 `judgement` 旗標」(`batch.py:540`)。agent 被 client 頂著,照字面把 `true` 改成 `false` 
+  [寬] docs/qa/108-walkthrough.md:90: `這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它,要改請先改 judgement 旗標`,
+  [寬] docs/qa/108-walkthrough.txt:317: 這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它,要改請先改 judgement 旗標
+  [寬] docs/qa/120-walkthrough.txt:3: + echo '==== AC1  batch.py 的錯誤訊息不再指路「改 judgement 旗標」'
+  [寬] docs/qa/120-walkthrough.txt:4: ==== AC1  batch.py 的錯誤訊息不再指路「改 judgement 旗標」
+  [寬] docs/qa/120-walkthrough.txt:82: AssertionError: 這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它,要改請先改 judgement 旗標
+  [寬] docs/qa/120-walkthrough.txt:93: + expect_gate red '錯誤訊息把「要改請先改 judgement 旗標」寫回去'
+  [寬] docs/qa/120-walkthrough.txt:94: + local want=red 'what=錯誤訊息把「要改請先改 judgement 旗標」寫回去'
+  [寬] docs/qa/120-walkthrough.txt:97: + echo 'RESULT PASS (錯誤訊息把「要改請先改 judgement 旗標」寫回去):預期守門紅、實際紅(batch=1 validate=0)'
+  [寬] docs/qa/120-walkthrough.txt:98: RESULT PASS (錯誤訊息把「要改請先改 judgement 旗標」寫回去):預期守門紅、實際紅(batch=1 validate=0)
+  [寬] docs/qa/120-walkthrough.txt:152: 759-     "agent 會把 judgement 改成 false 重跑,而拆掉的當下沒有任何東西會紅"),
+  [寬] docs/qa/120-walkthrough.txt:205: AssertionError: slice-tickets SKILL.md: 硬規則被 client 頂著時的處置那句不見了 —— 沒有它,agent 會把 judgement 改成 false 重
+  [寬] docs/qa/120-walkthrough.txt:223: AssertionError: slice-tickets SKILL.md: 硬規則被 client 頂著時的處置那句不見了 —— 沒有它,agent 會把 judgement 改成 false 重
+  [寬] docs/qa/120-walkthrough.txt:258: + echo '---- 2c-3  繞道方向 A:整段改寫成相反的話(「旗標改掉就好」)→ 該紅'
+  [寬] docs/qa/120-walkthrough.txt:259: ---- 2c-3  繞道方向 A:整段改寫成相反的話(「旗標改掉就好」)→ 該紅
+  [寬] docs/qa/120-walkthrough.txt:264: + grep -n 旗標改掉就好 /tmp/tmp.hRvhZG1u57/qa120b/case/skills/slice-tickets/SKILL.md
+  [寬] docs/qa/120-walkthrough.txt:265: 59:client 堅持的話,`judgement` 旗標改掉就好,改成 `false` 重跑一次就過了。為了讓 client 那句話成立而把 `true` 改成 `false`,拆掉的是這條線上唯一
+  [寬] docs/qa/120-walkthrough.txt:276: AssertionError: slice-tickets SKILL.md: 硬規則被 client 頂著時的處置那句不見了 —— 沒有它,agent 會把 judgement 改成 false 重
+  [寬] docs/qa/120-walkthrough.txt:400: AssertionError: ((re.compile('這批的快慢分級,有要改的嗎\\?'), 'slice-tickets SKILL.md: 印完分級清單問 client 點頭的那句不見了 —
+  [寬] scripts/qa/120-walkthrough.sh:80: echo "==== AC1  batch.py 的錯誤訊息不再指路「改 judgement 旗標」"
+  [寬] scripts/qa/120-walkthrough.sh:109: gate; expect_gate red "錯誤訊息把「要改請先改 judgement 旗標」寫回去"
+  [寬] scripts/qa/120-walkthrough.sh:146: echo "---- 2c-3  繞道方向 A:整段改寫成相反的話(「旗標改掉就好」)→ 該紅"
+  [寬] scripts/qa/120-walkthrough.sh:152: new = "client 堅持的話,`judgement` 旗標改掉就好,改成 `false` 重跑一次就過了。"
+  [寬] scripts/qa/120-walkthrough.sh:156: grep -n '旗標改掉就好' "$QA/case/$SLICE"
+  [寬] scripts/qa/120-wide.py:63: r"要改請先改.{0,10}judgement"
+  [寬] scripts/qa/120-wide.py:66: r"|旗標改掉"
+  [寬] scripts/qa/120-wide.py:234: print("\n==== 寬尺:整個 repo 還有沒有『去改 judgement 旗標』的指路殘留 ====")
+  [寬] scripts/qa/97-mutate.py:152: '                "驗收清單第 4 條就是它,要改請先改 judgement 旗標")',
+  [寬] scripts/qa/97-mutate.py:165: '     "agent 會把 judgement 改成 false 重跑,而拆掉的當下沒有任何東西會紅"),\n',
+  [寬] skills/build-batch/batch.py:756: # judgement 改成 false 重跑,一路綠。
+  [寬] skills/build-batch/batch.py:759: "agent 會把 judgement 改成 false 重跑,而拆掉的當下沒有任何東西會紅"),
+  [寬] skills/build-batch/batch.py:1503: # #120:訊息本身不准把繞道寫出來。原本那版寫「要改請先改 judgement 旗標」
+
+==== 受測物黑箱:兩支守門現在的臉色 ====
+  skills/build-batch/batch.py --self-check    -> exit 0  OK batch self-check green
+  scripts/validate.py --self-check -> exit 0  OK validate self-check green
+
+==== 受測物黑箱:它的母體到底有幾支檔(掏空反推)====
+  對照組(沒掏空任何檔):exit 0
+  掏空 skills/build/SKILL.md              -> exit 0  [看不到]
+  掏空 skills/build-batch/SKILL.md        -> exit 1  [看得到]
+  掏空 skills/client-demo/SKILL.md        -> exit 0  [看不到]
+  掏空 skills/close/SKILL.md              -> exit 0  [看不到]
+  掏空 skills/implement/SKILL.md          -> exit 0  [看不到]
+  掏空 skills/maintain/SKILL.md           -> exit 0  [看不到]
+  掏空 skills/next/SKILL.md               -> exit 0  [看不到]
+  掏空 skills/pm-intake/SKILL.md          -> exit 0  [看不到]
+  掏空 skills/qa/SKILL.md                 -> exit 0  [看不到]
+  掏空 skills/retro/SKILL.md              -> exit 0  [看不到]
+  掏空 skills/slice-tickets/SKILL.md      -> exit 1  [看得到]
+  掏空 skills/to-spec/SKILL.md            -> exit 0  [看不到]
+  掏空 skills/to-tickets/SKILL.md         -> exit 0  [看不到]
+  掏空 skills/tracking-viz/SKILL.md       -> exit 0  [看不到]
+  掏空 skills/triage/SKILL.md             -> exit 0  [看不到]
+  掏空 skills/ui-mockup/SKILL.md          -> exit 0  [看不到]
+
+  守門看得到的:2 支 ['skills/build-batch/SKILL.md', 'skills/slice-tickets/SKILL.md']
+  守門看不到的:14 支
+
+==== 差額 1:寬尺多撈、受測物放行的(逐筆判讀)====
+寬尺多撈 37 筆 —— 每一筆都要在報告裡判讀:
+  [多撈] skills/build-batch/SKILL.md  (a) 沒有任何一句說硬規則蓋過 client 的 override   (守門的母體裡)
+  [多撈] skills/build-batch/SKILL.md  (b) 沒有任何一句叫 agent 不要自己翻 judgement 旗標   (守門的母體裡)
+  [多撈] skills/next/SKILL.md  (a) 沒有任何一句說硬規則蓋過 client 的 override   (守門根本沒看這支)
+  [多撈] skills/next/SKILL.md  (b) 沒有任何一句叫 agent 不要自己翻 judgement 旗標   (守門根本沒看這支)
+  [多撈] docs/qa/108-report.md:43  指路殘留:stderr: 這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它,要改請先改 judg   (守門沒有掃全 repo)
+  [多撈] docs/qa/108-report.md:79  指路殘留:2. **錯誤訊息自己把繞道寫出來**:「要改請先改 `judgement` 旗標」(`batch.py:540`)。a   (守門沒有掃全 repo)
+  [多撈] docs/qa/108-walkthrough.md:90  指路殘留:`這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它,要改請先改 judgement 旗   (守門沒有掃全 repo)
+  [多撈] docs/qa/108-walkthrough.txt:317  指路殘留:這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它,要改請先改 judgement 旗標   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:3  指路殘留:+ echo '==== AC1  batch.py 的錯誤訊息不再指路「改 judgement 旗標」'   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:4  指路殘留:==== AC1  batch.py 的錯誤訊息不再指路「改 judgement 旗標」   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:82  指路殘留:AssertionError: 這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它,要改   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:93  指路殘留:+ expect_gate red '錯誤訊息把「要改請先改 judgement 旗標」寫回去'   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:94  指路殘留:+ local want=red 'what=錯誤訊息把「要改請先改 judgement 旗標」寫回去'   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:97  指路殘留:+ echo 'RESULT PASS (錯誤訊息把「要改請先改 judgement 旗標」寫回去):預期守門紅、實際紅   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:98  指路殘留:RESULT PASS (錯誤訊息把「要改請先改 judgement 旗標」寫回去):預期守門紅、實際紅(batch=1   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:152  指路殘留:759-     "agent 會把 judgement 改成 false 重跑,而拆掉的當下沒有任何東西會紅"),   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:205  指路殘留:AssertionError: slice-tickets SKILL.md: 硬規則被 client 頂著時的處置那句   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:223  指路殘留:AssertionError: slice-tickets SKILL.md: 硬規則被 client 頂著時的處置那句   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:258  指路殘留:+ echo '---- 2c-3  繞道方向 A:整段改寫成相反的話(「旗標改掉就好」)→ 該紅'   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:259  指路殘留:---- 2c-3  繞道方向 A:整段改寫成相反的話(「旗標改掉就好」)→ 該紅   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:264  指路殘留:+ grep -n 旗標改掉就好 /tmp/tmp.hRvhZG1u57/qa120b/case/skills/slic   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:265  指路殘留:59:client 堅持的話,`judgement` 旗標改掉就好,改成 `false` 重跑一次就過了。為了讓 cli   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:276  指路殘留:AssertionError: slice-tickets SKILL.md: 硬規則被 client 頂著時的處置那句   (守門沒有掃全 repo)
+  [多撈] docs/qa/120-walkthrough.txt:400  指路殘留:AssertionError: ((re.compile('這批的快慢分級,有要改的嗎\\?'), 'slice-tic   (守門沒有掃全 repo)
+  [多撈] scripts/qa/120-walkthrough.sh:80  指路殘留:echo "==== AC1  batch.py 的錯誤訊息不再指路「改 judgement 旗標」"   (守門沒有掃全 repo)
+  [多撈] scripts/qa/120-walkthrough.sh:109  指路殘留:gate; expect_gate red "錯誤訊息把「要改請先改 judgement 旗標」寫回去"   (守門沒有掃全 repo)
+  [多撈] scripts/qa/120-walkthrough.sh:146  指路殘留:echo "---- 2c-3  繞道方向 A:整段改寫成相反的話(「旗標改掉就好」)→ 該紅"   (守門沒有掃全 repo)
+  [多撈] scripts/qa/120-walkthrough.sh:152  指路殘留:new = "client 堅持的話,`judgement` 旗標改掉就好,改成 `false` 重跑一次就過了。"   (守門沒有掃全 repo)
+  [多撈] scripts/qa/120-walkthrough.sh:156  指路殘留:grep -n '旗標改掉就好' "$QA/case/$SLICE"   (守門沒有掃全 repo)
+  [多撈] scripts/qa/120-wide.py:63  指路殘留:r"要改請先改.{0,10}judgement"   (守門沒有掃全 repo)
+  [多撈] scripts/qa/120-wide.py:66  指路殘留:r"|旗標改掉"   (守門沒有掃全 repo)
+  [多撈] scripts/qa/120-wide.py:234  指路殘留:print("\n==== 寬尺:整個 repo 還有沒有『去改 judgement 旗標』的指路殘留 ====")   (守門沒有掃全 repo)
+  [多撈] scripts/qa/97-mutate.py:152  指路殘留:'                "驗收清單第 4 條就是它,要改請先改 judgement 旗標")',   (守門沒有掃全 repo)
+  [多撈] scripts/qa/97-mutate.py:165  指路殘留:'     "agent 會把 judgement 改成 false 重跑,而拆掉的當下沒有任何東西會紅"),\n',   (守門沒有掃全 repo)
+  [多撈] skills/build-batch/batch.py:756  指路殘留:# judgement 改成 false 重跑,一路綠。   (守門沒有掃全 repo)
+  [多撈] skills/build-batch/batch.py:759  指路殘留:"agent 會把 judgement 改成 false 重跑,而拆掉的當下沒有任何東西會紅"),   (守門沒有掃全 repo)
+  [多撈] skills/build-batch/batch.py:1503  指路殘留:# #120:訊息本身不准把繞道寫出來。原本那版寫「要改請先改 judgement 旗標」   (守門沒有掃全 repo)
+
+==== 差額 2:受測物咬到、寬尺沒撈到的 ====
+  (無 —— 守門全綠,寬尺對出貨檔也沒有抱怨)

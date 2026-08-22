@@ -72,7 +72,7 @@ echo "==== AC1  每張票都標了快或慢加一句理由,整批一次列給我
 echo "==================================================================="
 
 echo "---- 1a  出貨的 skills/slice-tickets/SKILL.md §4 原文(下一個 agent 照著做的那份)"
-sed -n '30,62p' "$ROOT/$SLICE" | cat -n
+awk '/^## 4\. /,/^## 5\. /' "$ROOT/$SLICE" | head -n -2 | cat -n
 
 echo "---- 1b  照抄 §4 那個指令跑一次 —— placeholder 換成安裝根目錄,其餘一個字不改"
 sed -n '35,41p' "$ROOT/$SLICE" | sed 's#<build-batch skill dir>#skills/build-batch#' > "$QA/verbatim.sh"
@@ -251,8 +251,8 @@ echo "==================================================================="
 
 echo "---- 5a  三段都在,附行號"
 grep -n -e 'skill 目錄底下的 `batch.py`' -e "<build-batch skill dir>/batch.py" -e '不在 → 這批整批判慢車道' -e '判錯必然會發生' "$ROOT/$SLICE"
-echo "---- 5b  點頭那兩句(否決權怎麼兌現)也在"
-grep -n -e '這批的快慢分級,有要改的嗎?' -e '照你說的改,改完的才是寫進票裡的那個' "$ROOT/$SLICE"
+echo "---- 5b  點頭那兩句(否決權怎麼兌現)+ #120 補的兩句也在"
+grep -n -e '這批的快慢分級,有要改的嗎?' -e '照你說的改,改完的才是寫進票裡的那個' -e '不要自己去改 `judgement` 旗標讓它過' -e '接得住的是..有驗收項..的那半' "$ROOT/$SLICE"
 
 echo "---- 5c  對真檔改壞、跑守門、還原 —— 全部在副本上做"
 echo "     5c-0  原封不動 → 該綠"
@@ -302,6 +302,30 @@ assert old in t
 p.write_text(t.replace(old, "照你說的改", 1), encoding="utf-8")
 PY
 gate; expect_gate red "以 client 改的為準那句不見"
+
+echo "     5c-4b 拿掉硬規則被 client 頂著時的處置(#120)→ 該紅"
+fresh
+python - "$QA/case/$SLICE" <<'PY'
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]); t = p.read_text(encoding="utf-8")
+old = "不要自己去改 `judgement` 旗標讓它過"
+assert old in t
+p.write_text(t.replace(old, "不要亂改", 1), encoding="utf-8")
+PY
+gate; expect_gate red "硬規則遇到 client 想改快的處置不見"
+grep -q '硬規則被 client 頂著' "$QA/g-batch.txt"; ok $? "紅在對的地方(batch 的散文 pin,不是別條順便)"
+
+echo "     5c-4c 天花板退回「降級回路全部關住」的過度宣稱(#120)→ 該紅"
+fresh
+python - "$QA/case/$SLICE" <<'PY'
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]); t = p.read_text(encoding="utf-8")
+old = "接得住的是**有驗收項**的那半"
+assert old in t
+p.write_text(t.replace(old, "把判錯的代價整個關住", 1), encoding="utf-8")
+PY
+gate; expect_gate red "降級回路只接得住一半那句不見"
+grep -q '只接得住一半' "$QA/g-batch.txt"; ok $? "紅在對的地方(天花板那條 pin)"
 
 echo "     5c-5  分級行示範改壞(全形冒號那一族:改成「中」)→ 該紅"
 fresh
