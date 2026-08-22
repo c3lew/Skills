@@ -1,0 +1,54 @@
+# #107 AC3 序列對照組 — 同一份 regression suite,一條一條依序跑
+# 對照:並行 lane 內的那次跑(docs/qa/107-regression.txt)
+# ran: 2026-08-22T06:35:44Z
+
+==== python scripts/validate.py
+OK validate green
+[exit 0]
+
+==== python scripts/validate.py --self-check
+OK validate self-check green
+[exit 0]
+
+==== python scripts/batch.py --self-check
+OK batch self-check green
+OK §8a/§8c conflict scenarios green
+[exit 0]
+
+==== python skills/build-batch/batch.py --self-check
+OK batch self-check green
+[exit 0]
+
+==== python scripts/install.py --self-check
+[fixture] FAIL skills/bad: missing SKILL.md
+OK install self-check green
+[exit 0]
+
+==== python scripts/hooks/triage-to-maintain.py --self-check
+OK triage-to-maintain self-check green
+[exit 0]
+
+==== python scripts/qa/96-newrule-probe.py .
+OK 新規則下全綠
+
+不合 0
+[exit 0]
+
+==== python scripts/qa/97-mutate.py --run
+咬住  stdin_by_text          self-check exit=1
+咬住  stdin_never            self-check exit=1
+咬住  underscore_filter      self-check exit=1
+咬住  unreadable_skip        self-check exit=1
+
+15/15 個 knob 被 self-check 咬住
+[exit 0]
+
+==== python scripts/qa/107-mutate.py --run
+咬住  ordering_never_checked self-check exit=1
+咬住  pool_section_optional  self-check exit=1
+咬住  trigger_by_mention     self-check exit=1
+咬住  trigger_off            self-check exit=1
+
+8/8 個 knob 被 self-check 咬住
+[exit 0]
+

@@ -1,0 +1,225 @@
+#107 QA regression lane — transcript
+repo: D:/Self Project/Skills   branch: build/107   HEAD: 97bf00d
+修前對照基準 (PREV): 84ab07d
+日期: 2026-08-22 06:29 UTC
+
+########## 1. 既有 regression suite ##########
+
+$ python scripts/validate.py
+OK validate green
+[exit 0]
+
+$ python scripts/validate.py --self-check
+OK validate self-check green
+[exit 0]
+
+$ python scripts/batch.py --self-check
+OK batch self-check green
+OK §8a/§8c conflict scenarios green
+[exit 0]
+
+$ python skills/build-batch/batch.py --self-check
+OK batch self-check green
+[exit 0]
+
+$ python scripts/install.py --self-check
+[fixture] FAIL skills/bad: missing SKILL.md
+OK install self-check green
+[exit 0]
+
+$ python scripts/hooks/triage-to-maintain.py --self-check
+OK triage-to-maintain self-check green
+[exit 0]
+
+$ python scripts/qa/96-newrule-probe.py .
+OK 新規則下全綠
+
+不合 0
+[exit 0]
+
+$ python scripts/qa/97-mutate.py --run
+咬住  buffer_exempt          self-check exit=1
+咬住  decode_error_uncaught  self-check exit=1
+咬住  filter_off             self-check exit=1
+咬住  first_main_only        self-check exit=1
+咬住  guard_off              self-check exit=1
+咬住  main_body_only         self-check exit=1
+咬住  no_norm                self-check exit=1
+咬住  pin_anywhere_in_file   self-check exit=1
+咬住  pin_anywhere_in_main   self-check exit=1
+咬住  print_exempt           self-check exit=1
+咬住  stdin_always           self-check exit=1
+咬住  stdin_by_text          self-check exit=1
+咬住  stdin_never            self-check exit=1
+咬住  underscore_filter      self-check exit=1
+咬住  unreadable_skip        self-check exit=1
+
+15/15 個 knob 被 self-check 咬住
+[exit 0]
+
+$ python scripts/qa/107-mutate.py --run
+咬住  extra_lane_ok          self-check exit=1
+咬住  lane_cell_any_bold     self-check exit=1
+咬住  missing_lane_ok        self-check exit=1
+咬住  ordering_by_keyword    self-check exit=1
+咬住  ordering_never_checked self-check exit=1
+咬住  pool_section_optional  self-check exit=1
+咬住  trigger_by_mention     self-check exit=1
+咬住  trigger_off            self-check exit=1
+
+8/8 個 knob 被 self-check 咬住
+[exit 0]
+
+########## 2. 修前對照 (84ab07d vs HEAD) ##########
+
+$ python scripts/qa/107-prevdiff.py
+修前 = 84ab07d(#107 動判斷邏輯之前的最後一個 commit)
+
+==== (a) 真實母體 —— repo 裡 16 支 SKILL.md ====
+項目                          修後    修前      判定
+build                       綠     綠     
+build-batch                 綠     綠     
+client-demo                 綠     綠     
+close                       綠     綠     
+implement                   綠     綠     
+maintain                    綠     綠     
+next                        綠     綠     
+pm-intake                   綠     綠     
+qa                          綠     綠     
+retro                       綠     綠     
+slice-tickets               綠     綠     
+to-spec                     綠     綠     
+to-tickets                  綠     綠     
+tracking-viz                綠     綠     
+triage                      綠     綠     
+ui-mockup                   綠     綠     
+
+==== (b) fixture 母體 —— 12 格 ====
+項目                          修後    修前      QA 期望   判定
+g01-pool-full               綠     綠       綠       OK
+g02-lane-order-shuffled     綠     綠       綠       OK
+g03-mentions-judge-only     綠     綠       綠       OK
+g04-no-judge-at-all         綠     綠       綠       OK
+g05-pool-plus-prose         綠     綠       綠       OK
+g06-heading-decorated       綠     綠       綠       OK
+r01-judge-in-pool           紅     綠       紅       OK  差額 修前綠→修後紅
+r02-missing-lane            紅     綠       紅       OK  差額 修前綠→修後紅
+r03-ordering-flipped        紅     綠       紅       OK  差額 修前綠→修後紅
+r04-ordering-negated        紅     綠       紅       OK  差額 修前綠→修後紅
+r05-no-pool-section         紅     綠       紅       OK  差額 修前綠→修後紅
+r06-no-ordering-line        紅     綠       紅       OK  差額 修前綠→修後紅
+
+==== 差額 6 筆 ====
+  [fixture] r01-judge-in-pool: 修前綠 → 修後紅
+      skills/r01-judge-in-pool/SKILL.md: 並行池 lanes are ['regression', 'walkthrough', 'code-review', 'judge'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+  [fixture] r02-missing-lane: 修前綠 → 修後紅
+      skills/r02-missing-lane/SKILL.md: 並行池 lanes are ['regression', 'walkthrough'] — must be exactly ['regression', 'walkthrough', 'code-review'] (order is free, the set is not); a judge lane in that pool reads an empty a11y snapshot and passes every criterion, which looks identical to a real pass
+  [fixture] r03-ordering-flipped: 修前綠 → 修後紅
+      skills/r03-ordering-flipped/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written, not inferred
+  [fixture] r04-ordering-negated: 修前綠 → 修後紅
+      skills/r04-ordering-negated/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written, not inferred
+  [fixture] r05-no-pool-section: 修前綠 → 修後紅
+      skills/r05-no-pool-section/SKILL.md: runs an 獨立 judge but declares no 並行池 section — the three lanes have to be written down where the next agent reads them
+  [fixture] r06-no-ordering-line: 修前綠 → 修後紅
+      skills/r06-no-ordering-line/SKILL.md: never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written, not inferred
+
+母體 28,不合 0
+[exit 0]
+
+########## 3. 第二把尺 — 真實 repo ##########
+
+$ python scripts/qa/107-wide.py .
+==== 寬尺母體:正文出現 `judge` 的 SKILL.md ====
+  skills/build-batch/SKILL.md
+      並行池 section:無
+      抓到的 lane:—
+      排序句(寬比對):無
+      寬尺判定:紅
+  skills/qa/SKILL.md
+      並行池 section:有
+      抓到的 lane:['regression', 'walkthrough', 'code-review']
+      排序句(寬比對):有
+      寬尺判定:綠
+
+寬尺母體 2 支 SKILL.md;寬尺判紅 1 支;受測物判紅 0 支
+
+==== 差額(寬尺 vs 受測物)—— 每一筆要人判讀 ====
+  skills/build-batch/SKILL.md:寬尺判紅,守門判綠 —— 寬尺抓到、守門放行
+  差額 1 筆
+[exit 0]
+
+########## 3b. 第二把尺 — 跑在 107-prevdiff 的 fixture 母體上
+(真實 repo 只有 2 支 SKILL.md 提到 judge,寬尺咬不到東西;把 prevdiff 的 12 格種出來再跑一次)
+
+$ python scripts/qa/107-wide.py C:/Users/user/AppData/Local/Temp/claude/D--Self-Project-Skills/fed5b271-899f-4250-8d58-5b3a1cff06fd/scratchpad/widepop
+==== 寬尺母體:正文出現 `judge` 的 SKILL.md ====
+  skills/g01-pool-full/SKILL.md
+      並行池 section:有
+      抓到的 lane:['regression', 'walkthrough', 'code-review']
+      排序句(寬比對):有
+      寬尺判定:綠
+  skills/g02-lane-order-shuffled/SKILL.md
+      並行池 section:有
+      抓到的 lane:['code-review', 'regression', 'walkthrough']
+      排序句(寬比對):有
+      寬尺判定:綠
+  skills/g03-mentions-judge-only/SKILL.md
+      並行池 section:無
+      抓到的 lane:—
+      排序句(寬比對):無
+      寬尺判定:紅
+  skills/g04-no-judge-at-all/SKILL.md
+      並行池 section:無
+      抓到的 lane:—
+      排序句(寬比對):無
+      寬尺判定:紅
+  skills/g05-pool-plus-prose/SKILL.md
+      並行池 section:有
+      抓到的 lane:['regression', 'walkthrough', 'code-review']
+      排序句(寬比對):有
+      寬尺判定:綠
+  skills/g06-heading-decorated/SKILL.md
+      並行池 section:有
+      抓到的 lane:['walkthrough', 'regression', 'code-review']
+      排序句(寬比對):有
+      寬尺判定:綠
+  skills/r01-judge-in-pool/SKILL.md
+      並行池 section:有
+      抓到的 lane:['regression', 'walkthrough', 'code-review', 'judge']
+      排序句(寬比對):有
+      寬尺判定:紅
+  skills/r02-missing-lane/SKILL.md
+      並行池 section:有
+      抓到的 lane:['regression', 'walkthrough']
+      排序句(寬比對):有
+      寬尺判定:紅
+  skills/r03-ordering-flipped/SKILL.md
+      並行池 section:有
+      抓到的 lane:['regression', 'walkthrough', 'code-review']
+      排序句(寬比對):無
+      寬尺判定:紅
+  skills/r04-ordering-negated/SKILL.md
+      並行池 section:有
+      抓到的 lane:['regression', 'walkthrough', 'code-review']
+      排序句(寬比對):有
+      寬尺判定:綠
+  skills/r05-no-pool-section/SKILL.md
+      並行池 section:無
+      抓到的 lane:—
+      排序句(寬比對):有
+      寬尺判定:紅
+  skills/r06-no-ordering-line/SKILL.md
+      並行池 section:有
+      抓到的 lane:['regression', 'walkthrough', 'code-review']
+      排序句(寬比對):無
+      寬尺判定:紅
+
+寬尺母體 12 支 SKILL.md;寬尺判紅 7 支;受測物判紅 6 支
+
+==== 差額(寬尺 vs 受測物)—— 每一筆要人判讀 ====
+  skills/g03-mentions-judge-only/SKILL.md:寬尺判紅,守門判綠 —— 寬尺抓到、守門放行
+  skills/g04-no-judge-at-all/SKILL.md:寬尺判紅,守門判綠 —— 寬尺抓到、守門放行
+  skills/r04-ordering-negated/SKILL.md:寬尺判綠,守門判紅 —— 守門抓到、寬尺沒抓
+      守門說:never states that the 獨立 judge runs walkthrough…之後 — the ordering constraint is load-bearing, so it is written, not inferred
+  差額 3 筆
+[exit 0]
