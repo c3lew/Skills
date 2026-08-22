@@ -12,52 +12,52 @@
 + CL_EXIT=1
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  慢            #47 a — 覆蓋 1 條驗收項
-  慢            #48 b — 你當場改成「慢」
+  慢          #47 a — 覆蓋 1 條驗收項
+  慢          #48 b — 你當場改成「慢」
   慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #49 c
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-停在這裡 —— #49 的分級改不了,上面那份清單寫了要改什麼
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
+停在這裡 —— #49 的分級改不了,理由跟著各自那一列
 + echo 'exit 1'
 exit 1
 ++ rows_n
-++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 ++ paste_n
-++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + echo '     分級列 3 行 / 票數 3;貼票行 0 行'
      分級列 3 行 / 票數 3;貼票行 0 行
 ++ rows_n
-++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + '[' 3 = 3 ']'
-+ grep -q '^  慢 *#47 a — 覆蓋 1 條驗收項$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  慢 *#48 b — 你當場改成「慢」$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q '^  慢 *#47 a — 覆蓋 1 條驗收項$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  慢 *#48 b — 你當場改成「慢」$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 '三行分級都印出來,client 同一輪改的 #48 沒有跟著消失'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (三行分級都印出來,client 同一輪改的 #48 沒有跟著消失)'
 RESULT PASS (三行分級都印出來,client 同一輪改的 #48 沒有跟著消失)
 + echo '---- 1b  被拒的那張自己標出來:是哪一張 + 為什麼拒'
 ---- 1b  被拒的那張自己標出來:是哪一張 + 為什麼拒
-+ grep -nE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-2:  慢            #47 a — 覆蓋 1 條驗收項
-3:  慢            #48 b — 你當場改成「慢」
++ grep -nE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+' /tmp/tmp.f1H06P8Quz/qa118/out.txt
+2:  慢          #47 a — 覆蓋 1 條驗收項
+3:  慢          #48 b — 你當場改成「慢」
 4:  慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
-+ grep -q '^  慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q 改不成快 /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q '^  慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢' /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q 改不成快 /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 '被拒那列標成「慢(改不了)」—— 車道照印、指名 #49、帶著理由'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (被拒那列標成「慢(改不了)」—— 車道照印、指名 #49、帶著理由)'
 RESULT PASS (被拒那列標成「慢(改不了)」—— 車道照印、指名 #49、帶著理由)
 + echo '---- 1c  標題自己報張數,而且報得出「其中幾張改不了」'
 ---- 1c  標題自己報張數,而且報得出「其中幾張改不了」
-+ grep -nE '^分級\(' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -nE '^分級\(' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 1:分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-+ grep -q '^分級(3 張,其中 1 張改不了)' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q '^分級(3 張,其中 1 張改不了)' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 '一份清單、標題自己數 3 張其中 1 張改不了'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (一份清單、標題自己數 3 張其中 1 張改不了)'
@@ -70,26 +70,26 @@ RESULT PASS (一份清單、標題自己數 3 張其中 1 張改不了)
 + CL_EXIT=1
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
   慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
-  慢            #47 a — 覆蓋 1 條驗收項
-  慢            #48 b — 你當場改成「慢」
+  慢          #47 a — 覆蓋 1 條驗收項
+  慢          #48 b — 你當場改成「慢」
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #49 c
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-停在這裡 —— #49 的分級改不了,上面那份清單寫了要改什麼
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
+停在這裡 —— #49 的分級改不了,理由跟著各自那一列
 + echo 'exit 1'
 exit 1
 ++ rows_n
-++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + '[' 3 = 3 ']'
-++ grep -cE '^  慢 +#(47|48)' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  慢 +#(47|48)' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + '[' 2 = 2 ']'
-+ grep -q '^  慢(改不了)  #49' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q '^  慢(改不了)  #49' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 '被拒在頭:3 行照印,其餘兩張都在'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (被拒在頭:3 行照印,其餘兩張都在)'
@@ -102,26 +102,26 @@ RESULT PASS (被拒在頭:3 行照印,其餘兩張都在)
 + CL_EXIT=1
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  慢            #47 a — 覆蓋 1 條驗收項
+  慢          #47 a — 覆蓋 1 條驗收項
   慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
-  慢            #48 b — 你當場改成「慢」
+  慢          #48 b — 你當場改成「慢」
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #49 c
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-停在這裡 —— #49 的分級改不了,上面那份清單寫了要改什麼
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
+停在這裡 —— #49 的分級改不了,理由跟著各自那一列
 + echo 'exit 1'
 exit 1
 ++ rows_n
-++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + '[' 3 = 3 ']'
-++ grep -cE '^  慢 +#(47|48)' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  慢 +#(47|48)' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + '[' 2 = 2 ']'
-+ grep -q '^  慢(改不了)  #49' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q '^  慢(改不了)  #49' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 '被拒在中間:3 行照印,其餘兩張都在'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (被拒在中間:3 行照印,其餘兩張都在)'
@@ -134,28 +134,28 @@ RESULT PASS (被拒在中間:3 行照印,其餘兩張都在)
 + CL_EXIT=1
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張,其中 2 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  慢            #47 a — 覆蓋 1 條驗收項
+  慢          #47 a — 覆蓋 1 條驗收項
   慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
-  改不了        #50 d — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
+  改不了      #50 d — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #49 c
   #50 d
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-停在這裡 —— #49、#50 的分級改不了,上面那份清單寫了要改什麼
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
+停在這裡 —— #49、#50 的分級改不了,理由跟著各自那一列
 + echo 'exit 1'
 exit 1
 ++ rows_n
-++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + '[' 3 = 3 ']'
-+ grep -q '^分級(3 張,其中 2 張改不了)' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  慢(改不了)  #49' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  改不了 *#50' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  慢 *#47' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q '^分級(3 張,其中 2 張改不了)' /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  慢(改不了)  #49' /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  改不了 *#50' /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  慢 *#47' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 '兩張被拒都各自標出來(硬規則那張連車道一起),沒被拒的 #47 照印'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (兩張被拒都各自標出來(硬規則那張連車道一起),沒被拒的 #47 照印)'
@@ -168,25 +168,25 @@ RESULT PASS (兩張被拒都各自標出來(硬規則那張連車道一起),沒�
 + CL_EXIT=1
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  慢            #47 a — 覆蓋 1 條驗收項
-  慢            #48 b — 你當場改成「慢」
+  慢          #47 a — 覆蓋 1 條驗收項
+  慢          #48 b — 你當場改成「慢」
   慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #49 c
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-停在這裡 —— #49 的分級改不了,上面那份清單寫了要改什麼
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
+停在這裡 —— #49 的分級改不了,理由跟著各自那一列
 + echo 'exit 1'
 exit 1
-+ grep -nE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-2:  慢            #47 a — 覆蓋 1 條驗收項
-3:  慢            #48 b — 你當場改成「慢」
++ grep -nE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+' /tmp/tmp.f1H06P8Quz/qa118/out.txt
+2:  慢          #47 a — 覆蓋 1 條驗收項
+3:  慢          #48 b — 你當場改成「慢」
 4:  慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
-++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + '[' 3 = 3 ']'
 + ok 0 '3 行分級,每行都帶一句理由'
 + '[' 0 = 0 ']'
@@ -200,10 +200,10 @@ RESULT PASS (3 行分級,每行都帶一句理由)
 ===================================================================
 + echo '---- 2a  stderr 裡有 #49'
 ---- 2a  stderr 裡有 #49
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-停在這裡 —— #49 的分級改不了,上面那份清單寫了要改什麼
-+ grep -q '#49' /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-+ grep -q 這張 /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
+停在這裡 —— #49 的分級改不了,理由跟著各自那一列
++ grep -q '#49' /tmp/tmp.f1H06P8Quz/qa118/err.txt
++ grep -q 這張 /tmp/tmp.f1H06P8Quz/qa118/err.txt
 + ok 0 'stderr 指名 #49,沒有出廠時那句沒有票號的「這張」'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (stderr 指名 #49,沒有出廠時那句沒有票號的「這張」)'
@@ -216,24 +216,24 @@ RESULT PASS (stderr 指名 #49,沒有出廠時那句沒有票號的「這張」)
 + CL_EXIT=1
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張,其中 2 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  慢            #47 a — 覆蓋 1 條驗收項
+  慢          #47 a — 覆蓋 1 條驗收項
   慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
-  改不了        #50 d — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
+  改不了      #50 d — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #49 c
   #50 d
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-停在這裡 —— #49、#50 的分級改不了,上面那份清單寫了要改什麼
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
+停在這裡 —— #49、#50 的分級改不了,理由跟著各自那一列
 + echo 'exit 1'
 exit 1
-+ grep -q '#49' /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-+ grep -q '#50' /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-+ grep -q '停在這裡 —— #49、#50 的分級改不了' /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
++ grep -q '#49' /tmp/tmp.f1H06P8Quz/qa118/err.txt
++ grep -q '#50' /tmp/tmp.f1H06P8Quz/qa118/err.txt
++ grep -q '停在這裡 —— #49、#50 的分級改不了' /tmp/tmp.f1H06P8Quz/qa118/err.txt
 + ok 0 兩張被拒,兩個票號都指名、順序照原批
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (兩張被拒,兩個票號都指名、順序照原批)'
@@ -252,18 +252,18 @@ RESULT PASS (兩張被拒,兩個票號都指名、順序照原批)
 + CL_EXIT=1
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  慢            #47 a — 覆蓋 1 條驗收項
-  慢            #48 b — 你當場改成「慢」
+  慢          #47 a — 覆蓋 1 條驗收項
+  慢          #48 b — 你當場改成「慢」
   慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #49 c
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-停在這裡 —— #49 的分級改不了,上面那份清單寫了要改什麼
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
+停在這裡 —— #49 的分級改不了,理由跟著各自那一列
 + echo 'exit 1'
 exit 1
 + '[' 1 '!=' 0 ']'
@@ -279,7 +279,7 @@ RESULT PASS (有被拒的批次 exit=1(非 0))
 + CL_EXIT=0
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張)— 標「慢」的會演給你看,標「快」的不會:
   慢  #47 a — 覆蓋 1 條驗收項
   慢  #48 b — 你當場改成「慢」
@@ -291,7 +291,7 @@ RESULT PASS (有被拒的批次 exit=1(非 0))
   #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
 + echo 'exit 0'
 exit 0
 + '[' 0 = 0 ']'
@@ -313,39 +313,39 @@ RESULT PASS (同一批把那張的 override 拿掉,exit=0)
 + CL_EXIT=1
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
-  慢            #47 a — 覆蓋 1 條驗收項
-  慢            #48 b — 你當場改成「慢」
+  慢          #47 a — 覆蓋 1 條驗收項
+  慢          #48 b — 你當場改成「慢」
   慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #49 c
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
-停在這裡 —— #49 的分級改不了,上面那份清單寫了要改什麼
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
+停在這裡 —— #49 的分級改不了,理由跟著各自那一列
 + echo 'exit 1'
 exit 1
 ++ paste_n
-++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + echo '     貼票行 0 行'
      貼票行 0 行
 ++ paste_n
-++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + '[' 0 = 0 ']'
-+ grep -q 點頭之後 /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q 點頭之後 /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 '貼票那段整段不印,agent 沒有東西可以照著貼'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (貼票那段整段不印,agent 沒有東西可以照著貼)'
 RESULT PASS (貼票那段整段不印,agent 沒有東西可以照著貼)
 + echo '---- 4b  而且明確印出「這批還不能貼」+ 是哪一張'
 ---- 4b  而且明確印出「這批還不能貼」+ 是哪一張
-+ grep -n -e 這批還不能貼 -e '^  #49 c$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -n -e 這批還不能貼 -e '^  #49 c$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 6:這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
 7:  #49 c
-+ grep -q 這批還不能貼 /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  #49 c$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q 這批還不能貼 /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  #49 c$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 印了「這批還不能貼」,並列出是哪一張
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (印了「這批還不能貼」,並列出是哪一張)'
@@ -358,7 +358,7 @@ RESULT PASS (印了「這批還不能貼」,並列出是哪一張)
 + CL_EXIT=0
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張)— 標「慢」的會演給你看,標「快」的不會:
   慢  #47 a — 覆蓋 1 條驗收項
   慢  #48 b — 你當場改成「慢」
@@ -370,18 +370,18 @@ RESULT PASS (印了「這批還不能貼」,並列出是哪一張)
   #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
 + echo 'exit 0'
 exit 0
 ++ paste_n
-++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + echo '     貼票行 3 行 / 票數 3'
      貼票行 3 行 / 票數 3
 ++ paste_n
-++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + '[' 3 = 3 ']'
-+ grep -q 點頭之後 /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q 點頭之後 /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 '沒被拒的批次貼票段照印,3 張 3 行'
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (沒被拒的批次貼票段照印,3 張 3 行)'
@@ -394,7 +394,7 @@ RESULT PASS (沒被拒的批次貼票段照印,3 張 3 行)
 + CL_EXIT=0
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(3 張)— 標「慢」的會演給你看,標「快」的不會:
   慢  #47 a — 覆蓋 1 條驗收項
   快  #51 e — 沒有覆蓋驗收項,不會有你看得到的行為
@@ -406,17 +406,17 @@ RESULT PASS (沒被拒的批次貼票段照印,3 張 3 行)
   #52  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
 + echo 'exit 0'
 exit 0
 + '[' 0 = 0 ']'
 ++ rows_n
-++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
+++ grep -cE '^  (快|慢\(改不了\)|慢|改不了) +#[0-9]+ .* — .+$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + '[' 3 = 3 ']'
-+ grep -q '^  快 *#51 e — ' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  快 *#52 f — ' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  慢 *#47 a — ' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  #51  分級:快 — ' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q '^  快 *#51 e — ' /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  快 *#52 f — ' /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  慢 *#47 a — ' /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  #51  分級:快 — ' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 同一批裡快、慢兩種標籤都印得出來,貼票行也跟著是「分級:快」
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (同一批裡快、慢兩種標籤都印得出來,貼票行也跟著是「分級:快」)'
@@ -431,7 +431,7 @@ RESULT PASS (同一批裡快、慢兩種標籤都印得出來,貼票行也跟著
 + CL_EXIT=0
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/out.txt
 分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
   慢  #47 a — 覆蓋 1 條驗收項
   快  #53 g — 你當場改成「快」
@@ -441,13 +441,13 @@ RESULT PASS (同一批裡快、慢兩種標籤都印得出來,貼票行也跟著
   #53  分級:快 — 你當場改成「快」
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/err.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/err.txt
 + echo 'exit 0'
 exit 0
 + '[' 0 = 0 ']'
-+ grep -q '^  快 *#53 g — 你當場改成「快」$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  慢 *#47 a — 覆蓋 1 條驗收項$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
-+ grep -q '^  #53  分級:快 — 你當場改成「快」$' /tmp/tmp.KLdKxcWsai/wt118/qa118/out.txt
++ grep -q '^  快 *#53 g — 你當場改成「快」$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  慢 *#47 a — 覆蓋 1 條驗收項$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
++ grep -q '^  #53  分級:快 — 你當場改成「快」$' /tmp/tmp.f1H06P8Quz/qa118/out.txt
 + ok 0 改成「快」真的生效,理由講明是他改的,同批沒改的那張不受影響
 + '[' 0 = 0 ']'
 + echo 'RESULT PASS (改成「快」真的生效,理由講明是他改的,同批沒改的那張不受影響)'
@@ -464,6 +464,7 @@ RESULT PASS (改成「快」真的生效,理由講明是他改的,同批沒改�
 buffer_exempt
 ceiling_half_pin_dropped
 classify_batch_dies_on_first
+classify_cell_len_not_cols
 classify_grade_cell_unpadded
 classify_lines_never_complains
 classify_paste_anyway
@@ -475,6 +476,7 @@ classify_reject_unnamed
 classify_rejected_lane_dropped
 classify_rejected_row_hidden
 classify_typo_lane_guessed
+classify_width_len_not_cols
 decode_error_uncaught
 filter_off
 first_main_only
@@ -502,6 +504,7 @@ unreadable_skip
 ++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' --list
 ++ grep '^classify_'
 + CLASSIFY_KNOBS='classify_batch_dies_on_first
+classify_cell_len_not_cols
 classify_grade_cell_unpadded
 classify_lines_never_complains
 classify_paste_anyway
@@ -512,8 +515,10 @@ classify_reject_only_first
 classify_reject_unnamed
 classify_rejected_lane_dropped
 classify_rejected_row_hidden
-classify_typo_lane_guessed'
+classify_typo_lane_guessed
+classify_width_len_not_cols'
 + echo 'classify_batch_dies_on_first
+classify_cell_len_not_cols
 classify_grade_cell_unpadded
 classify_lines_never_complains
 classify_paste_anyway
@@ -524,21 +529,25 @@ classify_reject_only_first
 classify_reject_unnamed
 classify_rejected_lane_dropped
 classify_rejected_row_hidden
-classify_typo_lane_guessed'
+classify_typo_lane_guessed
+classify_width_len_not_cols'
 + cat -n
      1	classify_batch_dies_on_first
-     2	classify_grade_cell_unpadded
-     3	classify_lines_never_complains
-     4	classify_paste_anyway
-     5	classify_reject_count_hardcoded
-     6	classify_reject_exit_zero
-     7	classify_reject_list_first_only
-     8	classify_reject_only_first
-     9	classify_reject_unnamed
-    10	classify_rejected_lane_dropped
-    11	classify_rejected_row_hidden
-    12	classify_typo_lane_guessed
+     2	classify_cell_len_not_cols
+     3	classify_grade_cell_unpadded
+     4	classify_lines_never_complains
+     5	classify_paste_anyway
+     6	classify_reject_count_hardcoded
+     7	classify_reject_exit_zero
+     8	classify_reject_list_first_only
+     9	classify_reject_only_first
+    10	classify_reject_unnamed
+    11	classify_rejected_lane_dropped
+    12	classify_rejected_row_hidden
+    13	classify_typo_lane_guessed
+    14	classify_width_len_not_cols
 ++ echo 'classify_batch_dies_on_first
+classify_cell_len_not_cols
 classify_grade_cell_unpadded
 classify_lines_never_complains
 classify_paste_anyway
@@ -549,10 +558,12 @@ classify_reject_only_first
 classify_reject_unnamed
 classify_rejected_lane_dropped
 classify_rejected_row_hidden
-classify_typo_lane_guessed'
+classify_typo_lane_guessed
+classify_width_len_not_cols'
 ++ wc -l
-+ '[' 12 -ge 4 ']'
++ '[' 14 -ge 4 ']'
 ++ echo 'classify_batch_dies_on_first
+classify_cell_len_not_cols
 classify_grade_cell_unpadded
 classify_lines_never_complains
 classify_paste_anyway
@@ -563,12 +574,13 @@ classify_reject_only_first
 classify_reject_unnamed
 classify_rejected_lane_dropped
 classify_rejected_row_hidden
-classify_typo_lane_guessed'
+classify_typo_lane_guessed
+classify_width_len_not_cols'
 ++ wc -l
-+ ok 0 'mutation 台上有 12 個 classify_* knob'
++ ok 0 'mutation 台上有 14 個 classify_* knob'
 + '[' 0 = 0 ']'
-+ echo 'RESULT PASS (mutation 台上有 12 個 classify_* knob)'
-RESULT PASS (mutation 台上有 12 個 classify_* knob)
++ echo 'RESULT PASS (mutation 台上有 14 個 classify_* knob)'
+RESULT PASS (mutation 台上有 14 個 classify_* knob)
 + echo '---- 5b  每一個 classify_* knob 都套一次,batch.py --self-check 都要轉紅'
 ---- 5b  每一個 classify_* knob 都套一次,batch.py --self-check 都要轉紅
 + echo '     不抽樣:抽到的那兩個紅,不代表沒抽到的那幾個也紅(judge 第三輪點名)'
@@ -576,14 +588,14 @@ RESULT PASS (mutation 台上有 12 個 classify_* knob)
 + echo '     控制組:副本原封不動 -> 該綠'
      控制組:副本原封不動 -> 該綠
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=0
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
 OK batch self-check green
 + echo 'exit 0'
 exit 0
@@ -596,16 +608,16 @@ exit 0
 RESULT PASS (pristine 副本):預期守門綠、實際綠
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_batch_dies_on_first
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_batch_dies_on_first
 mutation 已套用: classify_batch_dies_on_first
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
 + echo 'exit 1'
 exit 1
@@ -617,19 +629,42 @@ exit 1
 RESULT PASS (knob classify_batch_dies_on_first):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_grade_cell_unpadded
-mutation 已套用: classify_grade_cell_unpadded
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_cell_len_not_cols
+mutation 已套用: classify_cell_len_not_cols
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
-    assert want in shown, (want, shown)
-           ^^^^^^^^^^^^^
-AssertionError: ('  慢            #47 a', '分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:\n  慢  #47 a — 覆蓋 1 條驗收項\n  慢  #48 b — 你當場改成「慢」\n  慢(改不了)  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣\n\n這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:\n  #49 c')
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #49 c
++ echo 'exit 1'
+exit 1
++ expect_gate red 'knob classify_cell_len_not_cols'
++ local want=red 'what=knob classify_cell_len_not_cols'
++ '[' red = red ']'
++ '[' 1 '!=' 0 ']'
++ echo 'RESULT PASS (knob classify_cell_len_not_cols):預期守門紅、實際紅(batch=1)'
+RESULT PASS (knob classify_cell_len_not_cols):預期守門紅、實際紅(batch=1)
++ for KNOB in $CLASSIFY_KNOBS
++ fresh
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_grade_cell_unpadded
+mutation 已套用: classify_grade_cell_unpadded
++ selfcheck
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
++ G_BATCH=1
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
+    assert len({_cols(c) for c in cells}) == 1, [(c, _cols(c)) for c in cells]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: [('  慢  ', 6), ('  慢  ', 6), ('  慢(改不了)  ', 14)]
 + echo 'exit 1'
 exit 1
 + expect_gate red 'knob classify_grade_cell_unpadded'
@@ -640,16 +675,16 @@ exit 1
 RESULT PASS (knob classify_grade_cell_unpadded):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_lines_never_complains
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_lines_never_complains
 mutation 已套用: classify_lines_never_complains
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
     assert classify_lines_issue(slicing.replace(m.group(0), "")), m.group(0)
            ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: 這批的快慢分級,有要改的嗎?
@@ -663,19 +698,19 @@ exit 1
 RESULT PASS (knob classify_lines_never_complains):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_paste_anyway
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_paste_anyway
 mutation 已套用: classify_paste_anyway
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
-  #47  分級:慢 — 覆蓋 1 條驗收項
-  #48  分級:慢 — 你當場改成「慢」
-  #49  分級:慢(改不了) — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
+    assert len(cells) == 3, cells
+           ^^^^^^^^^^^^^^^
+AssertionError: ['  慢          ', '  慢          ', '  慢(改不了)  ', '  ', '  ', '  ']
 + echo 'exit 1'
 exit 1
 + expect_gate red 'knob classify_paste_anyway'
@@ -686,16 +721,16 @@ exit 1
 RESULT PASS (knob classify_paste_anyway):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_reject_count_hardcoded
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_reject_count_hardcoded
 mutation 已套用: classify_reject_count_hardcoded
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #47 a
   #49 c
@@ -709,19 +744,19 @@ exit 1
 RESULT PASS (knob classify_reject_count_hardcoded):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_reject_exit_zero
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_reject_exit_zero
 mutation 已套用: classify_reject_exit_zero
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
     assert child.returncode != 0, child.stdout
            ^^^^^^^^^^^^^^^^^^^^^
-AssertionError: b"\xe5\x88\x86\xe7\xb4\x9a(3 \xe5\xbc\xb5,\xe5\x85\xb6\xe4\xb8\xad 2 \xe5\xbc\xb5\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86)\xe2\x80\x94 \xe6\xa8\x99\xe3\x80\x8c\xe6\x85\xa2\xe3\x80\x8d\xe7\x9a\x84\xe6\x9c\x83\xe6\xbc\x94\xe7\xb5\xa6\xe4\xbd\xa0\xe7\x9c\x8b,\xe6\xa8\x99\xe3\x80\x8c\xe5\xbf\xab\xe3\x80\x8d\xe7\x9a\x84\xe4\xb8\x8d\xe6\x9c\x83:\r\n  \xe6\x85\xa2(\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86)  #47 \xe2\x80\x94 \xe5\x8b\x95\xe5\x88\xb0\xe5\x88\xa4\xe6\x96\xb7\xe9\x82\x8f\xe8\xbc\xaf\xe6\x88\x96\xe8\xb3\x87\xe6\x96\x99\xe5\xaf\xab\xe5\x85\xa5,\xe7\xa1\xac\xe8\xa6\x8f\xe5\x89\x87\xe4\xb8\x80\xe5\xbe\x8b\xe6\x85\xa2 \xe2\x80\x94\xe2\x80\x94 \xe6\x94\xb9\xe4\xb8\x8d\xe6\x88\x90\xe5\xbf\xab\xe3\x80\x82\xe9\xa9\x97\xe6\x94\xb6\xe6\xb8\x85\xe5\x96\xae\xe7\xac\xac 4 \xe6\xa2\x9d\xe5\xb0\xb1\xe6\x98\xaf\xe5\xae\x83\xe3\x80\x82\xe8\xa6\x81\xe6\x94\xb9\xe5\xbf\xab\xe5\x8f\xaa\xe6\x9c\x89\xe4\xb8\x80\xe6\xa2\x9d\xe8\xb7\xaf:\xe5\x9b\x9e\xe5\x8e\xbb\xe6\x94\xb9\xe7\xa5\xa8\xe7\x9a\x84\xe5\x85\xa7\xe5\xae\xb9,\xe6\x8a\x8a\xe5\x8b\x95\xe5\x88\xb0\xe5\x88\xa4\xe6\x96\xb7\xe9\x82\x8f\xe8\xbc\xaf\xe6\x88\x96\xe8\xb3\x87\xe6\x96\x99\xe5\xaf\xab\xe5\x85\xa5\xe7\x9a\x84\xe9\x82\xa3\xe9\x83\xa8\xe5\x88\x86\xe5\x88\x87\xe5\x87\xba\xe5\x8e\xbb,\xe5\x86\x8d\xe9\x87\x8d\xe5\x88\x87\xe4\xb8\x80\xe6\xac\xa1\xe5\x88\x86\xe7\xb4\x9a\xe3\x80\x82\xe7\xa5\xa8\xe7\x9a\x84\xe5\x85\xa7\xe5\xae\xb9\xe6\xb2\x92\xe8\xae\x8a\xe5\xb0\xb1\xe6\x98\xaf\xe6\x85\xa2,\xe4\xbd\xa0\xe8\xaa\xaa\xe4\xba\x86\xe4\xb9\x9f\xe4\xb8\x80\xe6\xa8\xa3\r\n  \xe6\x85\xa2            #48 \xe2\x80\x94 \xe8\xa6\x86\xe8\x93\x8b 1 \xe6\xa2\x9d\xe9\xa9\x97\xe6\x94\xb6\xe9\xa0\x85\r\n  \xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86        #49 \xe2\x80\x94 \xe4\xbd\xa0\xe5\xa1\xab\xe7\x9a\x84\xe5\x88\x86\xe7\xb4\x9a\xe5\x8f\xaa\xe8\x83\xbd\xe6\x98\xaf\xe3\x80\x8c\xe5\xbf\xab\xe3\x80\x8d\xe6\x88\x96\xe3\x80\x8c\xe6\x85\xa2\xe3\x80\x8d,\xe4\xbd\xa0\xe6\x89\x93\xe7\x9a\x84\xe6\x98\xaf 'fast' \xe2\x80\x94\xe2\x80\x94 \xe6\x94\xb9\xe4\xb8\x80\xe4\xb8\x8b\xe5\x86\x8d\xe9\x87\x8d\xe8\xb7\x91\r\n\r\n\xe9\x80\x99\xe6\x89\xb9\xe9\x82\x84\xe4\xb8\x8d\xe8\x83\xbd\xe8\xb2\xbc \xe2\x80\x94\xe2\x80\x94 \xe4\xb8\x8b\xe9\x9d\xa2\xe9\x80\x99\xe5\xb9\xbe\xe5\xbc\xb5\xe7\x9a\x84\xe5\x88\x86\xe7\xb4\x9a\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86,\xe5\x85\x88\xe8\xa7\xa3\xe6\xb1\xba\xe5\x86\x8d\xe6\x95\xb4\xe6\x89\xb9\xe9\x87\x8d\xe8\xb7\x91\xe4\xb8\x80\xe6\xac\xa1:\r\n  #47\r\n  #49\r\n"
+AssertionError: b"\xe5\x88\x86\xe7\xb4\x9a(3 \xe5\xbc\xb5,\xe5\x85\xb6\xe4\xb8\xad 2 \xe5\xbc\xb5\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86)\xe2\x80\x94 \xe6\xa8\x99\xe3\x80\x8c\xe6\x85\xa2\xe3\x80\x8d\xe7\x9a\x84\xe6\x9c\x83\xe6\xbc\x94\xe7\xb5\xa6\xe4\xbd\xa0\xe7\x9c\x8b,\xe6\xa8\x99\xe3\x80\x8c\xe5\xbf\xab\xe3\x80\x8d\xe7\x9a\x84\xe4\xb8\x8d\xe6\x9c\x83:\r\n  \xe6\x85\xa2(\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86)  #47 \xe2\x80\x94 \xe5\x8b\x95\xe5\x88\xb0\xe5\x88\xa4\xe6\x96\xb7\xe9\x82\x8f\xe8\xbc\xaf\xe6\x88\x96\xe8\xb3\x87\xe6\x96\x99\xe5\xaf\xab\xe5\x85\xa5,\xe7\xa1\xac\xe8\xa6\x8f\xe5\x89\x87\xe4\xb8\x80\xe5\xbe\x8b\xe6\x85\xa2 \xe2\x80\x94\xe2\x80\x94 \xe6\x94\xb9\xe4\xb8\x8d\xe6\x88\x90\xe5\xbf\xab\xe3\x80\x82\xe9\xa9\x97\xe6\x94\xb6\xe6\xb8\x85\xe5\x96\xae\xe7\xac\xac 4 \xe6\xa2\x9d\xe5\xb0\xb1\xe6\x98\xaf\xe5\xae\x83\xe3\x80\x82\xe8\xa6\x81\xe6\x94\xb9\xe5\xbf\xab\xe5\x8f\xaa\xe6\x9c\x89\xe4\xb8\x80\xe6\xa2\x9d\xe8\xb7\xaf:\xe5\x9b\x9e\xe5\x8e\xbb\xe6\x94\xb9\xe7\xa5\xa8\xe7\x9a\x84\xe5\x85\xa7\xe5\xae\xb9,\xe6\x8a\x8a\xe5\x8b\x95\xe5\x88\xb0\xe5\x88\xa4\xe6\x96\xb7\xe9\x82\x8f\xe8\xbc\xaf\xe6\x88\x96\xe8\xb3\x87\xe6\x96\x99\xe5\xaf\xab\xe5\x85\xa5\xe7\x9a\x84\xe9\x82\xa3\xe9\x83\xa8\xe5\x88\x86\xe5\x88\x87\xe5\x87\xba\xe5\x8e\xbb,\xe5\x86\x8d\xe9\x87\x8d\xe5\x88\x87\xe4\xb8\x80\xe6\xac\xa1\xe5\x88\x86\xe7\xb4\x9a\xe3\x80\x82\xe7\xa5\xa8\xe7\x9a\x84\xe5\x85\xa7\xe5\xae\xb9\xe6\xb2\x92\xe8\xae\x8a\xe5\xb0\xb1\xe6\x98\xaf\xe6\x85\xa2,\xe4\xbd\xa0\xe8\xaa\xaa\xe4\xba\x86\xe4\xb9\x9f\xe4\xb8\x80\xe6\xa8\xa3\r\n  \xe6\x85\xa2          #48 \xe2\x80\x94 \xe8\xa6\x86\xe8\x93\x8b 1 \xe6\xa2\x9d\xe9\xa9\x97\xe6\x94\xb6\xe9\xa0\x85\r\n  \xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86      #49 \xe2\x80\x94 \xe4\xbd\xa0\xe5\xa1\xab\xe7\x9a\x84\xe5\x88\x86\xe7\xb4\x9a\xe5\x8f\xaa\xe8\x83\xbd\xe6\x98\xaf\xe3\x80\x8c\xe5\xbf\xab\xe3\x80\x8d\xe6\x88\x96\xe3\x80\x8c\xe6\x85\xa2\xe3\x80\x8d,\xe4\xbd\xa0\xe6\x89\x93\xe7\x9a\x84\xe6\x98\xaf 'fast' \xe2\x80\x94\xe2\x80\x94 \xe6\x94\xb9\xe4\xb8\x80\xe4\xb8\x8b\xe5\x86\x8d\xe9\x87\x8d\xe8\xb7\x91\r\n\r\n\xe9\x80\x99\xe6\x89\xb9\xe9\x82\x84\xe4\xb8\x8d\xe8\x83\xbd\xe8\xb2\xbc \xe2\x80\x94\xe2\x80\x94 \xe4\xb8\x8b\xe9\x9d\xa2\xe9\x80\x99\xe5\xb9\xbe\xe5\xbc\xb5\xe7\x9a\x84\xe5\x88\x86\xe7\xb4\x9a\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86,\xe5\x85\x88\xe8\xa7\xa3\xe6\xb1\xba\xe5\x86\x8d\xe6\x95\xb4\xe6\x89\xb9\xe9\x87\x8d\xe8\xb7\x91\xe4\xb8\x80\xe6\xac\xa1:\r\n  #47\r\n  #49\r\n"
 + echo 'exit 1'
 exit 1
 + expect_gate red 'knob classify_reject_exit_zero'
@@ -732,16 +767,16 @@ exit 1
 RESULT PASS (knob classify_reject_exit_zero):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_reject_list_first_only
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_reject_list_first_only
 mutation 已套用: classify_reject_list_first_only
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
 
 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
   #47 a
@@ -755,18 +790,18 @@ exit 1
 RESULT PASS (knob classify_reject_list_first_only):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_reject_only_first
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_reject_only_first
 mutation 已套用: classify_reject_only_first
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: 停在這裡 —— #47 的分級改不了,上面那份清單寫了要改什麼
+AssertionError: 停在這裡 —— #47 的分級改不了,理由跟著各自那一列
 
 + echo 'exit 1'
 exit 1
@@ -778,18 +813,18 @@ exit 1
 RESULT PASS (knob classify_reject_only_first):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_reject_unnamed
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_reject_unnamed
 mutation 已套用: classify_reject_unnamed
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: 停在這裡 —— 這張、這張 的分級改不了,上面那份清單寫了要改什麼
+AssertionError: 停在這裡 —— 這張、這張 的分級改不了,理由跟著各自那一列
 
 + echo 'exit 1'
 exit 1
@@ -801,19 +836,19 @@ exit 1
 RESULT PASS (knob classify_reject_unnamed):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_rejected_lane_dropped
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_rejected_lane_dropped
 mutation 已套用: classify_rejected_lane_dropped
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
-    assert want in shown, (want, shown)
-           ^^^^^^^^^^^^^
-AssertionError: ('  慢            #47 a', '分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:\n  慢      #47 a — 覆蓋 1 條驗收項\n  慢      #48 b — 你當場改成「慢」\n  改不了  #49 c — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣\n\n這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:\n  #49 c')
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #49 c
 + echo 'exit 1'
 exit 1
 + expect_gate red 'knob classify_rejected_lane_dropped'
@@ -824,19 +859,19 @@ exit 1
 RESULT PASS (knob classify_rejected_lane_dropped):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_rejected_row_hidden
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_rejected_row_hidden
 mutation 已套用: classify_rejected_row_hidden
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
-    assert want in shown, (want, shown)
-           ^^^^^^^^^^^^^
-AssertionError: ('  慢(改不了)  #49 c', '分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:\n  慢            #47 a — 覆蓋 1 條驗收項\n  慢            #48 b — 你當場改成「慢」\n\n這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:\n  #49 c')
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #49 c
 + echo 'exit 1'
 exit 1
 + expect_gate red 'knob classify_rejected_row_hidden'
@@ -847,16 +882,16 @@ exit 1
 RESULT PASS (knob classify_rejected_row_hidden):預期守門紅、實際紅(batch=1)
 + for KNOB in $CLASSIFY_KNOBS
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_typo_lane_guessed
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_typo_lane_guessed
 mutation 已套用: classify_typo_lane_guessed
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
     assert e.cell == GRADE_REJECTED, e.cell
            ^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: 慢(改不了)
@@ -868,6 +903,29 @@ exit 1
 + '[' 1 '!=' 0 ']'
 + echo 'RESULT PASS (knob classify_typo_lane_guessed):預期守門紅、實際紅(batch=1)'
 RESULT PASS (knob classify_typo_lane_guessed):預期守門紅、實際紅(batch=1)
++ for KNOB in $CLASSIFY_KNOBS
++ fresh
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_width_len_not_cols
+mutation 已套用: classify_width_len_not_cols
++ selfcheck
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
++ G_BATCH=1
++ echo '--- skills/build-batch/batch.py --self-check'
+--- skills/build-batch/batch.py --self-check
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
+    assert len({_cols(c) for c in cells}) == 1, [(c, _cols(c)) for c in cells]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: [('  慢      ', 10), ('  慢      ', 10), ('  慢(改不了)  ', 14)]
++ echo 'exit 1'
+exit 1
++ expect_gate red 'knob classify_width_len_not_cols'
++ local want=red 'what=knob classify_width_len_not_cols'
++ '[' red = red ']'
++ '[' 1 '!=' 0 ']'
++ echo 'RESULT PASS (knob classify_width_len_not_cols):預期守門紅、實際紅(batch=1)'
+RESULT PASS (knob classify_width_len_not_cols):預期守門紅、實際紅(batch=1)
 + echo ===================================================================
 ===================================================================
 + echo '==== 改壞真檔的繞過方向(全在副本上,repo 本體只讀)'
@@ -877,16 +935,16 @@ RESULT PASS (knob classify_typo_lane_guessed):預期守門紅、實際紅(batch=
 + echo '---- 6a  classify_tickets 退回 list comprehension(第一張被拒就打死整批)→ 該紅'
 ---- 6a  classify_tickets 退回 list comprehension(第一張被拒就打死整批)→ 該紅
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_batch_dies_on_first
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_batch_dies_on_first
 mutation 已套用: classify_batch_dies_on_first
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
 + echo 'exit 1'
 exit 1
@@ -899,32 +957,32 @@ RESULT PASS (整批被第一張打死):預期守門紅、實際紅(batch=1)
 + echo '     繞過之後這批長什麼樣(#118 出廠時的畫面):'
      繞過之後這批長什麼樣(#118 出廠時的畫面):
 + printf %s '{"mode":"classify","tickets":[{"number":47,"coverage":["1. x"],"judgement":false},{"number":48,"coverage":[],"judgement":false,"override":"慢"},{"number":49,"coverage":[],"judgement":true,"override":"快"}],"titles":{"47":"a","48":"b","49":"c"}}'
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py
 + echo 'exit 1'
 exit 1
 + echo '--- stdout'
 --- stdout
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/m-out.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/m-out.txt
 + echo '--- stderr'
 --- stderr
-+ cat /tmp/tmp.KLdKxcWsai/wt118/qa118/m-err.txt
++ cat /tmp/tmp.f1H06P8Quz/qa118/m-err.txt
 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
 + echo '---- 6b  被拒那列從清單藏掉(其餘照印,但不知道少了誰)→ 該紅'
 ---- 6b  被拒那列從清單藏掉(其餘照印,但不知道少了誰)→ 該紅
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_rejected_row_hidden
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_rejected_row_hidden
 mutation 已套用: classify_rejected_row_hidden
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
-    assert want in shown, (want, shown)
-           ^^^^^^^^^^^^^
-AssertionError: ('  慢(改不了)  #49 c', '分級(3 張,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:\n  慢            #47 a — 覆蓋 1 條驗收項\n  慢            #48 b — 你當場改成「慢」\n\n這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:\n  #49 c')
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #49 c
 + echo 'exit 1'
 exit 1
 + expect_gate red 被拒那列被藏
@@ -936,19 +994,19 @@ RESULT PASS (被拒那列被藏):預期守門紅、實際紅(batch=1)
 + echo '---- 6c  有被拒還是把貼票那段印出來 → 該紅'
 ---- 6c  有被拒還是把貼票那段印出來 → 該紅
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_paste_anyway
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_paste_anyway
 mutation 已套用: classify_paste_anyway
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
-  #47  分級:慢 — 覆蓋 1 條驗收項
-  #48  分級:慢 — 你當場改成「慢」
-  #49  分級:慢(改不了) — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
+    assert len(cells) == 3, cells
+           ^^^^^^^^^^^^^^^
+AssertionError: ['  慢          ', '  慢          ', '  慢(改不了)  ', '  ', '  ', '  ']
 + echo 'exit 1'
 exit 1
 + expect_gate red 沒點頭的清單照樣可貼
@@ -960,19 +1018,19 @@ RESULT PASS (沒點頭的清單照樣可貼):預期守門紅、實際紅(batch=1
 + echo '---- 6d  退出碼變 0(印歸印,「當場停」沒了)→ 該紅'
 ---- 6d  退出碼變 0(印歸印,「當場停」沒了)→ 該紅
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_reject_exit_zero
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_reject_exit_zero
 mutation 已套用: classify_reject_exit_zero
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
     assert child.returncode != 0, child.stdout
            ^^^^^^^^^^^^^^^^^^^^^
-AssertionError: b"\xe5\x88\x86\xe7\xb4\x9a(3 \xe5\xbc\xb5,\xe5\x85\xb6\xe4\xb8\xad 2 \xe5\xbc\xb5\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86)\xe2\x80\x94 \xe6\xa8\x99\xe3\x80\x8c\xe6\x85\xa2\xe3\x80\x8d\xe7\x9a\x84\xe6\x9c\x83\xe6\xbc\x94\xe7\xb5\xa6\xe4\xbd\xa0\xe7\x9c\x8b,\xe6\xa8\x99\xe3\x80\x8c\xe5\xbf\xab\xe3\x80\x8d\xe7\x9a\x84\xe4\xb8\x8d\xe6\x9c\x83:\r\n  \xe6\x85\xa2(\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86)  #47 \xe2\x80\x94 \xe5\x8b\x95\xe5\x88\xb0\xe5\x88\xa4\xe6\x96\xb7\xe9\x82\x8f\xe8\xbc\xaf\xe6\x88\x96\xe8\xb3\x87\xe6\x96\x99\xe5\xaf\xab\xe5\x85\xa5,\xe7\xa1\xac\xe8\xa6\x8f\xe5\x89\x87\xe4\xb8\x80\xe5\xbe\x8b\xe6\x85\xa2 \xe2\x80\x94\xe2\x80\x94 \xe6\x94\xb9\xe4\xb8\x8d\xe6\x88\x90\xe5\xbf\xab\xe3\x80\x82\xe9\xa9\x97\xe6\x94\xb6\xe6\xb8\x85\xe5\x96\xae\xe7\xac\xac 4 \xe6\xa2\x9d\xe5\xb0\xb1\xe6\x98\xaf\xe5\xae\x83\xe3\x80\x82\xe8\xa6\x81\xe6\x94\xb9\xe5\xbf\xab\xe5\x8f\xaa\xe6\x9c\x89\xe4\xb8\x80\xe6\xa2\x9d\xe8\xb7\xaf:\xe5\x9b\x9e\xe5\x8e\xbb\xe6\x94\xb9\xe7\xa5\xa8\xe7\x9a\x84\xe5\x85\xa7\xe5\xae\xb9,\xe6\x8a\x8a\xe5\x8b\x95\xe5\x88\xb0\xe5\x88\xa4\xe6\x96\xb7\xe9\x82\x8f\xe8\xbc\xaf\xe6\x88\x96\xe8\xb3\x87\xe6\x96\x99\xe5\xaf\xab\xe5\x85\xa5\xe7\x9a\x84\xe9\x82\xa3\xe9\x83\xa8\xe5\x88\x86\xe5\x88\x87\xe5\x87\xba\xe5\x8e\xbb,\xe5\x86\x8d\xe9\x87\x8d\xe5\x88\x87\xe4\xb8\x80\xe6\xac\xa1\xe5\x88\x86\xe7\xb4\x9a\xe3\x80\x82\xe7\xa5\xa8\xe7\x9a\x84\xe5\x85\xa7\xe5\xae\xb9\xe6\xb2\x92\xe8\xae\x8a\xe5\xb0\xb1\xe6\x98\xaf\xe6\x85\xa2,\xe4\xbd\xa0\xe8\xaa\xaa\xe4\xba\x86\xe4\xb9\x9f\xe4\xb8\x80\xe6\xa8\xa3\r\n  \xe6\x85\xa2            #48 \xe2\x80\x94 \xe8\xa6\x86\xe8\x93\x8b 1 \xe6\xa2\x9d\xe9\xa9\x97\xe6\x94\xb6\xe9\xa0\x85\r\n  \xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86        #49 \xe2\x80\x94 \xe4\xbd\xa0\xe5\xa1\xab\xe7\x9a\x84\xe5\x88\x86\xe7\xb4\x9a\xe5\x8f\xaa\xe8\x83\xbd\xe6\x98\xaf\xe3\x80\x8c\xe5\xbf\xab\xe3\x80\x8d\xe6\x88\x96\xe3\x80\x8c\xe6\x85\xa2\xe3\x80\x8d,\xe4\xbd\xa0\xe6\x89\x93\xe7\x9a\x84\xe6\x98\xaf 'fast' \xe2\x80\x94\xe2\x80\x94 \xe6\x94\xb9\xe4\xb8\x80\xe4\xb8\x8b\xe5\x86\x8d\xe9\x87\x8d\xe8\xb7\x91\r\n\r\n\xe9\x80\x99\xe6\x89\xb9\xe9\x82\x84\xe4\xb8\x8d\xe8\x83\xbd\xe8\xb2\xbc \xe2\x80\x94\xe2\x80\x94 \xe4\xb8\x8b\xe9\x9d\xa2\xe9\x80\x99\xe5\xb9\xbe\xe5\xbc\xb5\xe7\x9a\x84\xe5\x88\x86\xe7\xb4\x9a\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86,\xe5\x85\x88\xe8\xa7\xa3\xe6\xb1\xba\xe5\x86\x8d\xe6\x95\xb4\xe6\x89\xb9\xe9\x87\x8d\xe8\xb7\x91\xe4\xb8\x80\xe6\xac\xa1:\r\n  #47\r\n  #49\r\n"
+AssertionError: b"\xe5\x88\x86\xe7\xb4\x9a(3 \xe5\xbc\xb5,\xe5\x85\xb6\xe4\xb8\xad 2 \xe5\xbc\xb5\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86)\xe2\x80\x94 \xe6\xa8\x99\xe3\x80\x8c\xe6\x85\xa2\xe3\x80\x8d\xe7\x9a\x84\xe6\x9c\x83\xe6\xbc\x94\xe7\xb5\xa6\xe4\xbd\xa0\xe7\x9c\x8b,\xe6\xa8\x99\xe3\x80\x8c\xe5\xbf\xab\xe3\x80\x8d\xe7\x9a\x84\xe4\xb8\x8d\xe6\x9c\x83:\r\n  \xe6\x85\xa2(\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86)  #47 \xe2\x80\x94 \xe5\x8b\x95\xe5\x88\xb0\xe5\x88\xa4\xe6\x96\xb7\xe9\x82\x8f\xe8\xbc\xaf\xe6\x88\x96\xe8\xb3\x87\xe6\x96\x99\xe5\xaf\xab\xe5\x85\xa5,\xe7\xa1\xac\xe8\xa6\x8f\xe5\x89\x87\xe4\xb8\x80\xe5\xbe\x8b\xe6\x85\xa2 \xe2\x80\x94\xe2\x80\x94 \xe6\x94\xb9\xe4\xb8\x8d\xe6\x88\x90\xe5\xbf\xab\xe3\x80\x82\xe9\xa9\x97\xe6\x94\xb6\xe6\xb8\x85\xe5\x96\xae\xe7\xac\xac 4 \xe6\xa2\x9d\xe5\xb0\xb1\xe6\x98\xaf\xe5\xae\x83\xe3\x80\x82\xe8\xa6\x81\xe6\x94\xb9\xe5\xbf\xab\xe5\x8f\xaa\xe6\x9c\x89\xe4\xb8\x80\xe6\xa2\x9d\xe8\xb7\xaf:\xe5\x9b\x9e\xe5\x8e\xbb\xe6\x94\xb9\xe7\xa5\xa8\xe7\x9a\x84\xe5\x85\xa7\xe5\xae\xb9,\xe6\x8a\x8a\xe5\x8b\x95\xe5\x88\xb0\xe5\x88\xa4\xe6\x96\xb7\xe9\x82\x8f\xe8\xbc\xaf\xe6\x88\x96\xe8\xb3\x87\xe6\x96\x99\xe5\xaf\xab\xe5\x85\xa5\xe7\x9a\x84\xe9\x82\xa3\xe9\x83\xa8\xe5\x88\x86\xe5\x88\x87\xe5\x87\xba\xe5\x8e\xbb,\xe5\x86\x8d\xe9\x87\x8d\xe5\x88\x87\xe4\xb8\x80\xe6\xac\xa1\xe5\x88\x86\xe7\xb4\x9a\xe3\x80\x82\xe7\xa5\xa8\xe7\x9a\x84\xe5\x85\xa7\xe5\xae\xb9\xe6\xb2\x92\xe8\xae\x8a\xe5\xb0\xb1\xe6\x98\xaf\xe6\x85\xa2,\xe4\xbd\xa0\xe8\xaa\xaa\xe4\xba\x86\xe4\xb9\x9f\xe4\xb8\x80\xe6\xa8\xa3\r\n  \xe6\x85\xa2          #48 \xe2\x80\x94 \xe8\xa6\x86\xe8\x93\x8b 1 \xe6\xa2\x9d\xe9\xa9\x97\xe6\x94\xb6\xe9\xa0\x85\r\n  \xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86      #49 \xe2\x80\x94 \xe4\xbd\xa0\xe5\xa1\xab\xe7\x9a\x84\xe5\x88\x86\xe7\xb4\x9a\xe5\x8f\xaa\xe8\x83\xbd\xe6\x98\xaf\xe3\x80\x8c\xe5\xbf\xab\xe3\x80\x8d\xe6\x88\x96\xe3\x80\x8c\xe6\x85\xa2\xe3\x80\x8d,\xe4\xbd\xa0\xe6\x89\x93\xe7\x9a\x84\xe6\x98\xaf 'fast' \xe2\x80\x94\xe2\x80\x94 \xe6\x94\xb9\xe4\xb8\x80\xe4\xb8\x8b\xe5\x86\x8d\xe9\x87\x8d\xe8\xb7\x91\r\n\r\n\xe9\x80\x99\xe6\x89\xb9\xe9\x82\x84\xe4\xb8\x8d\xe8\x83\xbd\xe8\xb2\xbc \xe2\x80\x94\xe2\x80\x94 \xe4\xb8\x8b\xe9\x9d\xa2\xe9\x80\x99\xe5\xb9\xbe\xe5\xbc\xb5\xe7\x9a\x84\xe5\x88\x86\xe7\xb4\x9a\xe6\x94\xb9\xe4\xb8\x8d\xe4\xba\x86,\xe5\x85\x88\xe8\xa7\xa3\xe6\xb1\xba\xe5\x86\x8d\xe6\x95\xb4\xe6\x89\xb9\xe9\x87\x8d\xe8\xb7\x91\xe4\xb8\x80\xe6\xac\xa1:\r\n  #47\r\n  #49\r\n"
 + echo 'exit 1'
 exit 1
 + expect_gate red '被拒卻 exit 0'
@@ -984,18 +1042,18 @@ RESULT PASS (被拒卻 exit 0):預期守門紅、實際紅(batch=1)
 + echo '---- 6e  訊息退回沒有票號的「這張」→ 該紅(AC2 的反向)'
 ---- 6e  訊息退回沒有票號的「這張」→ 該紅(AC2 的反向)
 + fresh
-+ rm -rf /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ cp -r /tmp/tmp.KLdKxcWsai/wt118/qa118/pristine /tmp/tmp.KLdKxcWsai/wt118/qa118/case
-+ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.KLdKxcWsai/wt118/qa118/case classify_reject_unnamed
++ rm -rf /tmp/tmp.f1H06P8Quz/qa118/case
++ cp -r /tmp/tmp.f1H06P8Quz/qa118/pristine /tmp/tmp.f1H06P8Quz/qa118/case
++ python '/d/Self Project/Skills/.git/batch-worktrees/118/scripts/qa/97-mutate.py' /tmp/tmp.f1H06P8Quz/qa118/case classify_reject_unnamed
 mutation 已套用: classify_reject_unnamed
 + selfcheck
-+ python /tmp/tmp.KLdKxcWsai/wt118/qa118/case/skills/build-batch/batch.py --self-check
++ python /tmp/tmp.f1H06P8Quz/qa118/case/skills/build-batch/batch.py --self-check
 + G_BATCH=1
 + echo '--- skills/build-batch/batch.py --self-check'
 --- skills/build-batch/batch.py --self-check
-+ tail -3 /tmp/tmp.KLdKxcWsai/wt118/qa118/g-batch.txt
++ tail -3 /tmp/tmp.f1H06P8Quz/qa118/g-batch.txt
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: 停在這裡 —— 這張、這張 的分級改不了,上面那份清單寫了要改什麼
+AssertionError: 停在這裡 —— 這張、這張 的分級改不了,理由跟著各自那一列
 
 + echo 'exit 1'
 exit 1
