@@ -21,6 +21,7 @@ import re
 import subprocess
 import sys
 import unicodedata
+from collections import Counter
 from pathlib import Path
 
 CAP = 3  # 平行上限,client 拍板寫死
@@ -524,6 +525,37 @@ def _rejected_cell(lane):
     return f"{lane}({GRADE_REJECTED})"
 
 
+def duplicate_counts(numbers):
+    """這批裡出現不只一次的票號 -> 出現次數。
+
+    重複票號是手滑進來的:`slice-tickets` 把票號餵進 JSON 是手打/照抄的,同一張
+    票在兩個 vertical slice 底下各列一次很自然。而它錯得很安靜 —— 兩列互相矛盾
+    的分級照印、exit 0,agent 兩行都貼進同一張票(#127)。
+    """
+    counts = Counter(numbers)
+    return {n: c for n, c in counts.items() if c > 1}
+
+
+def duplicate_reason(count):
+    """重複票號那幾列的理由 —— 指名重複幾次,client 手上要有可以動作的資訊。"""
+    return f"這個票號在這批出現 {count} 次 —— 同一張票只能有一列,刪掉多的再重跑"
+
+
+def rejected_rows(rows):
+    """`rows` 裡改不了的那幾張 -> [(票號, 理由)],同一個票號只留第一次。
+
+    去重是重複票號那條路要的:同一張票佔兩列,而「其中 N 張改不了」、還不能貼
+    那份名單、stderr 那一行講的都是**票**,不是列 —— 不去重的話 client 會看到
+    同一張票被列兩次,而那正是這條守門要講清楚的事情本身(#127)。
+    """
+    out, seen = [], set()
+    for n, grade, reason in rows:
+        if grade not in GRADES and n not in seen:
+            seen.add(n)
+            out.append((n, reason))
+    return out
+
+
 class OverrideRejected(Exception):
     """一張票的 override 被規則擋下 —— 帶著理由回批次層,不在單張這一層打死整批。
 
@@ -608,6 +640,7 @@ def classify_tickets(tickets):
     一次列給我看」變成一行都印不出來,client 同一輪改的別張也跟著消失,而他手上
     連是哪一張被拒都不知道。
     """
+    dupes = duplicate_counts(t["number"] for t in tickets)
     rows = []
     for t in tickets:
         try:
@@ -615,9 +648,20 @@ def classify_tickets(tickets):
                                          t.get("judgement", False),
                                          t.get("override"))
         except OverrideRejected as exc:
-            rows.append((t["number"], exc.cell, str(exc)))
-        else:
-            rows.append((t["number"], grade, reason))
+            grade, reason = exc.cell, str(exc)
+        if t["number"] in dupes:
+            # 重複票號蓋過這一列本來的結果 —— 它是批次層的事,單張怎麼判都不影響:
+            # 兩列各自都合法,合起來才是矛盾的。車道還是照這一列自己算出來的印
+            # (被拒的那張已經是 `lane(改不了)`),兩條矛盾的路長得不一樣的話
+            # client 掃過去看不出差別在哪(#121 那格)。
+            #
+            # 這一列本來就被拒的話,原本那個理由要留著接在後面:蓋掉它 client 這輪
+            # 只看得到重複,刪完重跑才撞到打錯字,一輪修一個問題來回跑 —— #118 的
+            # 「整批照印再停」要避免的就是這個形狀(#127 review)。
+            dup = duplicate_reason(dupes[t["number"]])
+            reason = dup if grade in GRADES else f"{dup};另外,{reason}"
+            grade = _rejected_cell(grade) if grade in GRADES else grade
+        rows.append((t["number"], grade, reason))
     return rows
 
 
@@ -651,8 +695,15 @@ def format_classify(rows, titles):
     印在這裡而不是留給 agent 現場排版:client 是照這份清單點頭的,而他點頭的
     對象跟真的寫進票裡的那幾行必須是同一份 —— 分開排版就會有一天不一樣。
     """
-    rejected = [(n, reason) for n, grade, reason in rows if grade not in GRADES]
-    head = f"分級({len(rows)} 張"
+    rejected = rejected_rows(rows)
+    # 「張」一律是票,不是列 —— 重複票號正好是兩者不一樣的那個情境,而那就是這份
+    # 清單要講清楚的事情本身。抬頭數列、下面數票的話,重現步驟那批會讀成「2 張,
+    # 其中 1 張改不了」,client 合理推論另外那張是好的 —— 那張不存在(#127 review)。
+    # 沒有重複的批次兩個數字一樣,抬頭跟 #108 凍結的那份逐字相同。
+    seats = len({n for n, _, _ in rows})
+    head = f"分級({seats} 張"
+    if len(rows) != seats:
+        head += f"、{len(rows)} 列"
     if rejected:
         head += f",其中 {len(rejected)} 張改不了"
     lines = [head + ")— 標「慢」的會演給你看,標「快」的不會:"]
@@ -696,7 +747,10 @@ def main():
         # 呼叫端是 slice-tickets。它由 classify_command_issue 對著那支檔咬。
         rows = classify_tickets(data["tickets"])
         print(format_classify(rows, titles))
-        rejected = [(n, reason) for n, grade, reason in rows if grade not in GRADES]
+        rejected = rejected_rows(rows)
+        # 從 `rows` 推,不回頭重讀 `data["tickets"]` —— stdout 的理由行與 stderr 的
+        # 「重複幾次」是同一個數字,兩邊各算一份就會有一天不一樣(#127 review)。
+        dupes = duplicate_counts(n for n, _, _ in rows)
         if rejected:
             # 整批印完了才停 —— 停是驗收清單第 4 條(當場停、不靜靜忽略),整批
             # 先印完是 #118(停之前要把批次講清楚)。訊息指名票號,不是「這張」。
@@ -704,7 +758,8 @@ def main():
             # 同一句 stdout / stderr 各印一次,client 在終端會讀到兩遍(#121)。
             raise SystemExit(
                 "停在這裡 —— "
-                + "、".join(f"#{n}" for n, _ in rejected)
+                + "、".join(f"#{n}(重複 {dupes[n]} 次)" if n in dupes
+                              else f"#{n}" for n, _ in rejected)
                 + " 的分級改不了,理由跟著各自那一列")
     elif mode == "start":
         print(format_lane_start(numbers, titles, data.get("running", [])))
@@ -864,6 +919,12 @@ CLASSIFY_LINES = (
     (re.compile(re.escape("接得住的是**有驗收項**的那半")),
      "slice-tickets SKILL.md: 降級回路只接得住一半那句不見了 —— 少了它天花板就"
      "回到「關住」那個過度宣稱,而 coverage 是空的那半根本不會觸發降級回路"),
+    # #127:重複票號是餵 JSON 的人手滑進來的,擋它的規則住在 batch.py,但
+    # 「怎麼修」只有散文講得出來 —— 少了這句,agent 會挑一列留著改分級,而那一列
+    # 是他挑的、不是 client 點的。
+    (re.compile(re.escape("同一個票號在同一批裡只能出現一次")),
+     "slice-tickets SKILL.md: 票號不能重複那句不見了 —— 少了它,agent 撞到停之後"
+     "會自己挑一列留著,而 client 點頭的對象是哪一列從頭到尾沒人知道"),
 )
 
 
@@ -1781,6 +1842,70 @@ JSON''')
     assert "#47" not in err and "#48" not in err, err
     assert "這張" not in err, err
 
+    # #127:同一個票號在一批裡出現兩次 —— 兩列互相矛盾的分級、exit 0,而 agent
+    # 會把兩行都貼進同一張票。「整批一次列給我看,我可以當場改任何一張」的前提是
+    # 一張票在清單上只有一列;兩列的時候 client 點的頭指向哪一列是不確定的。
+    dup = classify_tickets([{"number": 47, "coverage": []},
+                            {"number": 47, "coverage": ["1. 登入頁"]}])
+    assert [n for n, _, _ in dup] == [47, 47], dup
+    # 兩列都改不了,而且車道照票自己的內容算 —— 矛盾本身要看得見
+    assert [g for _, g, _ in dup] == ["快(改不了)", "慢(改不了)"], dup
+    for _, _, reason in dup:
+        assert reason == ("這個票號在這批出現 2 次 —— 同一張票只能有一列,"
+                          "刪掉多的再重跑"), dup
+
+    # client 那份清單:兩列照印,但「改不了」的張數算的是票、不是列
+    dupshown = format_classify(dup, {47: "登入頁"})
+    # 「張」數的是票、「列」另外講 —— 重現步驟那批只有 1 張票,而它改不了
+    assert dupshown.startswith("分級(1 張、2 列,其中 1 張改不了)"), dupshown
+    assert dupshown.count("#47 登入頁 — 這個票號在這批出現 2 次") == 2, dupshown
+    assert "點頭之後" not in dupshown, dupshown
+    assert "分級:" not in dupshown, dupshown
+    # 還不能貼那段也是一張一列,不是重複兩次
+    assert [ln for ln in dupshown.splitlines()
+            if ln == "  #47 登入頁"] == ["  #47 登入頁"], dupshown
+
+    # 重複 + 撞硬規則混在同一批:重複那兩列蓋掉本來的判斷,別張照舊
+    both_kinds = classify_tickets([
+        {"number": 47, "coverage": []},
+        {"number": 48, "coverage": [], "judgement": True, "override": "快"},
+        {"number": 47, "coverage": []},
+        {"number": 49, "coverage": ["1. x"]}])
+    assert [g for _, g, _ in both_kinds] == [
+        "快(改不了)", "慢(改不了)", "快(改不了)", GRADE_SLOW], both_kinds
+    assert "硬規則" in both_kinds[1][2], both_kinds
+    # 抬頭:4 列但只有 3 張票,改不了的是 #47 與 #48 兩張
+    assert format_classify(both_kinds, {}).startswith(
+        "分級(3 張、4 列,其中 2 張改不了)"), format_classify(both_kinds, {})
+
+    # 同一列既重複又打錯字:重複講在前面,原本那個理由接在後面一起給 —— 蓋掉它
+    # client 這輪只看得到重複,刪完重跑才撞到打錯字(#127 review)
+    stacked = classify_tickets([{"number": 9, "coverage": [], "override": "fast"},
+                                {"number": 9, "coverage": ["1. x"]}])
+    assert [g for _, g, _ in stacked] == ["快(改不了)", "慢(改不了)"], stacked
+    assert stacked[0][2].startswith("這個票號在這批出現 2 次"), stacked
+    assert "你填的分級只能是" in stacked[0][2], stacked
+    assert ";另外," in stacked[0][2], stacked
+    # 沒被拒的那一列不接東西 —— 它本來的理由是分級理由,不是問題
+    assert stacked[1][2] == duplicate_reason(2), stacked
+
+    # 端到端:整批照印(#118 不變)、退出碼非 0、stderr 指名是哪個票號重複幾次
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=json.dumps({"mode": "classify", "tickets": [
+            {"number": 47, "coverage": []},
+            {"number": 47, "coverage": ["1. 登入頁"]}],
+            "titles": {"47": "登入頁"}}, ensure_ascii=False).encode("utf-8"),
+        capture_output=True,
+        env=dict(os.environ, PYTHONIOENCODING="cp950"))
+    assert child.returncode != 0, child.stdout
+    assert (child.stdout.decode("utf-8").splitlines()
+            == dupshown.splitlines()), child.stdout.decode("utf-8")
+    errdup = child.stderr.decode("utf-8")
+    assert "停在這裡 —— #47(重複 2 次) 的分級改不了" in errdup, errdup
+    # 一張票在 stderr 上也只講一次
+    assert errdup.count("#47") == 1, errdup
+
     # 呼叫端是 slice-tickets,不是這支 skill 自己 —— 對著那支出貨檔咬。裝單一
     # skill 的機器上它根本不在,那時候這一段沒有母體可比,跳過(宣告過的天花板)。
     sibling = Path(__file__).resolve().parent.parent / "slice-tickets" / "SKILL.md"
@@ -1809,7 +1934,8 @@ JSON''')
                   "`batch.py` 不在 → 這批整批判慢車道",
                   "判錯必然會發生",
                   "不要自己去改 `judgement` 旗標讓它過",
-                  "接得住的是**有驗收項**的那半")
+                  "接得住的是**有驗收項**的那半",
+                  "同一個票號在同一批裡只能出現一次")
         # CLASSIFY_LINES 每一條都是 re.escape 的字面,所以對帳是機械可導的
         assert ({p.pattern for p, _ in CLASSIFY_LINES}
                 == {re.escape(s) for s in pinned}), CLASSIFY_LINES

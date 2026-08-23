@@ -194,7 +194,7 @@ KNOBS = {
     # 看不到,連他同一輪改的那幾張也一起消失
     "classify_batch_dies_on_first": (
         "        except OverrideRejected as exc:\n"
-        "            rows.append((t[\"number\"], exc.cell, str(exc)))",
+        "            grade, reason = exc.cell, str(exc)",
         "        except OverrideRejected as exc:\n"
         "            raise SystemExit(str(exc))",
         BATCH),
@@ -219,8 +219,9 @@ KNOBS = {
         BATCH),
     # 訊息退回「這張」—— 停得對,但 client 手上沒有可以動作的票號(#118 第 2 條)
     "classify_reject_unnamed": (
-        "                + \"、\".join(f\"#{n}\" for n, _ in rejected)",
-        "                + \"、\".join(\"這張\" for n, _ in rejected)",
+        "                + \"、\".join(f\"#{n}(重複 {dupes[n]} 次)\" if n in dupes\n"
+        "                              else f\"#{n}\" for n, _ in rejected)",
+        "                + \"、\".join(\"這張\" for _ in rejected)",
         BATCH),
     # 兩張同時被拒時只算第一張 —— 單張的批次上一格都看不出來(review WARN)
     "classify_reject_count_hardcoded": (
@@ -232,7 +233,8 @@ KNOBS = {
         "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected[:1]]",
         BATCH),
     "classify_reject_only_first": (
-        "                + \"、\".join(f\"#{n}\" for n, _ in rejected)",
+        "                + \"、\".join(f\"#{n}(重複 {dupes[n]} 次)\" if n in dupes\n"
+        "                              else f\"#{n}\" for n, _ in rejected)",
         "                + \"、\".join(f\"#{n}\" for n, _ in rejected[:1])",
         BATCH),
     # 被拒那張退回「沒有車道」的第三種標籤 —— 原句是「每張票都標了快或慢」,
@@ -260,6 +262,65 @@ KNOBS = {
     "classify_width_len_not_cols": (
         "    width = max([_cols(g) for _, g, _ in rows] or [2])",
         "    width = max([len(g) for _, g, _ in rows] or [2])",
+        BATCH),
+    # ---- #127 同一個票號在一批裡出現兩次 -----------------------------
+    # 重複票號怎麼修那句的 pin 整項刪掉 —— 守門自己少一條的那面(同 #120 兩格)
+    "dupe_pin_dropped": (
+        '    (re.compile(re.escape("同一個票號在同一批裡只能出現一次")),\n'
+        '     "slice-tickets SKILL.md: 票號不能重複那句不見了 —— 少了它,agent 撞到停之後"\n'
+        '     "會自己挑一列留著,而 client 點頭的對象是哪一列從頭到尾沒人知道"),\n',
+        "",
+        BATCH),
+    # 重複檢查整條關掉 —— #127 出廠時的形狀:兩列互相矛盾的分級靜靜印出來,exit 0
+    "classify_dupes_never_found": (
+        "    counts = Counter(numbers)\n"
+        "    return {n: c for n, c in counts.items() if c > 1}",
+        "    return {}",
+        BATCH),
+    # 門檻退成 `>= 1` —— 反面:每張票都算重複,整批永遠貼不出去
+    "classify_dupes_always": (
+        "    return {n: c for n, c in counts.items() if c > 1}",
+        "    return {n: c for n, c in counts.items() if c > 0}",
+        BATCH),
+    # 算完了但那幾列沒被標成改不了 —— 清單照印兩列矛盾的分級,而且 exit 還是 0
+    "classify_dupes_not_marked": (
+        "        if t[\"number\"] in dupes:",
+        "        if False and t[\"number\"] in dupes:",
+        BATCH),
+    # 重複那幾列的車道被吞掉 —— 「每張票都標了快或慢」那條原句(#121 同一格)
+    "classify_dupe_lane_dropped": (
+        "            grade = _rejected_cell(grade) if grade in GRADES else grade",
+        "            grade = GRADE_REJECTED",
+        BATCH),
+    # 理由不講重複幾次 —— client 手上只剩「有問題」,沒有可以動作的資訊
+    "classify_dupe_count_hidden": (
+        "    return f\"這個票號在這批出現 {count} 次 —— 同一張票只能有一列,"
+        "刪掉多的再重跑\"",
+        "    return \"這個票號重複了\"",
+        BATCH),
+    # 抬頭的「N 張」退回數列 —— 重現步驟那批會讀成「2 張,其中 1 張改不了」,
+    # client 合理推論另外那張是好的,而那張不存在(#127 review C-1)
+    "classify_head_counts_rows": (
+        "    seats = len({n for n, _, _ in rows})",
+        "    seats = len(rows)",
+        BATCH),
+    # 重複那一列把本來被拒的理由整個吃掉 —— client 一輪只看得到一個問題,刪完
+    # 重跑才撞到打錯字(#127 review C-2)
+    "classify_dupe_reason_swallowed": (
+        "            reason = dup if grade in GRADES else f\"{dup};另外,{reason}\"",
+        "            reason = dup",
+        BATCH),
+    # 改不了的名單不去重 —— 同一張票在「其中 N 張改不了」與那份名單上各算兩次,
+    # 而這條守門要講清楚的事情本身就是「一張票只能有一列」
+    "classify_rejected_not_deduped": (
+        "        if grade not in GRADES and n not in seen:",
+        "        if grade not in GRADES:",
+        BATCH),
+    # stderr 不講重複幾次 —— 停得對,但停在哪一種問題上看不出來
+    "classify_dupe_stderr_plain": (
+        "                + \"、\".join(f\"#{n}(重複 {dupes[n]} 次)\" if n in dupes\n"
+        "                              else f\"#{n}\" for n, _ in rejected)",
+        "                + \"、\".join(f\"#{n}\" for n, _ in rejected)",
         BATCH),
     # 守門整條關掉 —— 對照組:確認 self-check 真的在量這支,不是在量別的
     "guard_off": (
