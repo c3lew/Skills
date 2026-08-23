@@ -73,6 +73,59 @@ FAIL_LANE_LINES = (
 )
 
 
+# 一份 payload 裡放票號的那幾格名單。收在一張表而不是每個 mode 各自轉:漏掉一格
+# 是無聲的(`titles` 查表查不到就少印一個標題,`fixing` 比對不上就誤停),而
+# #129 的形狀本身就是「有一個入口沒收」。
+NUMBER_LISTS = ("numbers", "fixing", "running", "queue", "merged", "pending")
+
+
+def normalize_tickets(tickets):
+    """整批票 -> 同一份票,但票號一律是 int。轉不動就當場停。
+
+    入口的合約,不是守門的特例:`"47"` / `" 47 "` / `47` 對 client 就是同一張
+    #47(清單上三列都印成 `#47`),而重複守門比的是 key —— 把型別特例補進
+    `duplicate_counts` 只會讓下一個拿票號當 key 的地方(`titles` 查表、
+    `rejected_rows` 去重、stderr 那一行)各自再漏一次。`titles` 的 key 走的是
+    同一支 `ticket_number`,兩邊的 key 因此對得起來(#129)。
+
+    走 `int(str(...))` 不走 `int(...)`:`int(47.9)` 會靜靜捨掉小數,那已經是
+    另一張票了。空白由 `int` 自己吃掉(`int(" 47 ")` 就是 47)。
+
+    `blocked_by` 裡放的也是票號,跟著一起轉 —— plan 模式比的就是這兩份名單,
+    只轉一邊的話卡關那張會被讀成「卡在一個沒見過的票號後面」。
+    """
+    out = []
+    for row, t in enumerate(tickets, 1):
+        clean = dict(t, number=ticket_number(t.get("number"), f"第 {row} 列的票號"))
+        if "blocked_by" in t:
+            clean["blocked_by"] = [
+                ticket_number(b, f"第 {row} 列的「卡在誰後面」那份名單裡的票號")
+                for b in t["blocked_by"]]
+        out.append(clean)
+    return out
+
+
+def ticket_number(raw, where):
+    """一格票號 -> int,轉不動就當場停。`where` 是這一格在 JSON 裡的位置。
+
+    停在這裡而不是讓 `int` 自己炸:裸 traceback 上面沒有「是哪一格」,而餵
+    JSON 的人手上要有可以動作的資訊(#118 的「指名道姓」同一條)。
+
+    `titles` 的 key 也走這裡 —— 那邊本來就 `int(k)`,兩邊的 key 對得起來這件事
+    現在是同一支函式的事實,不是註解裡的宣稱(#129 review)。
+
+    宣告過的天花板:`47.0` 這種小數寫法一律停,不特別放行整數值的那半 ——
+    放行就得在這裡開一個型別特例,而那正是這條路要拆掉的東西。停是有聲的,
+    訊息講得出他填了什麼,client 改一個字就過。
+    """
+    try:
+        return int(str(raw))
+    except (TypeError, ValueError):
+        raise SystemExit(
+            f"停在這裡 —— {where}不是數字,他填的是 {raw!r} —— "
+            "改成票號那個數字(像 47 這樣)再重跑")
+
+
 def plan_batch(tickets, cap=CAP):
     """Split tickets into (ready, queued, blocked).
 
@@ -734,7 +787,19 @@ def main():
     AGENTS.md 「會被跑到的 python 檔要釘 UTF-8」.
     """
     data = json.load(sys.stdin)
-    titles = {int(k): v for k, v in data.get("titles", {}).items()}
+    # 票號的型別在這裡收斂,整份 payload 一次收完 —— 每個 mode 各自包一層的話,
+    # 下一個吃票號的 mode 忘了包就是無聲漏掉,而那正是 #129 的形狀本身。
+    # `coverage` 的 key 在 `coverage_of` 自己收(它另外要答「少了哪一張」)。
+    if "tickets" in data:
+        data["tickets"] = normalize_tickets(data["tickets"])
+    for field in NUMBER_LISTS:
+        if field in data:
+            data[field] = [ticket_number(n, f"`{field}` 那份名單裡的票號")
+                           for n in data[field]]
+    if "number" in data:
+        data["number"] = ticket_number(data["number"], "`number` 那格票號")
+    titles = {ticket_number(k, "`titles` 那份標題表裡的票號"): v
+              for k, v in data.get("titles", {}).items()}
     mode = data.get("mode", "plan")
     numbers = data.get("numbers", [])
     # `numbers` 一律是整批的票號,`fixing` 是其中沒過 QA 的那幾張。誰收誰留由
@@ -1905,6 +1970,100 @@ JSON''')
     assert "停在這裡 —— #47(重複 2 次) 的分級改不了" in errdup, errdup
     # 一張票在 stderr 上也只講一次
     assert errdup.count("#47") == 1, errdup
+
+    # #129:票號寫成字串 `"47"` 或前後帶空白 `" 47 "` —— 在 client 眼裡跟 47 就是
+    # 同一張 #47(清單上兩列都印成 `#47`),而 #127 的守門比的是 JSON 解出來的原值,
+    # 整條繞過去,#127 要殺的那個形狀原封不動活著。正規化住在入口(`main` 讀完
+    # JSON 那一步),不是在 `duplicate_counts` 裡補型別特例 —— 補在守門裡的話,
+    # 下一個拿票號當 key 的地方(`titles` 查表、`rejected_rows` 去重、stderr 那一行)
+    # 還是各自會漏一次。
+    assert [t["number"] for t in normalize_tickets(
+        [{"number": "47"}, {"number": " 47 "}, {"number": 47}])] == [47, 47, 47]
+    # 型別混用的那批跟兩張都寫成數字 47 的那批走同一條路 —— 逐字相同,不是「也會停」
+    aliased = classify_tickets(normalize_tickets([
+        {"number": "47", "coverage": []},
+        {"number": " 47 ", "coverage": ["1. 登入頁"]}]))
+    assert aliased == dup, aliased
+    assert format_classify(aliased, {47: "登入頁"}) == dupshown, aliased
+
+    # 端到端:票上重現步驟那批(一個 47、一個 "47")
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=json.dumps({"mode": "classify", "tickets": [
+            {"number": 47, "coverage": []},
+            {"number": "47", "coverage": ["1. 登入頁"]}],
+            "titles": {"47": "登入頁"}}, ensure_ascii=False).encode("utf-8"),
+        capture_output=True,
+        env=dict(os.environ, PYTHONIOENCODING="cp950"))
+    assert child.returncode != 0, child.stdout
+    assert (child.stdout.decode("utf-8").splitlines()
+            == dupshown.splitlines()), child.stdout.decode("utf-8")
+    assert ("停在這裡 —— #47(重複 2 次) 的分級改不了"
+            in child.stderr.decode("utf-8")), child.stderr
+
+    # 票號轉不成整數:當場停,指名是哪一列、他填的是什麼 —— 不是裸 traceback
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=json.dumps({"mode": "classify", "tickets": [
+            {"number": 47, "coverage": []},
+            {"number": "四十七", "coverage": []}]},
+            ensure_ascii=False).encode("utf-8"),
+        capture_output=True,
+        env=dict(os.environ, PYTHONIOENCODING="cp950"))
+    assert child.returncode != 0, child.stdout
+    badnum = child.stderr.decode("utf-8")
+    assert "Traceback" not in badnum, badnum
+    assert ("停在這裡 —— 第 2 列的票號不是數字,他填的是 '四十七' —— "
+            "改成票號那個數字(像 47 這樣)再重跑") in badnum, badnum
+
+    # 別的 mode 的票號名單也走同一關 —— 只收 `tickets` 的話同一個洞換個 mode
+    # 就活著:`numbers` 裡寫成 "48" 的那張,標題查不到就靜靜少印一個
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=json.dumps({"mode": "split", "numbers": [47, "48"],
+                          "fixing": ["48"], "titles": {"47": "a", "48": "b"}},
+                         ensure_ascii=False).encode("utf-8"),
+        capture_output=True,
+        env=dict(os.environ, PYTHONIOENCODING="cp950"))
+    assert child.returncode == 0, child.stderr
+    assert child.stdout.decode("utf-8").splitlines() == format_split(
+        [47], [48], {47: "a", 48: "b"}).splitlines(), child.stdout
+
+    # `titles` 的 key 走同一支 —— 那條路本來也是裸 int(),壞 key 一樣是 traceback
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=json.dumps({"mode": "classify", "tickets": [{"number": 47}],
+                          "titles": {"四七": "登入頁"}},
+                         ensure_ascii=False).encode("utf-8"),
+        capture_output=True,
+        env=dict(os.environ, PYTHONIOENCODING="cp950"))
+    assert child.returncode != 0, child.stdout
+    badkey = child.stderr.decode("utf-8")
+    assert "Traceback" not in badkey, badkey
+    assert ("停在這裡 —— `titles` 那份標題表裡的票號不是數字,他填的是 '四七' —— "
+            "改成票號那個數字(像 47 這樣)再重跑") in badkey, badkey
+
+    # `blocked_by` 裡放的也是票號 —— 只轉 `number` 的話兩邊的 key 對不起來,
+    # 而 plan 模式比的就是這兩份:卡關的那張會被讀成「卡在一個沒見過的票號後面」
+    assert normalize_tickets([{"number": "48", "blocked_by": ["47", 47]}]) == [
+        {"number": 48, "blocked_by": [47, 47]}]
+    # 卡關名單裡的票號轉不動,訊息要講得出是哪一列的哪一份名單
+    try:
+        normalize_tickets([{"number": 48, "blocked_by": ["四十七"]}])
+    except SystemExit as exc:
+        assert ("停在這裡 —— 第 1 列的「卡在誰後面」那份名單裡的票號不是數字,"
+                "他填的是 '四十七' —— 改成票號那個數字(像 47 這樣)再重跑"
+                == str(exc)), exc
+    else:
+        assert False, "卡關名單裡轉不動的票號沒有被擋下來"
+
+    # 小數的票號一樣不放行:`int(47.9)` 會靜靜捨掉小數,那就換成別的票號了
+    try:
+        normalize_tickets([{"number": 47.9}])
+    except SystemExit as exc:
+        assert "他填的是 47.9" in str(exc), exc
+    else:
+        assert False, "小數的票號沒有被擋下來"
 
     # 呼叫端是 slice-tickets,不是這支 skill 自己 —— 對著那支出貨檔咬。裝單一
     # skill 的機器上它根本不在,那時候這一段沒有母體可比,跳過(宣告過的天花板)。

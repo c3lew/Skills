@@ -322,6 +322,44 @@ KNOBS = {
         "                              else f\"#{n}\" for n, _ in rejected)",
         "                + \"、\".join(f\"#{n}\" for n, _ in rejected)",
         BATCH),
+    # ---- #129 票號的型別 / 空白 alias -------------------------------
+    # 正規化整條關掉 —— #129 出廠時的形狀:`"47"` 與 47 同批,守門比原值比不出
+    # 重複,#127 要殺的那個形狀(兩列矛盾的分級、exit 0)原封不動活著
+    "ticket_number_not_normalized": (
+        "        return int(str(raw))",
+        "        return raw",
+        BATCH),
+    # 走 `int(raw)` 不走 `int(str(raw))` —— 字串那面照樣過,但 47.9 會被靜靜
+    # 捨成 47,那已經是另一張票了(換票號是無聲的)
+    "ticket_number_int_truncates": (
+        "        return int(str(raw))",
+        "        return int(raw)",
+        BATCH),
+    # 轉不動的時候不接住 —— 停是停了,但 client 手上是一坨裸 traceback,
+    # 上面沒有「是哪一列」也沒有「他填的是什麼」
+    "ticket_number_bare_traceback": (
+        "        return int(str(raw))\n"
+        "    except (TypeError, ValueError):",
+        "        return int(str(raw))\n"
+        "    except ():",
+        BATCH),
+    # `blocked_by` 那份名單沒跟著轉 —— 兩邊的 key 對不起來,plan 模式會把卡關
+    # 那張讀成「卡在一個沒見過的票號後面」
+    "blocked_by_not_normalized": (
+        '        if "blocked_by" in t:',
+        '        if False and "blocked_by" in t:',
+        BATCH),
+    # 只收 `tickets`、別的 mode 的票號名單不收 —— #129 的洞換個 mode 就活著
+    "number_lists_not_normalized": (
+        "    for field in NUMBER_LISTS:",
+        "    for field in ():",
+        BATCH),
+    # `titles` 的 key 退回裸 `int(k)` —— 壞 key 又變成一坨 traceback,而
+    # 「兩邊的 key 走同一支」那個宣稱回到只活在註解裡
+    "titles_key_bare_int": (
+        '    titles = {ticket_number(k, "`titles` 那份標題表裡的票號"): v',
+        "    titles = {int(k): v",
+        BATCH),
     # 守門整條關掉 —— 對照組:確認 self-check 真的在量這支,不是在量別的
     "guard_off": (
         "    errors = []\n"
