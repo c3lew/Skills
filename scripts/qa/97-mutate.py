@@ -11,7 +11,8 @@
 `--self-check` 是兩支:`scripts/validate.py --self-check` 與
 `skills/build-batch/batch.py --self-check`,任一支非 0 就算咬住。knob 預設打在
 `scripts/validate.py`,第三個元素填相對路徑就改打別支 —— #120 的分級散文 pin
-住在 `batch.py`,而那支自己少一條規則的那面,validate.py 量不到。
+與 #118 的「分級被拒還是整批照印」都住在 `batch.py`,那兩面 validate.py 量不到,
+拿它當儀器是在量別支檔。
 
 用法:
     python scripts/qa/97-mutate.py --run          # 整張表跑完,每格報 exit code
@@ -22,6 +23,7 @@
 `--run` 不碰 repo 本體:完整 repo 複製到拋棄式暫存目錄,mutation 全跑在副本上。
 """
 import pathlib
+import ast
 import shutil
 import subprocess
 import sys
@@ -149,14 +151,14 @@ KNOBS = {
     "hardrule_msg_signposts_flag": (
         '                "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"\n'
         '                "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"\n'
-        '                "票的內容沒變就是慢,client 說了也一樣")',
+        '                "票的內容沒變就是慢,你說了也一樣",',
         '                "驗收清單第 4 條就是它,要改請先改 judgement 旗標")',
         BATCH),
     # 「回去改票的內容」那半拿掉 —— 只說改不成,不說真的那條路長怎樣
     "hardrule_msg_no_real_path": (
         '                "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"\n'
         '                "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"\n'
-        '                "票的內容沒變就是慢,client 說了也一樣")',
+        '                "票的內容沒變就是慢,你說了也一樣",',
         '                "驗收清單第 4 條就是它。")',
         BATCH),
     # 硬規則處置那句的 pin 整項刪掉 —— 守門自己少一條的那面
@@ -185,6 +187,80 @@ KNOBS = {
         "            return message\n"
         "    return None",
         BATCH),
+    # ---- #118 分級被拒的那張:整批先算完再退出 -----------------------
+    # 判準一樣住在 batch.py,所以證據也要在 `batch.py --self-check` 上轉紅 ——
+    # 拿 validate.py 的 self-check 當儀器量它,量的是別支檔。
+    # 退回「第一張被拒就把整批打死」—— #118 出廠時的形狀:client 一行分級都
+    # 看不到,連他同一輪改的那幾張也一起消失
+    "classify_batch_dies_on_first": (
+        "        except OverrideRejected as exc:\n"
+        "            rows.append((t[\"number\"], exc.cell, str(exc)))",
+        "        except OverrideRejected as exc:\n"
+        "            raise SystemExit(str(exc))",
+        BATCH),
+    # 被拒的那張從 client 清單上消失 —— 其餘各張照印,但他不知道少了誰
+    "classify_rejected_row_hidden": (
+        "    lines += [f\"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}\"\n"
+        "              for n, grade, reason in rows] or [\"  (無)\"]",
+        "    lines += [f\"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}\"\n"
+        "              for n, grade, reason in rows if grade in GRADES] "
+        "or [\"  (無)\"]",
+        BATCH),
+    # 有張被拒還是把貼票那段印出來 —— agent 會照著貼進一份 client 沒點過的清單
+    "classify_paste_anyway": (
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]\n"
+        "        return \"\\n\".join(lines)\n",
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]\n",
+        BATCH),
+    # 退出碼變 0 —— 印歸印,但「當場停」沒了,靜靜往下走
+    "classify_reject_exit_zero": (
+        "        if rejected:\n            # 整批印完了才停",
+        "        if False and rejected:\n            # 整批印完了才停",
+        BATCH),
+    # 訊息退回「這張」—— 停得對,但 client 手上沒有可以動作的票號(#118 第 2 條)
+    "classify_reject_unnamed": (
+        "                + \"、\".join(f\"#{n}\" for n, _ in rejected)",
+        "                + \"、\".join(\"這張\" for n, _ in rejected)",
+        BATCH),
+    # 兩張同時被拒時只算第一張 —— 單張的批次上一格都看不出來(review WARN)
+    "classify_reject_count_hardcoded": (
+        "        head += f\",其中 {len(rejected)} 張改不了\"",
+        "        head += \",其中 1 張改不了\"",
+        BATCH),
+    "classify_reject_list_first_only": (
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected]",
+        "        lines += [f\"  {_titled(n, titles)}\" for n, _ in rejected[:1]]",
+        BATCH),
+    "classify_reject_only_first": (
+        "                + \"、\".join(f\"#{n}\" for n, _ in rejected)",
+        "                + \"、\".join(f\"#{n}\" for n, _ in rejected[:1])",
+        BATCH),
+    # 被拒那張退回「沒有車道」的第三種標籤 —— 原句是「每張票都標了快或慢」,
+    # 而硬規則那條路系統自己算得出是慢,吞掉就是 #121 那格
+    "classify_rejected_lane_dropped": (
+        '    return f"{lane}({GRADE_REJECTED})"',
+        "    return GRADE_REJECTED",
+        BATCH),
+    # 打錯字那張反過來被猜了一個車道 —— #108「不猜」那條
+    "classify_typo_lane_hardcoded": (
+        "            _rejected_cell(lane))",
+        "            _rejected_cell(GRADE_SLOW))",
+        BATCH),
+    # 左欄補寬回退成不補 —— client 那份清單左欄歪掉
+    "classify_grade_cell_unpadded": (
+        '    return grade + " " * (width - _cols(grade))',
+        "    return grade",
+        BATCH),
+    # 欄寬退回「一個 char 兩欄」—— 半形括號那一格少補兩欄,而歪掉的剛好是
+    # client 最需要讀的那一列(QA code-review C-1)
+    "classify_cell_len_not_cols": (
+        '    return grade + " " * (width - _cols(grade))',
+        '    return grade + "  " * (width - len(grade))',
+        BATCH),
+    "classify_width_len_not_cols": (
+        "    width = max([_cols(g) for _, g, _ in rows] or [2])",
+        "    width = max([len(g) for _, g, _ in rows] or [2])",
+        BATCH),
     # 守門整條關掉 —— 對照組:確認 self-check 真的在量這支,不是在量別的
     "guard_off": (
         "    errors = []\n"
@@ -193,6 +269,29 @@ KNOBS = {
         "    return errors\n"
         "    for py in sorted(repo.rglob(\"*.py\")):"),
 }
+
+def _duplicate_knob_names():
+    """`KNOBS` 這張 dict literal 裡有沒有同名的 key。
+
+    撞名是靜的:後面那個直接蓋掉前面那個,表上少一格,而 `--run` 照樣印
+    「N/N 咬住」。#118 出廠時靠兩張表相加的長度擋這件事,merge 成一張表之後
+    那道守門在 `len()` 上寫不出來(被蓋掉的 key 根本不在 dict 裡),所以改成
+    讀自己的 source 對帳。
+    """
+    tree = ast.parse(pathlib.Path(__file__).read_text(encoding="utf-8"))
+    for node in tree.body:
+        if (isinstance(node, ast.Assign)
+                and any(getattr(t, "id", None) == "KNOBS" for t in node.targets)):
+            names = [k.value for k in node.value.keys]
+            return sorted({n for n in names if names.count(n) > 1})
+    raise SystemExit("97-mutate.py:找不到 KNOBS 這張表 —— 撞名守門自己失效了")
+
+
+_DUPES = _duplicate_knob_names()
+if _DUPES:
+    # 不寫 assert:`python -O` 下 assert 整條被剝掉,而撞名是靜的
+    raise SystemExit("KNOBS 裡有同名的 knob,後面那個會靜靜蓋掉前面那個:"
+                     + "、".join(_DUPES))
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -282,7 +381,8 @@ if __name__ == "__main__":
             print(exc, file=sys.stderr)
             sys.exit(1)
         for knob, code in rows:
-            print(f"{'咬住' if code else '沒咬住'}  {knob:<30} self-check exit={code}")
+            print(f"{'咬住' if code else '沒咬住'}  {knob:<30} "
+                  f"目標={target_of(knob)} self-check exit={code}")
         missed = [k for k, c in rows if c == 0]
         print(f"\n{len(rows) - len(missed)}/{len(rows)} 個 knob 被 self-check 咬住")
         if missed:
@@ -296,6 +396,13 @@ if __name__ == "__main__":
             copy = pathlib.Path(td) / "repo"
             shutil.copytree(ROOT, copy,
                             ignore=shutil.ignore_patterns(".git", "__pycache__"))
+            # 控制組:一支 gate 本來就紅的話,底下每個 knob 都會「對得上」,
+            # 而歸因表宣稱回答的那個問題一條都沒回答(`--run` 有這道,漏了這邊)
+            control = gate_codes(copy)
+            if any(control.values()):
+                raise SystemExit(
+                    "控制組未套 knob 就已經紅,歸因表不執行:"
+                    + " ".join(f"{g}={c}" for g, c in control.items()))
             pristine = {rel: (copy / rel).read_bytes() for rel in TARGETS}
             for knob in sorted(KNOBS):
                 for rel, blob in pristine.items():

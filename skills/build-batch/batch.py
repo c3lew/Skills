@@ -20,6 +20,7 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 
 CAP = 3  # 平行上限,client 拍板寫死
@@ -504,6 +505,41 @@ def format_batch_summary(spec, numbers, titles, coverage, fixing=()):
 
 
 GRADE_FAST, GRADE_SLOW = "快", "慢"
+GRADES = (GRADE_FAST, GRADE_SLOW)
+# 掛在車道後面的那三個字,給被規則擋下的那張用。
+GRADE_REJECTED = "改不了"
+
+
+def _rejected_cell(lane):
+    """被擋下來那張在 client 清單左欄佔的格子 —— 車道照印,後面掛「改不了」。
+
+    原句是「每張票都標了快或慢」,所以**兩條**被擋的路都要標得出車道:硬規則
+    那條算得出是慢,打錯字那條也算得出來(車道由票的內容決定,跟他填錯的那個
+    字無關)。這不是猜他想填什麼 —— 猜的是「把 'fast' 當成快收下來」,那件事
+    照樣不做(#108「不猜」那條);這裡印的是系統自己本來就算出來的那個車道。
+
+    兩條路長得不一樣的話,client 掃過去分不出差別在哪 —— 同一份清單上兩種被擋
+    的票給他兩種長相,是 #121 獨立 judge 點名的那一格。
+    """
+    return f"{lane}({GRADE_REJECTED})"
+
+
+class OverrideRejected(Exception):
+    """一張票的 override 被規則擋下 —— 帶著理由回批次層,不在單張這一層打死整批。
+
+    刻意不是 `SystemExit`:單張的規則不該決定整個行程的生死。#118 的根因就是這個
+    —— 一張被拒,其餘各張的分級、連同 client 同一輪改的那幾張全部一起消失,而訊息
+    裡只有「這張」,他手上連票號都沒有。停還是要停(當場停、不靜靜忽略),但由批次
+    層在整批算完之後停。
+
+    `cell` 是這張在 client 清單左欄佔的那一格。擋下來的理由決定車道知不知道:
+    硬規則那條路算得出是慢,打錯字那條路算不出來(#121)。
+    """
+
+    def __init__(self, message, cell):
+        super().__init__(message)
+        self.cell = cell
+
 
 # 「無 — 由後續票的驗收項間接驗證」是「這張沒有覆蓋驗收項」的寫法,不是一條驗收項。
 # agent 把那段原封不動餵進來時它會變成 coverage 裡唯一一筆,於是一張純基礎工程的票
@@ -534,18 +570,24 @@ def classify_one(coverage, judgement=False, override=None):
     天花板,不是這裡要補的規則。
     """
     items = [c for c in coverage if not NO_COVERAGE_RE.match(str(c).strip())]
+    # 這張票自己落在哪個車道 —— 只看票的內容,不看 override。override 是 client
+    # 的意見,可能不成立(打錯字、或撞上硬規則),但車道照樣算得出來,而清單上
+    # 那一格要印的就是它(見 `_rejected_cell`)。
+    lane = GRADE_SLOW if judgement or items else GRADE_FAST
     # 認不得的 override 先擋 —— 擺在硬規則前面,因為硬規則那條路的結果剛好也是慢:
     # 打錯字被靜靜吃掉跟 client 根本沒改長得一模一樣,他下次還是會那樣打。
     if override is not None and override not in (GRADE_FAST, GRADE_SLOW):
-        raise SystemExit(f"override 只能是「快」或「慢」,拿到 {override!r} —— "
-                         "打錯一個字就靜靜照原判寫進票,不猜")
+        raise OverrideRejected(
+            f"你填的分級只能是「快」或「慢」,你打的是 {override!r} —— 改一下再重跑",
+            _rejected_cell(lane))
     if judgement:
         if override == GRADE_FAST:
-            raise SystemExit(
-                "這張動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。"
+            raise OverrideRejected(
+                "動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。"
                 "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"
                 "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"
-                "票的內容沒變就是慢,client 說了也一樣")
+                "票的內容沒變就是慢,你說了也一樣",
+                _rejected_cell(GRADE_SLOW))
         return GRADE_SLOW, "動到判斷邏輯或資料寫入,硬規則一律慢"
     if override is not None:
         return override, f"你當場改成「{override}」"
@@ -555,11 +597,28 @@ def classify_one(coverage, judgement=False, override=None):
 
 
 def classify_tickets(tickets):
-    """整批票 -> [(票號, 快/慢, 理由)],保序。"""
-    return [(t["number"],
-             *classify_one(t.get("coverage", []), t.get("judgement", False),
-                           t.get("override")))
-            for t in tickets]
+    """整批票 -> [(票號, 左欄那一格, 理由)],保序。
+
+    左欄是「快」/「慢」,或被擋下來時 `OverrideRejected.cell` 給的那格 —— 判斷
+    一張過沒過看的是 `grade in GRADES`,不是 `grade is None`(#121:被擋下的那張
+    車道知道的時候要印出來)。
+
+    整批照算完,退不退出由呼叫端(`main`)拿到整份名單之後決定 —— 被拒的那張在
+    這一層不 raise(資料格式壞掉的還是會)。#118:原本是一行 list comprehension,任一張被拒整批就死,於是「整批
+    一次列給我看」變成一行都印不出來,client 同一輪改的別張也跟著消失,而他手上
+    連是哪一張被拒都不知道。
+    """
+    rows = []
+    for t in tickets:
+        try:
+            grade, reason = classify_one(t.get("coverage", []),
+                                         t.get("judgement", False),
+                                         t.get("override"))
+        except OverrideRejected as exc:
+            rows.append((t["number"], exc.cell, str(exc)))
+        else:
+            rows.append((t["number"], grade, reason))
+    return rows
 
 
 def format_grade_line(grade, reason):
@@ -571,16 +630,45 @@ def format_grade_line(grade, reason):
     return f"分級:{grade} — {reason}"
 
 
+def _cols(text):
+    """`text` 印在等寬主控台上佔幾欄。
+
+    中日韓文字與全形符號佔兩欄,其餘一欄。不能用 `len()` 代替:`慢(改不了)`
+    的括號是**半形**,一個字佔一欄,拿字數當欄寬那一列就會少補兩欄(#121 的
+    左欄歪掉就是這麼來的),而歪掉的剛好是清單上最需要被讀到的那一列。
+    """
+    return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
+
+
+def _grade_cell(grade, width):
+    """分級清單左欄那一格,補空白到 `width` 欄寬。"""
+    return grade + " " * (width - _cols(grade))
+
+
 def format_classify(rows, titles):
     """client 看的整批分級清單 + 逐張要貼進票的那幾行。
 
     印在這裡而不是留給 agent 現場排版:client 是照這份清單點頭的,而他點頭的
     對象跟真的寫進票裡的那幾行必須是同一份 —— 分開排版就會有一天不一樣。
     """
-    lines = [f"分級({len(rows)} 張)— 標「慢」的會演給你看,標「快」的不會:"]
-    lines += [f"  {grade}  {_titled(n, titles)} — {reason}"
+    rejected = [(n, reason) for n, grade, reason in rows if grade not in GRADES]
+    head = f"分級({len(rows)} 張"
+    if rejected:
+        head += f",其中 {len(rejected)} 張改不了"
+    lines = [head + ")— 標「慢」的會演給你看,標「快」的不會:"]
+    # 左欄補到同寬,量的是顯示欄寬不是字數(見 `_cols`)。沒有被拒的那批
+    # 寬度就是 2(一個「快」或「慢」),印出來跟 #108 凍結的那份逐 byte 相同。
+    width = max([_cols(g) for _, g, _ in rows] or [2])
+    lines += [f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}"
               for n, grade, reason in rows] or ["  (無)"]
-    lines += ["", "點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:"]
+    if rejected:
+        # 貼票那段整段不印:client 還沒點頭過這份清單(被拒的那張還沒有車道),
+        # 印出來 agent 就會照著貼進票 body —— 那是一份他沒點過的分級。
+        lines += ["", "這批還不能貼 —— 下面這幾張的分級改不了,"
+                      "先解決再整批重跑一次:"]
+        lines += [f"  {_titled(n, titles)}" for n, _ in rejected]
+        return "\n".join(lines)
+    lines += ["", "點頭之後,每張票上會多這一行:"]
     lines += [f"  #{n}  {format_grade_line(grade, reason)}"
               for n, grade, reason in rows] or ["  (無)"]
     return "\n".join(lines)
@@ -606,7 +694,18 @@ def main():
     elif mode == "classify":
         # 不進 MODES:那份表咬的是 build-batch 自己的 SKILL.md,而 classify 的
         # 呼叫端是 slice-tickets。它由 classify_command_issue 對著那支檔咬。
-        print(format_classify(classify_tickets(data["tickets"]), titles))
+        rows = classify_tickets(data["tickets"])
+        print(format_classify(rows, titles))
+        rejected = [(n, reason) for n, grade, reason in rows if grade not in GRADES]
+        if rejected:
+            # 整批印完了才停 —— 停是驗收清單第 4 條(當場停、不靜靜忽略),整批
+            # 先印完是 #118(停之前要把批次講清楚)。訊息指名票號,不是「這張」。
+            # 只留「停在哪、是哪幾張」:為什麼改不了在上面那份清單裡逐張寫過了,
+            # 同一句 stdout / stderr 各印一次,client 在終端會讀到兩遍(#121)。
+            raise SystemExit(
+                "停在這裡 —— "
+                + "、".join(f"#{n}" for n, _ in rejected)
+                + " 的分級改不了,理由跟著各自那一列")
     elif mode == "start":
         print(format_lane_start(numbers, titles, data.get("running", [])))
     elif mode == "done":
@@ -1500,7 +1599,7 @@ JSON''')
     # 硬規則連 client 都蓋不過 —— 但要當場停,不是靜靜忽略(靜靜忽略的畫面跟改成功一樣)
     try:
         classify_one([], judgement=True, override=GRADE_FAST)
-    except SystemExit as e:
+    except OverrideRejected as e:
         assert "硬規則" in str(e), e
         # #120:訊息本身不准把繞道寫出來。原本那版寫「要改請先改 judgement 旗標」
         # —— agent 被 client 頂著就照字面把 true 改成 false 重跑,一路綠,而硬規則
@@ -1510,6 +1609,16 @@ JSON''')
         # (「把 true 改成 false」之類)擋不住 —— 方向是 fail-closed,不是全稱。
         assert "旗標" not in str(e), e
         assert "judgement" not in str(e), e
+        # #121:印給 client 的話裡不准出現他不是說話對象的第三人稱
+        assert "client" not in str(e), e
+        assert e.cell == "慢(改不了)", e.cell
+        # #121 AC3 要的是「咬新的措辭」。上面那幾條是關鍵字,擋得住方向卻擋不住
+        # 措辭漂移 —— 把「你說了也一樣」改回「client 說了也一樣」它們全都照樣綠。
+        assert str(e) == (
+            "動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。"
+            "驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,"
+            "把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。"
+            "票的內容沒變就是慢,你說了也一樣"), e
     else:
         raise AssertionError("hard rule silently overridden")
     # 硬規則票改成慢是同一個結果,不用停
@@ -1520,8 +1629,16 @@ JSON''')
         for judgement in (False, True):
             try:
                 classify_one([], judgement=judgement, override=bad)
-            except SystemExit as e:
-                assert "override" in str(e), e
+            except OverrideRejected as e:
+                # #121:`override` 是工程詞,client 讀不到它。咬新的整句,不是
+                # 放寬成關鍵字 —— 放寬的話換回英文詞也照樣綠。
+                assert str(e) == (f"你填的分級只能是「快」或「慢」,你打的是 {bad!r}"
+                                  " —— 改一下再重跑"), e
+                # 打錯字那張的車道照印,而且跟著票的內容跑:coverage 是空的
+                # -> 快,judgement 是 true -> 慢。不是把他打錯的那個字收下來,
+                # 也不是寫死一個。
+                assert e.cell == ("慢(改不了)" if judgement
+                                  else "快(改不了)"), (e.cell, judgement)
             else:
                 raise AssertionError(f"bad override swallowed: {bad!r} "
                                      f"(judgement={judgement})")
@@ -1536,6 +1653,46 @@ JSON''')
                     (48, GRADE_FAST, "沒有覆蓋驗收項,不會有你看得到的行為"),
                     (49, GRADE_SLOW, "動到判斷邏輯或資料寫入,硬規則一律慢")], rows
 
+    # #118:一張被拒不准把整批打死 —— 其餘各張照算完,被拒的那張自己佔一列。
+    # 票號 47/48/49 就是重現步驟那批:#48 是 client 同一輪改的,#49 撞硬規則。
+    batch = [{"number": 47, "coverage": ["1. x"], "judgement": False},
+             {"number": 48, "coverage": [], "judgement": False, "override": "慢"},
+             {"number": 49, "coverage": [], "judgement": True, "override": "快"}]
+    mixed = classify_tickets(batch)
+    assert [n for n, _, _ in mixed] == [47, 48, 49], mixed
+    assert mixed[0][:2] == (47, GRADE_SLOW), mixed
+    assert mixed[1] == (48, GRADE_SLOW, "你當場改成「慢」"), mixed
+    # 被拒的那張:車道算得出來就印出來(硬規則 -> 慢),理由留在同一列
+    assert mixed[2][0] == 49 and mixed[2][1] == "慢(改不了)", mixed
+    assert "硬規則" in mixed[2][2], mixed
+    # 認不得的 override 走同一條路 —— 也是一列,不是整批陪葬
+    typo = classify_tickets([{"number": 47, "coverage": []},
+                             {"number": 48, "coverage": [], "override": "fast"}])
+    assert typo[0][1] == GRADE_FAST and typo[1][1] == "快(改不了)", typo
+    # 打錯字那張的車道照印(票的內容算的),但他填的那個字沒被收下來
+    assert "你填的分級只能是" in typo[1][2], typo
+
+    # client 那份清單:三張全印,被拒的那張標出來是哪一張、為什麼
+    shown = format_classify(mixed, {47: "a", 48: "b", 49: "c"})
+    for want in ("#47 a", "#48 b", "#49 c"):
+        assert want in shown, (want, shown)
+    # 左欄真的對齊:三列在 `#` 之前佔的欄數必須相同。數空白會漏掉半形括號那一格
+    # —— 它字數多、欄數少,補白剛好差兩欄(QA code-review C-1)。
+    # 被拒那張的車道要真的印在紙上。這條刻意咬字面而不是 `_rejected_cell()`:
+    # 用常數比對的話,常數被改回「改不了」它照樣綠 —— 而那正是 mutation knob
+    # `classify_rejected_lane_dropped` 打的那一格。
+    assert "  慢(改不了)  #49 c — " in shown, shown
+    cells = [ln[:ln.index("#")] for ln in shown.splitlines() if "#" in ln
+             and ln.startswith("  ") and " — " in ln]
+    assert len(cells) == 3, cells
+    assert len({_cols(c) for c in cells}) == 1, [(c, _cols(c)) for c in cells]
+    assert "其中 1 張改不了" in shown, shown
+    # 貼票那段不印,改印「這批還不能貼」+ 是哪一張
+    assert "點頭之後" not in shown, shown
+    assert "這批還不能貼" in shown, shown
+    assert shown.rstrip().endswith("\n  #49 c"), shown
+    assert "分級:" not in shown, shown
+
     # 印給 client 的那份清單 + 逐張要貼進票的那幾行,是同一份判斷排出來的
     listed = format_classify(rows, {47: "分級", 48: "骨架", 49: "算票"})
     assert listed.splitlines() == [
@@ -1544,7 +1701,7 @@ JSON''')
         "  快  #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為",
         "  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢",
         "",
-        "點頭之後,這幾行逐張貼進票 body 的「覆蓋驗收項」段下方:",
+        "點頭之後,每張票上會多這一行:",
         "  #47  分級:慢 — 覆蓋 2 條驗收項",
         "  #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為",
         "  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢",
@@ -1569,6 +1726,60 @@ JSON''')
     assert (child.stdout.decode("utf-8").splitlines()
             == format_classify(classify_tickets(payload["tickets"]),
                                {47: "登入頁 → 🔑", 48: "骨架"}).splitlines())
+
+    # 兩張同時被拒:數字、列數、stderr 的行數都要跟著長 —— 只印第一張的退化
+    # 在單張的批次上看不出來(review WARN)
+    two = classify_tickets([
+        {"number": 47, "coverage": [], "judgement": True, "override": "快"},
+        {"number": 48, "coverage": ["1. x"]},
+        {"number": 49, "coverage": [], "override": "fast"}])
+    assert [g for _, g, _ in two] == ["慢(改不了)", GRADE_SLOW,
+                                      "快(改不了)"], two
+    both = format_classify(two, {47: "a", 48: "b", 49: "c"})
+    assert "其中 2 張改不了" in both, both
+    assert both.rstrip().endswith("\n  #47 a\n  #49 c"), both
+    # 左欄對齊:兩種被拒的格子 + 一個「慢」混在同一批,三列欄數還是要一樣
+    wide = [ln[:ln.index("#")] for ln in both.splitlines() if "#" in ln
+            and ln.startswith("  ") and " — " in ln]
+    assert len(wide) == 3, wide
+    assert len({_cols(c) for c in wide}) == 1, [(c, _cols(c)) for c in wide]
+    assert wide[0].strip() == "慢(改不了)", wide
+    assert wide[1].strip() == GRADE_SLOW, wide
+    assert wide[2].strip() == "快(改不了)", wide
+    # 沒有被拒的那批左欄一個字都沒動 —— #108 凍結的那份格式原樣
+    assert "  慢  #47 分級 — 覆蓋 2 條驗收項" in listed, listed
+
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=json.dumps({"mode": "classify", "tickets": [
+            {"number": 47, "coverage": [], "judgement": True, "override": "快"},
+            {"number": 48, "coverage": ["1. x"]},
+            {"number": 49, "coverage": [], "override": "fast"}]},
+            ensure_ascii=False).encode("utf-8"),
+        capture_output=True)
+    assert child.returncode != 0, child.stdout
+    err2 = child.stderr.decode("utf-8")
+    # #121:stderr 只講「停在哪、哪幾張」,理由不跟 stdout 重講一遍
+    assert "停在這裡 —— #47、#49 的分級改不了" in err2, err2
+    assert "硬規則" not in err2, err2
+
+    # #118 端到端:退出碼還是非 0(當場停),但 stdout 上整批分級一行不少,
+    # stderr 指名是哪一張 —— 這兩件事在重現步驟裡是「exit 1 + OUT: ''」
+    child = subprocess.run(
+        [sys.executable, __file__],
+        input=json.dumps({"mode": "classify", "tickets": batch,
+                          "titles": {"47": "a", "48": "b", "49": "c"}},
+                         ensure_ascii=False).encode("utf-8"),
+        capture_output=True,
+        env=dict(os.environ, PYTHONIOENCODING="cp950"))
+    assert child.returncode != 0, child.stdout
+    out = child.stdout.decode("utf-8")
+    assert out.splitlines() == format_classify(
+        mixed, {47: "a", 48: "b", 49: "c"}).splitlines(), out
+    err = child.stderr.decode("utf-8")
+    assert "#49" in err, err
+    assert "#47" not in err and "#48" not in err, err
+    assert "這張" not in err, err
 
     # 呼叫端是 slice-tickets,不是這支 skill 自己 —— 對著那支出貨檔咬。裝單一
     # skill 的機器上它根本不在,那時候這一段沒有母體可比,跳過(宣告過的天花板)。

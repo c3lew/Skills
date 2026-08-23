@@ -478,7 +478,9 @@ for (cn, cv), (jn, jv), (on, ov) in itertools.product(
     try:
         grade, reason = m.classify_one(cv, jv, ov)
         tally[grade] += 1
-    except SystemExit as e:
+    except m.OverrideRejected as e:
+        # #118 之後單張這一層拒絕不再是 SystemExit —— 整批算完才由 main 停。
+        # 掃法照舊:這條路不會落到「快」,訊息也照樣逐條驗。
         tally["停"] += 1
         reason = f"(當場停:{str(e)[:20]}…)"
         # #120 的重點:硬規則停下來的那條路,訊息不准指路去改旗標
