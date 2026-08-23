@@ -1,0 +1,723 @@
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 A  票上的重現步驟:同一張 #47 在一批裡列了兩次'
+==== 情境 A  票上的重現步驟:同一張 #47 在一批裡列了兩次
++ echo '====        client 會看到什麼 —— 這就是 AC1~AC4 的共同證據'
+====        client 會看到什麼 —— 這就是 AC1~AC4 的共同證據
++ echo ===================================================================
+===================================================================
++ classify '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":47,"coverage":["1. 登入頁"]}],
+  "titles":{"47":"登入頁"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":47,"coverage":["1. 登入頁"]}],
+  "titles":{"47":"登入頁"}}'
++ python 'D:/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat /tmp/tmp.EVuFrMFeGE/qa127/out.txt
+分級(1 張、2 列,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
+  快(改不了)  #47 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+  慢(改不了)  #47 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #47 登入頁
++ echo '--- stderr'
+--- stderr
++ cat /tmp/tmp.EVuFrMFeGE/qa127/err.txt
+停在這裡 —— #47(重複 2 次) 的分級改不了,理由跟著各自那一列
++ echo 'exit 1'
+exit 1
++ echo '---- A1  AC1:當場停,非 0 退出(出廠時是 exit 0 靜靜印兩列)'
+---- A1  AC1:當場停,非 0 退出(出廠時是 exit 0 靜靜印兩列)
++ '[' 1 '!=' 0 ']'
++ ok 0 '重複票號的批次 exit 非 0'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (重複票號的批次 exit 非 0)'
+RESULT PASS (重複票號的批次 exit 非 0)
++ echo '---- A2  AC1 的另一半:不是靜靜印出兩列 —— 兩列都標著改不了、講得出為什麼'
+---- A2  AC1 的另一半:不是靜靜印出兩列 —— 兩列都標著改不了、講得出為什麼
++ grep -nE '^  (快|慢)\(改不了\)  #47' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
+2:  快(改不了)  #47 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+3:  慢(改不了)  #47 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+++ grep -cE '^  (快|慢)\(改不了\)  #47 登入頁 — 這個票號在這批出現 2 次' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ '[' 2 = 2 ']'
++ ok 0 '兩列都掛「改不了」+ 指名重複的理由,不是兩條互相矛盾又沒說明的分級'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (兩列都掛「改不了」+ 指名重複的理由,不是兩條互相矛盾又沒說明的分級)'
+RESULT PASS (兩列都掛「改不了」+ 指名重複的理由,不是兩條互相矛盾又沒說明的分級)
++ echo '---- A3  AC2:訊息指名是哪個票號、重複幾次'
+---- A3  AC2:訊息指名是哪個票號、重複幾次
++ cat /tmp/tmp.EVuFrMFeGE/qa127/err.txt
+停在這裡 —— #47(重複 2 次) 的分級改不了,理由跟著各自那一列
++ grep -q '停在這裡 —— #47(重複 2 次) 的分級改不了' /tmp/tmp.EVuFrMFeGE/qa127/err.txt
++ ok 0 'stderr 指名 #47、講出重複 2 次'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (stderr 指名 #47、講出重複 2 次)'
+RESULT PASS (stderr 指名 #47、講出重複 2 次)
++ echo '---- A4  AC2 的邊界:一張票在 stderr 只講一次(不是佔兩列就報兩次)'
+---- A4  AC2 的邊界:一張票在 stderr 只講一次(不是佔兩列就報兩次)
+++ grep -o '#47' /tmp/tmp.EVuFrMFeGE/qa127/err.txt
+++ wc -l
++ '[' 1 = 1 ']'
++ ok 0 'stderr 裡 #47 只出現一次'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (stderr 裡 #47 只出現一次)'
+RESULT PASS (stderr 裡 #47 只出現一次)
++ echo '---- A5  AC3(#118 不變):停之前整批照印 —— 這一輪的分級長什麼樣看得到'
+---- A5  AC3(#118 不變):停之前整批照印 —— 這一輪的分級長什麼樣看得到
+++ rows_n
+++ grep -cE '^  (快|慢)(\(改不了\))? +#[0-9]+ .* — .+$' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ echo '     分級列 2 行 / 餵進去 2 列'
+     分級列 2 行 / 餵進去 2 列
+++ rows_n
+++ grep -cE '^  (快|慢)(\(改不了\))? +#[0-9]+ .* — .+$' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ '[' 2 = 2 ']'
++ grep -q '^  快(改不了)  #47 登入頁 — ' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ grep -q '^  慢(改不了)  #47 登入頁 — ' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ ok 0 '兩列都印出來,而且車道照各自那一列的內容算(一快一慢,矛盾本身看得見)'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (兩列都印出來,而且車道照各自那一列的內容算(一快一慢,矛盾本身看得見))'
+RESULT PASS (兩列都印出來,而且車道照各自那一列的內容算(一快一慢,矛盾本身看得見))
++ echo '---- A6  AC4:貼票那段整段不印(跟被拒的那張同一個處置)'
+---- A6  AC4:貼票那段整段不印(跟被拒的那張同一個處置)
+++ paste_n
+++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ echo '     貼票行 0 行'
+     貼票行 0 行
+++ paste_n
+++ grep -cE '^  #[0-9]+  分級:' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ '[' 0 = 0 ']'
++ grep -q 點頭之後 /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ grep -q 這批還不能貼 /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ ok 0 一行貼票用的「分級:」都沒有,而且明講「這批還不能貼」
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (一行貼票用的「分級:」都沒有,而且明講「這批還不能貼」)'
+RESULT PASS (一行貼票用的「分級:」都沒有,而且明講「這批還不能貼」)
++ echo '---- A7  AC4 邊界:還不能貼那份名單講的是票不是列 —— 同一張不列兩次'
+---- A7  AC4 邊界:還不能貼那份名單講的是票不是列 —— 同一張不列兩次
++ grep -n '^  #47 登入頁$' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
+6:  #47 登入頁
+++ grep -c '^  #47 登入頁$' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ '[' 1 = 1 ']'
++ ok 0 '名單上 #47 只出現一行'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (名單上 #47 只出現一行)'
+RESULT PASS (名單上 #47 只出現一行)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 B  抬頭那句:client 讀到的「N 張 / N 列」數的到底是票還是列'
+==== 情境 B  抬頭那句:client 讀到的「N 張 / N 列」數的到底是票還是列
++ echo ===================================================================
+===================================================================
++ echo '---- B1  重現步驟那批的抬頭原文'
+---- B1  重現步驟那批的抬頭原文
++ grep -n '^分級(' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
+1:分級(1 張、2 列,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
++ grep -q '^分級(1 張、2 列,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ ok 0 '抬頭是「1 張、2 列,其中 1 張改不了」'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (抬頭是「1 張、2 列,其中 1 張改不了」)'
+RESULT PASS (抬頭是「1 張、2 列,其中 1 張改不了」)
++ echo '---- B2  反向:不能讀成「2 張,其中 1 張改不了」'
+---- B2  反向:不能讀成「2 張,其中 1 張改不了」
++ grep -q '^分級(2 張,其中 1 張改不了)' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ ok 0 '抬頭沒有讓 client 以為另外那張是好的那個數字'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (抬頭沒有讓 client 以為另外那張是好的那個數字)'
+RESULT PASS (抬頭沒有讓 client 以為另外那張是好的那個數字)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 C  三重複 —— 要講「3 次」,不是 2 也不是 4'
+==== 情境 C  三重複 —— 要講「3 次」,不是 2 也不是 4
++ echo ===================================================================
+===================================================================
++ classify '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":47,"coverage":["1. 登入頁"]},
+  {"number":47,"coverage":[]}],
+  "titles":{"47":"登入頁"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":47,"coverage":["1. 登入頁"]},
+  {"number":47,"coverage":[]}],
+  "titles":{"47":"登入頁"}}'
++ python 'D:/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat /tmp/tmp.EVuFrMFeGE/qa127/out.txt
+分級(1 張、3 列,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
+  快(改不了)  #47 登入頁 — 這個票號在這批出現 3 次 —— 同一張票只能有一列,刪掉多的再重跑
+  慢(改不了)  #47 登入頁 — 這個票號在這批出現 3 次 —— 同一張票只能有一列,刪掉多的再重跑
+  快(改不了)  #47 登入頁 — 這個票號在這批出現 3 次 —— 同一張票只能有一列,刪掉多的再重跑
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #47 登入頁
++ echo '--- stderr'
+--- stderr
++ cat /tmp/tmp.EVuFrMFeGE/qa127/err.txt
+停在這裡 —— #47(重複 3 次) 的分級改不了,理由跟著各自那一列
++ echo 'exit 1'
+exit 1
++ echo '---- C1  三列都印,每列都說 3 次'
+---- C1  三列都印,每列都說 3 次
+++ grep -c '這個票號在這批出現 3 次' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ '[' 3 = 3 ']'
++ ok 0 '三列各講一次「出現 3 次」'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (三列各講一次「出現 3 次」)'
+RESULT PASS (三列各講一次「出現 3 次」)
++ echo '---- C2  不會數成 2 或 4(列數差一的那兩種錯法)'
+---- C2  不會數成 2 或 4(列數差一的那兩種錯法)
++ grep -q '出現 2 次' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ grep -q '出現 4 次' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ grep -q '重複 2 次' /tmp/tmp.EVuFrMFeGE/qa127/err.txt
++ grep -q '重複 4 次' /tmp/tmp.EVuFrMFeGE/qa127/err.txt
++ ok 0 '整份輸出沒有 2 次 / 4 次'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (整份輸出沒有 2 次 / 4 次)'
+RESULT PASS (整份輸出沒有 2 次 / 4 次)
++ echo '---- C3  抬頭跟著變成 1 張、3 列;stderr 說重複 3 次'
+---- C3  抬頭跟著變成 1 張、3 列;stderr 說重複 3 次
++ grep -q '^分級(1 張、3 列,其中 1 張改不了)' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ grep -q '停在這裡 —— #47(重複 3 次) 的分級改不了' /tmp/tmp.EVuFrMFeGE/qa127/err.txt
++ ok 0 '抬頭 3 列、stderr 重複 3 次,兩個數字同一個來源'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (抬頭 3 列、stderr 重複 3 次,兩個數字同一個來源)'
+RESULT PASS (抬頭 3 列、stderr 重複 3 次,兩個數字同一個來源)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 D  重複 + 打錯字同一列 —— 兩個理由都要看得到'
+==== 情境 D  重複 + 打錯字同一列 —— 兩個理由都要看得到
++ echo '====        (不然 client 刪完重跑才撞到第二個問題,一輪修一個)'
+====        (不然 client 刪完重跑才撞到第二個問題,一輪修一個)
++ echo ===================================================================
+===================================================================
++ classify '{"mode":"classify","tickets":[
+  {"number":9,"coverage":[],"override":"fast"},
+  {"number":9,"coverage":["1. 登入頁"]}],
+  "titles":{"9":"登入頁"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":9,"coverage":[],"override":"fast"},
+  {"number":9,"coverage":["1. 登入頁"]}],
+  "titles":{"9":"登入頁"}}'
++ python 'D:/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat /tmp/tmp.EVuFrMFeGE/qa127/out.txt
+分級(1 張、2 列,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
+  快(改不了)  #9 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑;另外,你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
+  慢(改不了)  #9 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #9 登入頁
++ echo '--- stderr'
+--- stderr
++ cat /tmp/tmp.EVuFrMFeGE/qa127/err.txt
+停在這裡 —— #9(重複 2 次) 的分級改不了,理由跟著各自那一列
++ echo 'exit 1'
+exit 1
++ echo '---- D1  那一列的原文'
+---- D1  那一列的原文
++ grep -n '#9 登入頁' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
+2:  快(改不了)  #9 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑;另外,你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
+3:  慢(改不了)  #9 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+6:  #9 登入頁
++ echo '---- D2  同一列同時看得到「重複」跟「打錯字」兩句'
+---- D2  同一列同時看得到「重複」跟「打錯字」兩句
++ grep -q '^  快(改不了)  #9 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑;另外,你填的分級只能是「快」或「慢」,你打的是 '\''fast'\'' —— 改一下再重跑$' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ ok 0 重複講在前、原本那個理由接在後面,一次給完
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (重複講在前、原本那個理由接在後面,一次給完)'
+RESULT PASS (重複講在前、原本那個理由接在後面,一次給完)
++ echo '---- D3  沒打錯字的那一列不會被硬接一句(它本來就沒有第二個問題)'
+---- D3  沒打錯字的那一列不會被硬接一句(它本來就沒有第二個問題)
++ grep -q '^  慢(改不了)  #9 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑$' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ ok 0 '另一列只有重複那句,沒有多接「;另外,」'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (另一列只有重複那句,沒有多接「;另外,」)'
+RESULT PASS (另一列只有重複那句,沒有多接「;另外,」)
++ echo '---- D4  邊界:「改不了」不會疊成兩層'
+---- D4  邊界:「改不了」不會疊成兩層
++ grep -q '(改不了)(改不了)' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ ok 0 左欄沒有疊字
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (左欄沒有疊字)'
+RESULT PASS (左欄沒有疊字)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 E  重複 + 硬規則同一批,外加一張乾淨的票'
+==== 情境 E  重複 + 硬規則同一批,外加一張乾淨的票
++ echo ===================================================================
+===================================================================
++ classify '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":48,"coverage":[],"judgement":true,"override":"快"},
+  {"number":47,"coverage":[]},
+  {"number":49,"coverage":["1. 登入頁"]}],
+  "titles":{"47":"骨架","48":"算票","49":"登入頁"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":48,"coverage":[],"judgement":true,"override":"快"},
+  {"number":47,"coverage":[]},
+  {"number":49,"coverage":["1. 登入頁"]}],
+  "titles":{"47":"骨架","48":"算票","49":"登入頁"}}'
++ python 'D:/Self Project/Skills/skills/build-batch/batch.py'
++ CL_EXIT=1
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat /tmp/tmp.EVuFrMFeGE/qa127/out.txt
+分級(3 張、4 列,其中 2 張改不了)— 標「慢」的會演給你看,標「快」的不會:
+  快(改不了)  #47 骨架 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+  慢(改不了)  #48 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
+  快(改不了)  #47 骨架 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+  慢          #49 登入頁 — 覆蓋 1 條驗收項
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #47 骨架
+  #48 算票
++ echo '--- stderr'
+--- stderr
++ cat /tmp/tmp.EVuFrMFeGE/qa127/err.txt
+停在這裡 —— #47(重複 2 次)、#48 的分級改不了,理由跟著各自那一列
++ echo 'exit 1'
+exit 1
++ echo '---- E1  四列照印,三種情況各自講各自的話'
+---- E1  四列照印,三種情況各自講各自的話
+++ rows_n
+++ grep -cE '^  (快|慢)(\(改不了\))? +#[0-9]+ .* — .+$' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ '[' 4 = 4 ']'
+++ grep -c '^  快(改不了)  #47 骨架 — 這個票號在這批出現 2 次' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ '[' 2 = 2 ']'
++ grep -q '^  慢(改不了)  #48 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ grep -qE '^  慢 +#49 登入頁 — 覆蓋 1 條驗收項$' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ ok 0 '重複兩列 + 硬規則一列 + 乾淨一列都在,理由各自不同'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (重複兩列 + 硬規則一列 + 乾淨一列都在,理由各自不同)'
+RESULT PASS (重複兩列 + 硬規則一列 + 乾淨一列都在,理由各自不同)
++ echo '---- E2  抬頭:3 張、4 列,其中 2 張改不了'
+---- E2  抬頭:3 張、4 列,其中 2 張改不了
++ grep -q '^分級(3 張、4 列,其中 2 張改不了)' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ ok 0 '張數數票(3)、列數數列(4)、改不了數票(2)'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (張數數票(3)、列數數列(4)、改不了數票(2))'
+RESULT PASS (張數數票(3)、列數數列(4)、改不了數票(2))
++ echo '---- E3  stderr:重複那張帶次數,硬規則那張不帶(它不是重複)'
+---- E3  stderr:重複那張帶次數,硬規則那張不帶(它不是重複)
++ cat /tmp/tmp.EVuFrMFeGE/qa127/err.txt
+停在這裡 —— #47(重複 2 次)、#48 的分級改不了,理由跟著各自那一列
++ grep -q '停在這裡 —— #47(重複 2 次)、#48 的分級改不了,理由跟著各自那一列' /tmp/tmp.EVuFrMFeGE/qa127/err.txt
++ ok 0 兩張都指名,只有重複的那張講次數
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (兩張都指名,只有重複的那張講次數)'
+RESULT PASS (兩張都指名,只有重複的那張講次數)
++ echo '---- E4  沒被拒的 #49 沒有被連坐(它照樣有車道跟理由)'
+---- E4  沒被拒的 #49 沒有被連坐(它照樣有車道跟理由)
++ grep -q '#49.*改不了' /tmp/tmp.EVuFrMFeGE/qa127/out.txt
++ grep -q '#49' /tmp/tmp.EVuFrMFeGE/qa127/err.txt
++ ok 0 '#49 不在改不了名單、也不在 stderr'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (#49 不在改不了名單、也不在 stderr)'
+RESULT PASS (#49 不在改不了名單、也不在 stderr)
++ echo '---- E5  左欄真的對齊 —— 量 east-asian 顯示欄寬,不是數字數'
+---- E5  左欄真的對齊 —— 量 east-asian 顯示欄寬,不是數字數
++ PYTHONIOENCODING=utf-8
++ python - /tmp/tmp.EVuFrMFeGE/qa127/out.txt 4
+  欄寬  14  '  快(改不了)  '
+  欄寬  14  '  慢(改不了)  '
+  欄寬  14  '  快(改不了)  '
+  欄寬  14  '  慢          '
+列數 4 不同的欄寬 [14]
++ ok 0 四列在票號之前佔的欄數完全相同
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (四列在票號之前佔的欄數完全相同)'
+RESULT PASS (四列在票號之前佔的欄數完全相同)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 F  沒有重複的批次:輸出跟 #127 之前那版逐字相同'
+==== 情境 F  沒有重複的批次:輸出跟 #127 之前那版逐字相同
++ echo '====        (#108 / #118 / #121 凍結的那份不能被這次改動動到)'
+====        (#108 / #118 / #121 凍結的那份不能被這次改動動到)
++ echo ===================================================================
+===================================================================
++ echo '---- F1  取出 #127 之前那版 batch.py 當母本'
+---- F1  取出 #127 之前那版 batch.py 當母本
++ git -C 'D:/Self Project/Skills' show '7c4754a^:skills/build-batch/batch.py'
++ '[' -s /tmp/tmp.EVuFrMFeGE/qa127/prev-batch.py ']'
++ ok 0 '拿到 7c4754a^ 的 batch.py'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (拿到 7c4754a^ 的 batch.py)'
+RESULT PASS (拿到 7c4754a^ 的 batch.py)
++ echo '---- F2  乾淨批次(全綠那條路)逐字相同'
+---- F2  乾淨批次(全綠那條路)逐字相同
++ diff_prev '{"mode":"classify","tickets":[
+  {"number":48,"coverage":[],"judgement":false},
+  {"number":49,"coverage":["1. 登入頁"]}],
+  "titles":{"48":"骨架","49":"登入頁"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":48,"coverage":[],"judgement":false},
+  {"number":49,"coverage":["1. 登入頁"]}],
+  "titles":{"48":"骨架","49":"登入頁"}}'
++ python 'D:/Self Project/Skills/skills/build-batch/batch.py'
++ NOW=0
++ printf %s '{"mode":"classify","tickets":[
+  {"number":48,"coverage":[],"judgement":false},
+  {"number":49,"coverage":["1. 登入頁"]}],
+  "titles":{"48":"骨架","49":"登入頁"}}'
++ python /tmp/tmp.EVuFrMFeGE/qa127/prev-batch.py
++ PREV=0
++ echo '--- 現在這版 stdout'
+--- 現在這版 stdout
++ cat /tmp/tmp.EVuFrMFeGE/qa127/now.out
+分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #49 登入頁 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #48  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #49  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 現在 exit 0 / 之前 exit 0'
+--- 現在 exit 0 / 之前 exit 0
++ diff /tmp/tmp.EVuFrMFeGE/qa127/prev.out /tmp/tmp.EVuFrMFeGE/qa127/now.out
++ diff /tmp/tmp.EVuFrMFeGE/qa127/prev.err /tmp/tmp.EVuFrMFeGE/qa127/now.err
++ '[' 0 = 0 ']'
++ ok 0 'stdout / stderr / exit 三者都跟 #127 之前一樣'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (stdout / stderr / exit 三者都跟 #127 之前一樣)'
+RESULT PASS (stdout / stderr / exit 三者都跟 #127 之前一樣)
++ echo '---- F3  抬頭那句尤其要咬:沒有重複就不多印「N 列」'
+---- F3  抬頭那句尤其要咬:沒有重複就不多印「N 列」
++ grep -n '^分級(' /tmp/tmp.EVuFrMFeGE/qa127/now.out
+1:分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
++ grep -q '^分級(2 張)— 標「慢」的會演給你看,標「快」的不會:' /tmp/tmp.EVuFrMFeGE/qa127/now.out
++ grep -q 列 /tmp/tmp.EVuFrMFeGE/qa127/now.out
++ ok 0 '抬頭是「分級(2 張)」,整份輸出沒有多出來的「列」字'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (抬頭是「分級(2 張)」,整份輸出沒有多出來的「列」字)'
+RESULT PASS (抬頭是「分級(2 張)」,整份輸出沒有多出來的「列」字)
++ echo '---- F4  #121 那批(有被拒、但沒有重複)也逐字相同'
+---- F4  #121 那批(有被拒、但沒有重複)也逐字相同
++ diff_prev '{"mode":"classify","tickets":[
+  {"number":48,"coverage":[],"judgement":false},
+  {"number":49,"coverage":[],"judgement":true,"override":"快"},
+  {"number":50,"coverage":["1. 登入頁"],"override":"fast"}],
+  "titles":{"48":"骨架","49":"算票","50":"登入頁"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":48,"coverage":[],"judgement":false},
+  {"number":49,"coverage":[],"judgement":true,"override":"快"},
+  {"number":50,"coverage":["1. 登入頁"],"override":"fast"}],
+  "titles":{"48":"骨架","49":"算票","50":"登入頁"}}'
++ python 'D:/Self Project/Skills/skills/build-batch/batch.py'
++ NOW=1
++ printf %s '{"mode":"classify","tickets":[
+  {"number":48,"coverage":[],"judgement":false},
+  {"number":49,"coverage":[],"judgement":true,"override":"快"},
+  {"number":50,"coverage":["1. 登入頁"],"override":"fast"}],
+  "titles":{"48":"骨架","49":"算票","50":"登入頁"}}'
++ python /tmp/tmp.EVuFrMFeGE/qa127/prev-batch.py
++ PREV=1
++ echo '--- 現在這版 stdout'
+--- 現在這版 stdout
++ cat /tmp/tmp.EVuFrMFeGE/qa127/now.out
+分級(3 張,其中 2 張改不了)— 標「慢」的會演給你看,標「快」的不會:
+  快          #48 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢(改不了)  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢 —— 改不成快。驗收清單第 4 條就是它。要改快只有一條路:回去改票的內容,把動到判斷邏輯或資料寫入的那部分切出去,再重切一次分級。票的內容沒變就是慢,你說了也一樣
+  慢(改不了)  #50 登入頁 — 你填的分級只能是「快」或「慢」,你打的是 'fast' —— 改一下再重跑
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #49 算票
+  #50 登入頁
++ echo '--- 現在 exit 1 / 之前 exit 1'
+--- 現在 exit 1 / 之前 exit 1
++ diff /tmp/tmp.EVuFrMFeGE/qa127/prev.out /tmp/tmp.EVuFrMFeGE/qa127/now.out
++ diff /tmp/tmp.EVuFrMFeGE/qa127/prev.err /tmp/tmp.EVuFrMFeGE/qa127/now.err
++ '[' 1 = 1 ']'
++ ok 0 被拒那條路沒被這次改動動到
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (被拒那條路沒被這次改動動到)'
+RESULT PASS (被拒那條路沒被這次改動動到)
++ echo '---- F5  #121 那批的抬頭:是「3 張,其中 2 張改不了」,沒有列數'
+---- F5  #121 那批的抬頭:是「3 張,其中 2 張改不了」,沒有列數
++ grep -q '^分級(3 張,其中 2 張改不了)' /tmp/tmp.EVuFrMFeGE/qa127/now.out
++ ok 0 沒有重複的批次抬頭跟凍結的那份一樣
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (沒有重複的批次抬頭跟凍結的那份一樣)'
+RESULT PASS (沒有重複的批次抬頭跟凍結的那份一樣)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 G  AC5:batch.py --self-check 涵蓋重複票號,而且咬整句'
+==== 情境 G  AC5:batch.py --self-check 涵蓋重複票號,而且咬整句
++ echo ===================================================================
+===================================================================
++ echo '---- G1  出貨版 --self-check 綠'
+---- G1  出貨版 --self-check 綠
++ python 'D:/Self Project/Skills/skills/build-batch/batch.py' --self-check
+OK batch self-check green
++ ok 0 'batch.py --self-check exit 0'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (batch.py --self-check exit 0)'
+RESULT PASS (batch.py --self-check exit 0)
++ echo '---- G2  self-check 裡真的有一段跑重複票號的批次'
+---- G2  self-check 裡真的有一段跑重複票號的批次
++ grep -n 同一個票號在一批裡出現兩次 'D:/Self Project/Skills/skills/build-batch/batch.py'
++ head -3
+1845:    # #127:同一個票號在一批裡出現兩次 —— 兩列互相矛盾的分級、exit 0,而 agent
++ grep -q 'assert dupshown.startswith("分級(1 張、2 列,其中 1 張改不了)")' 'D:/Self Project/Skills/skills/build-batch/batch.py'
++ ok 0 '斷言直接咬 client 看到的那句抬頭'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (斷言直接咬 client 看到的那句抬頭)'
+RESULT PASS (斷言直接咬 client 看到的那句抬頭)
++ echo '---- G3  把理由的措辭改掉(語意不變)-> self-check 要紅在 AssertionError'
+---- G3  把理由的措辭改掉(語意不變)-> self-check 要紅在 AssertionError
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python - /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py
++ ok 0 副本上換掉措辭
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (副本上換掉措辭)'
+RESULT PASS (副本上換掉措辭)
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ G1=1
++ tail -5 /tmp/tmp.EVuFrMFeGE/qa127/g1.txt
+    assert reason == ("這個票號在這批出現 2 次 —— 同一張票只能有一列,"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                      "刪掉多的再重跑"), dup
+                      ^^^^^^^^^^^^^^^^^
+AssertionError: [(47, '快(改不了)', '票號重複 2 次,請刪掉多的'), (47, '慢(改不了)', '票號重複 2 次,請刪掉多的')]
++ '[' 1 '!=' 0 ']'
++ ok 0 '換掉措辭 -> self-check 紅'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (換掉措辭 -> self-check 紅)'
+RESULT PASS (換掉措辭 -> self-check 紅)
++ grep -q AssertionError /tmp/tmp.EVuFrMFeGE/qa127/g1.txt
++ ok 0 '紅在斷言上 —— 咬的是整句,不是放寬成關鍵字'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (紅在斷言上 —— 咬的是整句,不是放寬成關鍵字)'
+RESULT PASS (紅在斷言上 —— 咬的是整句,不是放寬成關鍵字)
++ echo '---- G4  抬頭的「1 張、2 列」也咬整句:改成數列 -> self-check 紅'
+---- G4  抬頭的「1 張、2 列」也咬整句:改成數列 -> self-check 紅
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python - /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ G2=1
++ tail -3 /tmp/tmp.EVuFrMFeGE/qa127/g2.txt
+
+這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+  #47 登入頁
++ '[' 1 '!=' 0 ']'
++ grep -q AssertionError /tmp/tmp.EVuFrMFeGE/qa127/g2.txt
++ ok 0 '抬頭退回數列 -> self-check 紅在斷言'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (抬頭退回數列 -> self-check 紅在斷言)'
+RESULT PASS (抬頭退回數列 -> self-check 紅在斷言)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 H  AC6:進 97-mutate.py 的 mutation 台,守門拆掉要轉紅'
+==== 情境 H  AC6:進 97-mutate.py 的 mutation 台,守門拆掉要轉紅
++ echo ===================================================================
+===================================================================
++ echo '---- H1  #127 這批 knob 都在表上'
+---- H1  #127 這批 knob 都在表上
++ K127='classify_dupe_count_hidden|classify_dupe_lane_dropped'
++ K127='classify_dupe_count_hidden|classify_dupe_lane_dropped|classify_dupe_reason_swallowed|classify_dupe_stderr_plain'
++ K127='classify_dupe_count_hidden|classify_dupe_lane_dropped|classify_dupe_reason_swallowed|classify_dupe_stderr_plain|classify_dupes_always|classify_dupes_never_found'
++ K127='classify_dupe_count_hidden|classify_dupe_lane_dropped|classify_dupe_reason_swallowed|classify_dupe_stderr_plain|classify_dupes_always|classify_dupes_never_found|classify_dupes_not_marked|classify_rejected_not_deduped'
++ K127='classify_dupe_count_hidden|classify_dupe_lane_dropped|classify_dupe_reason_swallowed|classify_dupe_stderr_plain|classify_dupes_always|classify_dupes_never_found|classify_dupes_not_marked|classify_rejected_not_deduped|classify_head_counts_rows|dupe_pin_dropped'
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' --list
++ grep -E '^(classify_dupe_count_hidden|classify_dupe_lane_dropped|classify_dupe_reason_swallowed|classify_dupe_stderr_plain|classify_dupes_always|classify_dupes_never_found|classify_dupes_not_marked|classify_rejected_not_deduped|classify_head_counts_rows|dupe_pin_dropped)$'
+classify_dupe_count_hidden
+classify_dupe_lane_dropped
+classify_dupe_reason_swallowed
+classify_dupe_stderr_plain
+classify_dupes_always
+classify_dupes_never_found
+classify_dupes_not_marked
+classify_head_counts_rows
+classify_rejected_not_deduped
+dupe_pin_dropped
+++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' --list
+++ grep -E '^(classify_dupe_count_hidden|classify_dupe_lane_dropped|classify_dupe_reason_swallowed|classify_dupe_stderr_plain|classify_dupes_always|classify_dupes_never_found|classify_dupes_not_marked|classify_rejected_not_deduped|classify_head_counts_rows|dupe_pin_dropped)$'
++ DUPE_KNOBS='classify_dupe_count_hidden
+classify_dupe_lane_dropped
+classify_dupe_reason_swallowed
+classify_dupe_stderr_plain
+classify_dupes_always
+classify_dupes_never_found
+classify_dupes_not_marked
+classify_head_counts_rows
+classify_rejected_not_deduped
+dupe_pin_dropped'
+++ echo 'classify_dupe_count_hidden
+classify_dupe_lane_dropped
+classify_dupe_reason_swallowed
+classify_dupe_stderr_plain
+classify_dupes_always
+classify_dupes_never_found
+classify_dupes_not_marked
+classify_head_counts_rows
+classify_rejected_not_deduped
+dupe_pin_dropped'
+++ wc -l
++ '[' 10 -ge 10 ']'
++ ok 0 '至少 10 個 #127 相關的 knob'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (至少 10 個 #127 相關的 knob)'
+RESULT PASS (至少 10 個 #127 相關的 knob)
++ echo '---- H2  逐個 knob 改壞 -> batch.py --self-check 要轉紅'
+---- H2  逐個 knob 改壞 -> batch.py --self-check 要轉紅
++ MISSED=
++ for knob in $DUPE_KNOBS
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' /tmp/tmp.EVuFrMFeGE/qa127/case classify_dupe_count_hidden
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ KC=1
++ '[' 1 = 0 ']'
++ echo '  咬住    classify_dupe_count_hidden (exit=1)'
+  咬住    classify_dupe_count_hidden (exit=1)
++ for knob in $DUPE_KNOBS
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' /tmp/tmp.EVuFrMFeGE/qa127/case classify_dupe_lane_dropped
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ KC=1
++ '[' 1 = 0 ']'
++ echo '  咬住    classify_dupe_lane_dropped (exit=1)'
+  咬住    classify_dupe_lane_dropped (exit=1)
++ for knob in $DUPE_KNOBS
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' /tmp/tmp.EVuFrMFeGE/qa127/case classify_dupe_reason_swallowed
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ KC=1
++ '[' 1 = 0 ']'
++ echo '  咬住    classify_dupe_reason_swallowed (exit=1)'
+  咬住    classify_dupe_reason_swallowed (exit=1)
++ for knob in $DUPE_KNOBS
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' /tmp/tmp.EVuFrMFeGE/qa127/case classify_dupe_stderr_plain
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ KC=1
++ '[' 1 = 0 ']'
++ echo '  咬住    classify_dupe_stderr_plain (exit=1)'
+  咬住    classify_dupe_stderr_plain (exit=1)
++ for knob in $DUPE_KNOBS
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' /tmp/tmp.EVuFrMFeGE/qa127/case classify_dupes_always
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ KC=1
++ '[' 1 = 0 ']'
++ echo '  咬住    classify_dupes_always (exit=1)'
+  咬住    classify_dupes_always (exit=1)
++ for knob in $DUPE_KNOBS
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' /tmp/tmp.EVuFrMFeGE/qa127/case classify_dupes_never_found
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ KC=1
++ '[' 1 = 0 ']'
++ echo '  咬住    classify_dupes_never_found (exit=1)'
+  咬住    classify_dupes_never_found (exit=1)
++ for knob in $DUPE_KNOBS
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' /tmp/tmp.EVuFrMFeGE/qa127/case classify_dupes_not_marked
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ KC=1
++ '[' 1 = 0 ']'
++ echo '  咬住    classify_dupes_not_marked (exit=1)'
+  咬住    classify_dupes_not_marked (exit=1)
++ for knob in $DUPE_KNOBS
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' /tmp/tmp.EVuFrMFeGE/qa127/case classify_head_counts_rows
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ KC=1
++ '[' 1 = 0 ']'
++ echo '  咬住    classify_head_counts_rows (exit=1)'
+  咬住    classify_head_counts_rows (exit=1)
++ for knob in $DUPE_KNOBS
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' /tmp/tmp.EVuFrMFeGE/qa127/case classify_rejected_not_deduped
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ KC=1
++ '[' 1 = 0 ']'
++ echo '  咬住    classify_rejected_not_deduped (exit=1)'
+  咬住    classify_rejected_not_deduped (exit=1)
++ for knob in $DUPE_KNOBS
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python 'D:/Self Project/Skills/scripts/qa/97-mutate.py' /tmp/tmp.EVuFrMFeGE/qa127/case dupe_pin_dropped
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ KC=1
++ '[' 1 = 0 ']'
++ echo '  咬住    dupe_pin_dropped (exit=1)'
+  咬住    dupe_pin_dropped (exit=1)
++ '[' -z '' ']'
++ ok 0 '每個 #127 knob 都被 batch.py 自己的 --self-check 咬住'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (每個 #127 knob 都被 batch.py 自己的 --self-check 咬住)'
+RESULT PASS (每個 #127 knob 都被 batch.py 自己的 --self-check 咬住)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 I  AC7:slice-tickets/SKILL.md 補了這個情況怎麼辦'
+==== 情境 I  AC7:slice-tickets/SKILL.md 補了這個情況怎麼辦
++ echo ===================================================================
+===================================================================
++ echo '---- I1  那句散文的原文'
+---- I1  那句散文的原文
++ grep -n 同一個票號在同一批裡只能出現一次 'D:/Self Project/Skills/skills/slice-tickets/SKILL.md'
+63:**同一個票號在同一批裡只能出現一次**。餵進 JSON 的票號是手打/照抄的,同一張票在兩個 vertical slice 底下各列一次很自然 —— 而那會讓同一張票在清單上佔兩列、標著兩個互相矛盾的分級,client 點的頭指向哪一列就不確定了(他的否決權在那裡是空的)。`batch.py` 會當場停,指名是哪個票號、重複幾次;整批照印、貼票那段不印,跟被拒的那張同一個處置。修法是刪掉多的那幾列(不是挑一列留著改分級),再整批重跑一次。
++ grep -q 同一個票號在同一批裡只能出現一次 'D:/Self Project/Skills/skills/slice-tickets/SKILL.md'
++ ok 0 'SKILL.md 有這句'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (SKILL.md 有這句)'
+RESULT PASS (SKILL.md 有這句)
++ echo '---- I2  講得出「怎麼修」,不是只說不行'
+---- I2  講得出「怎麼修」,不是只說不行
++ grep -q '刪掉多的那幾列(不是挑一列留著改分級)' 'D:/Self Project/Skills/skills/slice-tickets/SKILL.md'
++ ok 0 修法寫出來了:刪多的,不是挑一列留著
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (修法寫出來了:刪多的,不是挑一列留著)'
+RESULT PASS (修法寫出來了:刪多的,不是挑一列留著)
++ echo '---- I3  那句被 batch.py 的 CLASSIFY_LINES pin 住 —— 刪掉會轉紅'
+---- I3  那句被 batch.py 的 CLASSIFY_LINES pin 住 —— 刪掉會轉紅
++ fresh
++ rm -rf /tmp/tmp.EVuFrMFeGE/qa127/case
++ cp -r /tmp/tmp.EVuFrMFeGE/qa127/pristine /tmp/tmp.EVuFrMFeGE/qa127/case
++ python - /tmp/tmp.EVuFrMFeGE/qa127/case/skills/slice-tickets/SKILL.md
++ python /tmp/tmp.EVuFrMFeGE/qa127/case/skills/build-batch/batch.py --self-check
++ IC=1
++ tail -3 /tmp/tmp.EVuFrMFeGE/qa127/i.txt
+    assert classify_lines_issue(slicing) is None, classify_lines_issue(slicing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: slice-tickets SKILL.md: 票號不能重複那句不見了 —— 少了它,agent 撞到停之後會自己挑一列留著,而 client 點頭的對象是哪一列從頭到尾沒人知道
++ '[' 1 '!=' 0 ']'
++ ok 0 'SKILL.md 那句刪掉 -> batch.py --self-check 紅'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (SKILL.md 那句刪掉 -> batch.py --self-check 紅)'
+RESULT PASS (SKILL.md 那句刪掉 -> batch.py --self-check 紅)
++ set +x
+
+全部格子符合預期
