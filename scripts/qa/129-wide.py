@@ -20,6 +20,9 @@ JSON 母體算**,再跟實際行為對照。
 - N6  `blocked_by` 兩邊 key 對得起來:plan 的三段(要開 / 排隊 / 還卡著)由這支自己
       照散文算一遍(blocker 還開著、或整批裡根本沒見過 -> 卡著),再跟印出來的對。
 - N7  沒有重複、票號都合法 -> exit 0 且貼票段行數 == 列數。
+- N8  反引號裡那幾行「照抄貼進終端機」的下一棒指令,`#` 後面**緊接**純數字 ——
+      `# 108`(帶空白,bash / PowerShell 都當註解)與 `#108.0`(指到不存在的票)
+      都算違例。`spec` 那格是這條在守的(#130)。
 
 **寬在哪**:這支認「看起來像票號的東西」比受測物寬 —— 除了 `int(str(x).strip())`
 之外,整數值的小數(`47.0`、`"47.0"`)也算同一張 #47。受測物在那裡是停的(票上
@@ -51,7 +54,20 @@ PASTE_RE = re.compile(r"^ +#(\S+) +分級")
 BLOCKED_RE = re.compile(r"^ {2}#(\S+?)(?: .*)?$")
 # stdout 上一個 `#` 後面接的那一串 —— 標點與括號不算票號的一部分(輸出裡全形
 # 半形都有,兩種都要斷開),N2 / N5 掃的就是這個。
-HASH_RE = re.compile(r"#([^\s`()（）,，。：;；、「」]+)")
+# `(?<!#)#(?!#)`:markdown 的 `##` / `###` 標題不是票號。這一段本來靠「有 `/` 或
+# `:` 就跳過」順便躲掉,那個放行是為 `#<spec 連結>` 開的,#130 之後沒有東西住在
+# 裡面了 —— 拆掉之後標題要自己認,不要再借別人的洞。
+HASH_RE = re.compile(r"(?<!#)#(?!#)([^\s`()（）,，。：;；、「」]+)")
+# 反引號裡那一段給 client 照抄貼的下一棒指令:`` `/client-demo #51` `` /
+# `` `$build #48` ``。抓的是指令名後面那個參數(N8)。
+#
+# 宣告過的天花板兩條,別把它讀成更強的保證:
+#   1. 指令名只認 `[a-z-]+`,而且後面一定要有一個帶空白的參數 —— 指令名帶數字或
+#      大寫、或是沒有參數的指令,這條掃不到。現在 repo 裡四支下一棒指令
+#      (`/build` / `/build-batch` / `/qa` / `/client-demo`)都是這個形狀。
+#   2. N8 只跑在「票號全部合法」那半(壞值那半在上面就 early return 了),守的是
+#      綠路徑上印出來的指令。壞值那面由 N4 守。
+PASTE_CMD_RE = re.compile(r"`[$/][a-z-]+ ([^`]*)`")
 
 
 def cols(text):
@@ -156,8 +172,12 @@ def numbers_in(payload):
         raws += list(t.get("blocked_by", []))
     for field in ("numbers", "fixing", "running", "queue", "merged", "pending"):
         raws += list(payload.get(field, []))
-    if "number" in payload:
-        raws.append(payload["number"])
+    # `spec` 也在裡面(#130):它被印進 `/build-batch #{spec}` 這種要 client 照抄
+    # 貼進終端機的下一棒指令。這支自己窮舉,不 import 受測物那張表 —— 受測物那張
+    # 表少一格正是要量的東西。
+    for field in ("number", "spec"):
+        if field in payload:
+            raws.append(payload[field])
     raws += list(payload.get("titles", {}).keys())
     return raws
 
@@ -187,14 +207,21 @@ def check(name, payload):
         return bad, wide
 
     # 以下都是「票號全部合法」的批次
-    # N2:stdout 上每個「該是票號」的 #xxx 都是裸整數。
-    # `#<spec 連結>` 不是票號(交棒那幾行本來就這樣寫),用「有沒有 `/` 或 `:`」
-    # 認出來跳過 —— 標點靠 strip 掃掉,全形半形都要,因為輸出兩種都有。
+    # N2:stdout 上每個 `#xxx` 都是裸整數。這裡本來對「有 `/` 或 `:` 的就跳過」
+    # 開了一個放行(當時 `spec` 那格放的是連結),#130 之後 `spec` 也是票號,那個
+    # 放行沒有東西住在裡面了 —— 留著等於這面尺自己開一個洞。
     for tok in HASH_RE.findall(out):
-        if "/" in tok or ":" in tok:
-            continue
         if not tok.isdigit():
             bad.append((f"N2 stdout 上印出非裸整數的票號 `#{tok}`", ctx))
+
+    # N8:反引號裡那幾行下一棒指令,client 是整段照抄貼進終端機的 —— `#` 後面
+    # 必須**緊接**純數字。帶空白(`# 108`)在 bash 與 PowerShell 都是註解起頭,
+    # 貼上去等於什麼都沒跑;小數(`#108.0`)指到一張不存在的票。這條 N2 掃不到:
+    # `# 108` 的 `#` 後面是空白,`#(\S+)` 根本不匹配(#130)。
+    for arg in PASTE_CMD_RE.findall(out):
+        if not re.fullmatch(r"#\d+", arg):
+            bad.append((f"N8 照抄貼的指令參數是 `{arg}` —— 不是 `#<純數字>`,"
+                        "貼進終端機不會跑到那張票", ctx))
 
     # N5:**印出來**的每個票號,titles 表裡有它就要看得到那個標題。
     # 判準訂在「印出來的」而不是「payload 裡的」:一張已收的票本來就只被算進
@@ -325,13 +352,18 @@ def cases(quick):
     yield ("refill 型別混用", {"mode": "refill", "running": ["47"],
                                "queue": ["48", 49], "titles": T})
     yield ("merged 型別混用", {"mode": "merged", "numbers": ["47", 48],
-                               "fixing": ["48"], "titles": T,
-                               "spec": "https://example.invalid/1"})
-    yield ("summary 型別混用", {"mode": "summary", "spec": "https://example.invalid/1",
+                               "fixing": ["48"], "titles": T, "spec": 108})
+    yield ("summary 型別混用", {"mode": "summary", "spec": 108,
                                 "numbers": ["47", 48], "fixing": [], "titles": T,
-                                "coverage": {}})
+                                "coverage": {"47": ["a"], "48": ["b"]}})
+    # coverage 給空的那個形狀單獨留一格 —— 上面那格本來是空的,#130 給它補上真的
+    # coverage 是為了讓 N2 / N5 / N8 走得到 stdout(空的那條在 coverage_of 就停了),
+    # 兩個形狀各佔一格,不要用補的把舊的那個蓋掉
+    yield ("summary coverage 空的", {"mode": "summary", "spec": 108,
+                                     "numbers": ["47", 48], "fixing": [],
+                                     "titles": T, "coverage": {}})
     yield ("interrupted 型別混用", {"mode": "interrupted", "numbers": ["47", 48],
-                                    "titles": T, "spec": "https://example.invalid/1"})
+                                    "titles": T, "spec": 108})
     yield ("conflict-stopped 型別混用",
            {"mode": "conflict-stopped", "numbers": ["47"], "titles": T,
             "files": ["a.py"], "merged": ["47"], "pending": ["48"]})
@@ -342,6 +374,29 @@ def cases(quick):
                                  "tickets": [dict(KINDS["fast"], number="47")]})
     yield ("titles key 壞掉", {"mode": "classify", "titles": {"四七": "登入頁"},
                                "tickets": [dict(KINDS["fast"], number=47)]})
+
+    # ---- N8:`spec` 那格 —— 它印出來的是 client 要照抄貼的下一棒指令(#130)----
+    # 四個印 spec 的地方各走一遍:interrupted、merged 全綠那半、merged 有人還在
+    # 修那半、summary 的交棒行。同一張 #108 的三種寫法各跑一次。
+    for raw in [108, "108", " 108 ", "0108"]:
+        yield (f"interrupted spec {raw!r}",
+               {"mode": "interrupted", "numbers": ["47", 48], "titles": T,
+                "spec": raw})
+        yield (f"merged 全綠 spec {raw!r}",
+               {"mode": "merged", "numbers": ["47", 48], "titles": T,
+                "spec": raw})
+        yield (f"merged 有人還在修 spec {raw!r}",
+               {"mode": "merged", "numbers": ["47", 48], "fixing": ["48"],
+                "titles": T, "spec": raw})
+        yield (f"summary spec {raw!r}",
+               {"mode": "summary", "numbers": ["47", 48], "fixing": [],
+                "titles": T, "spec": raw,
+                "coverage": {"47": ["1. 登入頁"], "48": ["2. 結帳"]}})
+    # 轉不成整數的 spec:N4 那條同樣要蓋到它 —— 停、不裸 traceback、講得出他填了什麼
+    for raw in ["一〇八", None, "", "108.0", 108.0, "#108", "108a",
+                "https://example.invalid/1"]:
+        yield (f"壞 spec {raw!r}",
+               {"mode": "merged", "numbers": ["47"], "titles": T, "spec": raw})
 
     # ---- N6:blocked_by 兩邊 key 對得起來 ----
     def P(n, b=(), state="open"):

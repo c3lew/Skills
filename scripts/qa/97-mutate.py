@@ -354,6 +354,20 @@ KNOBS = {
         "    for field in NUMBER_LISTS:",
         "    for field in ():",
         BATCH),
+    # ---- #130 `spec` 那格 ------------------------------------------
+    # 單格值只收 `number`、`spec` 漏掉 —— #130 出廠時的形狀:`" 108 "` 印成
+    # `/build-batch # 108`,`#` 後面帶空白在 bash 與 PowerShell 都是註解起頭,
+    # client 照抄貼上去等於什麼都沒跑,而且 exit 0、stderr 空的
+    "spec_not_normalized": (
+        "    for field in NUMBER_SCALARS:",
+        '    for field in ("number",):',
+        BATCH),
+    # 單格值那半整條關掉 —— `number` 與 `spec` 一起漏,對照組:確認咬住上面那個
+    # knob 的不是「碰巧有別的東西在量 number」
+    "number_scalars_not_normalized": (
+        "    for field in NUMBER_SCALARS:",
+        "    for field in ():",
+        BATCH),
     # `titles` 的 key 退回裸 `int(k)` —— 壞 key 又變成一坨 traceback,而
     # 「兩邊的 key 走同一支」那個宣稱回到只活在註解裡
     "titles_key_bare_int": (

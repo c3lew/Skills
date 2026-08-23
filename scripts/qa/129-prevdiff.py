@@ -44,7 +44,12 @@ BEFORE.write_bytes(subprocess.run(
 AFTER = ROOT / "skills" / "build-batch" / "batch.py"   # 工作區(= HEAD 643f683)
 
 T = {"47": "登入頁", "48": "結帳流程", "49": "寄信"}
-SPEC = "https://github.com/c3lew/Skills/issues/108"
+# spec 那格放的是**票號**,不是連結:它被印進 `/build-batch #{spec}` 這種要 client
+# 照抄貼進終端機的下一棒指令(SKILL.md §3 / §7 的範例都給整數)。這裡本來塞的是
+# 完整 URL,修前印出來是 `/build-batch #https://github.com/...` —— 那本來就貼不動,
+# 只是當時沒有任何一把尺在量它。#130 把 spec 收進入口之後這格會當場停,所以 fixture
+# 一起校準成票號(留 URL 的話 c17/c18/c20 三格會把「修對的收緊」誤報成新誤判)。
+SPEC = 108
 
 
 def C(n, cov=None, **kw):

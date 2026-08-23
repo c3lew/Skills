@@ -76,7 +76,18 @@ FAIL_LANE_LINES = (
 # 一份 payload 裡放票號的那幾格名單。收在一張表而不是每個 mode 各自轉:漏掉一格
 # 是無聲的(`titles` 查表查不到就少印一個標題,`fixing` 比對不上就誤停),而
 # #129 的形狀本身就是「有一個入口沒收」。
+#
+# 這六格怎麼窮舉出來的:`main` 裡每一個 `data[...]` / `data.get(...)` 的 call site
+# 逐一看它拿到的是不是票號。清單值的六格在這裡,單格值的兩格在 `NUMBER_SCALARS`,
+# `titles` 的 key 與 `tickets` 各自在 `main` 裡點名 —— 加新 mode 的人要一起看這兩張
+# 表,新的一格沒登記進來就是下一個 #130(那次漏的是 `spec`)。剩下的 `worktrees`
+# 是 `git worktree list` 的原文、`coverage` 的 key 在 `coverage_of` 自己收、
+# `files` / `how` / `mode` 不是票號。
 NUMBER_LISTS = ("numbers", "fixing", "running", "queue", "merged", "pending")
+# 單格值的那半。`spec` 也在裡面:它被印進 `/build-batch #{spec}` 這種**要 client
+# 照抄貼進終端機**的下一棒指令,沒收的話 `" 108 "` 印出來是 `# 108`,`#` 後面帶
+# 空白在 bash 與 PowerShell 都是註解起頭,貼上去等於沒跑(#130)。
+NUMBER_SCALARS = ("number", "spec")
 
 
 def normalize_tickets(tickets):
@@ -796,8 +807,9 @@ def main():
         if field in data:
             data[field] = [ticket_number(n, f"`{field}` 那份名單裡的票號")
                            for n in data[field]]
-    if "number" in data:
-        data["number"] = ticket_number(data["number"], "`number` 那格票號")
+    for field in NUMBER_SCALARS:
+        if field in data:
+            data[field] = ticket_number(data[field], f"`{field}` 那格票號")
     titles = {ticket_number(k, "`titles` 那份標題表裡的票號"): v
               for k, v in data.get("titles", {}).items()}
     mode = data.get("mode", "plan")
@@ -2064,6 +2076,52 @@ JSON''')
         assert "他填的是 47.9" in str(exc), exc
     else:
         assert False, "小數的票號沒有被擋下來"
+
+    # #130:`spec` 也是被當票號用的那一格,而且它印出來的是 client 要**照抄貼進
+    # 終端機**的下一棒指令。`" 108 "` 沒收的話印出來是 `/build-batch # 108` ——
+    # `#` 後面帶空白在 bash 與 PowerShell 都是註解起頭,client 貼上去等於什麼都
+    # 沒跑,exit 還是 0、stderr 還是空的。四個印 spec 的地方各咬一次整句:
+    # interrupted、merged 的全綠那半、merged 有人還在修那半、summary 的交棒行。
+    for payload, want in (
+        ({"mode": "interrupted", "numbers": [47], "spec": " 108 ",
+          "titles": {"47": "a"}},
+         "重跑 `/build-batch #108`(Codex: `$build-batch #108`)會接續這條 lane"),
+        ({"mode": "merged", "numbers": [47], "spec": " 108 "},
+         "1 張已合併,下一步:`/client-demo #108`"
+         "(Codex: `$client-demo #108`) — 一次 demo 這批"),
+        ({"mode": "merged", "numbers": [47, 48], "spec": " 108 ",
+          "fixing": [48]},
+         "下一步:`/client-demo #108`(Codex: `$client-demo #108`)"
+         " — 先 demo 已收的 1 張"),
+        ({"mode": "summary", "numbers": [47], "spec": " 108 ",
+          "titles": {"47": "a"}, "coverage": {"47": ["1. 登入頁"]}},
+         "下一步:`/client-demo #108`(Codex: `$client-demo #108`)"),
+    ):
+        child = subprocess.run(
+            [sys.executable, __file__],
+            input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            capture_output=True,
+            env=dict(os.environ, PYTHONIOENCODING="cp950"))
+        assert child.returncode == 0, child.stderr.decode("utf-8", "replace")
+        pasted = child.stdout.decode("utf-8")
+        assert want in pasted, (payload["mode"], pasted)
+        # 貼得動的那個形狀反過來再問一次:`#` 後面不准接空白
+        assert "# 108" not in pasted, (payload["mode"], pasted)
+
+    # `spec` 轉不動 -> 當場停,訊息指名是 `spec` 那格、他填的是什麼。`108.0`
+    # 那條特別要停:它 exit 0 印出來的 `#108.0` 指到一張不存在的票。
+    for raw, shown in ((108.0, "108.0"), ("一〇八", "'一〇八'"), (None, "None")):
+        child = subprocess.run(
+            [sys.executable, __file__],
+            input=json.dumps({"mode": "merged", "numbers": [47], "spec": raw},
+                             ensure_ascii=False).encode("utf-8"),
+            capture_output=True,
+            env=dict(os.environ, PYTHONIOENCODING="cp950"))
+        assert child.returncode != 0 and not child.stdout.strip(), child.stdout
+        badspec = child.stderr.decode("utf-8")
+        assert "Traceback" not in badspec, badspec
+        assert (f"停在這裡 —— `spec` 那格票號不是數字,他填的是 {shown} —— "
+                "改成票號那個數字(像 47 這樣)再重跑") in badspec, badspec
 
     # 呼叫端是 slice-tickets,不是這支 skill 自己 —— 對著那支出貨檔咬。裝單一
     # skill 的機器上它根本不在,那時候這一段沒有母體可比,跳過(宣告過的天花板)。

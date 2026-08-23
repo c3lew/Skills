@@ -50,6 +50,8 @@ JSON
 
 cap 寫死 3,不做設定。blocker 已關的票會被放行;blocker 還開著、或 blocker 根本不在這份資料裡的,一律留在「還卡著」— 看不到它關了就不賭。
 
+**payload 裡放票號的每一格都要登記**:票號的型別在 `batch.py` 的 `main` 一次收斂,靠的是兩張表 —— 清單值的走 `NUMBER_LISTS`(`numbers` / `fixing` / `running` / `queue` / `merged` / `pending`),單格值的走 `NUMBER_SCALARS`(`number` / `spec`)。加新 mode、或給既有 mode 加一格票號,**要同時把那一格登記進對應的表**。沒登記是無聲的:標題查表查不到就少印一個、`fixing` 比對不上就誤停,而 `spec` 那格漏掉的後果最重 —— 它被印進 `/build-batch #<spec>` 這種要 client 照抄貼進終端機的下一棒指令,`" 108 "` 沒收就印成 `# 108`,`#` 後面帶空白在 bash 與 PowerShell 都是註解起頭,client 貼上去等於什麼都沒跑(#129 / #130 各漏過一次)。
+
 ## 4. 兩個提早結束的岔路
 
 - **只有 1 張能跑** → 印「沒必要開批次,用 `/build #47`(Codex: `$build #47`)就好」,結束,不問點頭。
