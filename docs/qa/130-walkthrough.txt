@@ -1,0 +1,2435 @@
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 O  修前長什麼樣 —— 證明這個洞真的存在過(對照組,不是 AC)'
+==== 情境 O  修前長什麼樣 —— 證明這個洞真的存在過(對照組,不是 AC)
++ echo ===================================================================
+===================================================================
++ echo '---- O1  取出 #130 修法之前那版 batch.py 當母本'
+---- O1  取出 #130 修法之前那版 batch.py 當母本
++ git -C '/d/Self Project/Skills' show '2ebbc89^:skills/build-batch/batch.py'
++ '[' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/prev-batch.py ']'
++ ok 0 '拿到 2ebbc89^ 的 batch.py'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (拿到 2ebbc89^ 的 batch.py)'
+RESULT PASS (拿到 2ebbc89^ 的 batch.py)
++ echo '---- O2  票上重現步驟①(修前):spec 帶空白 -> 印出 `/build-batch # 108 `'
+---- O2  票上重現步驟①(修前):spec 帶空白 -> 印出 `/build-batch # 108 `
++ runp '{"mode":"interrupted","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/prev-batch.py
++ BIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/prev-batch.py
++ printf %s '{"mode":"interrupted","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/prev-batch.py
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+中斷,可續 #47 a — 未合併,工作區 .git/batch-worktrees/47 與 branch batch/47 都留著;重跑 `/build-batch # 108 `(Codex: `$build-batch # 108 `)會接續這條 lane
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ PREV_INTR_RC=0
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt ']'
++ grep -q '重跑 `/build-batch # 108 `' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ ok 0 '修前確實印出帶空白的 `# 108 `、exit 0、stderr 空的(票上「實際」那段)'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (修前確實印出帶空白的 `# 108 `、exit 0、stderr 空的(票上「實際」那段))'
+RESULT PASS (修前確實印出帶空白的 `# 108 `、exit 0、stderr 空的(票上「實際」那段))
++ echo '---- O3  票上重現步驟②(修前):spec=108.0 -> 印出 `#108.0`,exit 0 無聲'
+---- O3  票上重現步驟②(修前):spec=108.0 -> 印出 `#108.0`,exit 0 無聲
++ runp '{"mode":"merged","numbers":[47],"spec":108.0,"titles":{"47":"a"}}' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/prev-batch.py
++ BIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/prev-batch.py
++ printf %s '{"mode":"merged","numbers":[47],"spec":108.0,"titles":{"47":"a"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/prev-batch.py
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+1 張已合併,下一步:`/client-demo #108.0`(Codex: `$client-demo #108.0`) — 一次 demo 這批
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt ']'
++ grep -q '`/client-demo #108.0`' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ ok 0 '修前指到一張不存在的 #108.0、完全沒有聲音'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (修前指到一張不存在的 #108.0、完全沒有聲音)'
+RESULT PASS (修前指到一張不存在的 #108.0、完全沒有聲音)
++ echo '---- O4  「貼不動」是量得出來的 —— 讓 shell 自己斷詞'
+---- O4  「貼不動」是量得出來的 —— 讓 shell 自己斷詞
+++ paste_tokens '/build-batch #108'
+++ set -f
+++ set -- /build-batch '#108'
+++ echo 2
+++ paste_arg2 '/build-batch #108'
+++ set -f
+++ set -- /build-batch '#108'
+++ echo '#108'
++ echo '     修後  '\''/build-batch #108'\''   -> 2 個 token,參數 '\''#108'\'''
+     修後  '/build-batch #108'   -> 2 個 token,參數 '#108'
+++ paste_tokens '/build-batch # 108 '
+++ set -f
+++ set -- /build-batch '#' 108
+++ echo 3
+++ paste_arg2 '/build-batch # 108 '
+++ set -f
+++ set -- /build-batch '#' 108
+++ echo '#'
++ echo '     修前  '\''/build-batch # 108 '\'' -> 3 個 token,參數 '\''#'\'''
+     修前  '/build-batch # 108 ' -> 3 個 token,參數 '#'
++ echo '     (修前那個第 2 個 token 是裸 `#` —— bash 與 PowerShell 都當註解起頭,'
+     (修前那個第 2 個 token 是裸 `#` —— bash 與 PowerShell 都當註解起頭,
++ echo '      後面的 108 整段被吃掉;實際示範:)'
+      後面的 108 整段被吃掉;實際示範:)
++ bash -c 'f() { echo "拿到 $# 個參數"; }; f 108'
+拿到 1 個參數
++ bash -c 'f() { echo "拿到 $# 個參數"; }; f # 108'
+拿到 0 個參數
+++ paste_tokens '/build-batch #108'
+++ set -f
+++ set -- /build-batch '#108'
+++ echo 2
++ '[' 2 = 2 ']'
+++ paste_arg2 '/build-batch #108'
+++ set -f
+++ set -- /build-batch '#108'
+++ echo '#108'
++ '[' '#108' = '#108' ']'
+++ paste_tokens '/build-batch # 108 '
+++ set -f
+++ set -- /build-batch '#' 108
+++ echo 3
++ '[' 3 = 3 ']'
+++ paste_arg2 '/build-batch # 108 '
+++ set -f
+++ set -- /build-batch '#' 108
+++ echo '#'
++ '[' '#' = '#' ']'
++ ok 0 '修前斷成 3 個 token、參數是裸 `#`;修後是 2 個 token、參數 `#108` —— 這把尺是活的'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (修前斷成 3 個 token、參數是裸 `#`;修後是 2 個 token、參數 `#108` —— 這把尺是活的)'
+RESULT PASS (修前斷成 3 個 token、參數是裸 `#`;修後是 2 個 token、參數 `#108` —— 這把尺是活的)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 A  AC1:spec 帶前後空白,四個印 spec 的 mode 各走一遍'
+==== 情境 A  AC1:spec 帶前後空白,四個印 spec 的 mode 各走一遍
++ echo '====        client 螢幕上要是 `#108`,而且照抄貼得動'
+====        client 螢幕上要是 `#108`,而且照抄貼得動
++ echo ===================================================================
+===================================================================
++ echo '---- A1  interrupted(票上重現步驟①,修後)'
+---- A1  interrupted(票上重現步驟①,修後)
++ spec_cell '{"mode":"interrupted","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}' '重跑 `/build-batch #108`(Codex: `$build-batch #108`)會接續這條 lane'
++ runp '{"mode":"interrupted","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}'
++ BIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"interrupted","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+中斷,可續 #47 a — 未合併,工作區 .git/batch-worktrees/47 與 branch batch/47 都留著;重跑 `/build-batch #108`(Codex: `$build-batch #108`)會接續這條 lane
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ echo '--- 反引號裡照抄貼的下一棒指令:'
+--- 反引號裡照抄貼的下一棒指令:
++ paste_cmds
++ grep -oE '`[$/][a-z-]+ [^`]*`' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ sed 's/^`//; s/`$//'
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/cmds.txt
+/build-batch #108
+$build-batch #108
++ BADARG=0
++ '[' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/cmds.txt ']'
++ IFS=
++ read -r c
+++ paste_tokens '/build-batch #108'
+++ set -f
+++ set -- /build-batch '#108'
+++ echo 2
+++ paste_arg2 '/build-batch #108'
+++ set -f
+++ set -- /build-batch '#108'
+++ echo '#108'
++ echo '    '\''/build-batch #108'\'' -> shell 斷成 2 個 token,參數是 '\''#108'\'''
+    '/build-batch #108' -> shell 斷成 2 個 token,參數是 '#108'
+++ paste_tokens '/build-batch #108'
+++ set -f
+++ set -- /build-batch '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '/build-batch #108'
++ grep -qE '^#[0-9]+$'
++ set -f
++ set -- /build-batch '#108'
++ echo '#108'
++ IFS=
++ read -r c
+++ paste_tokens '$build-batch #108'
+++ set -f
+++ set -- '$build-batch' '#108'
+++ echo 2
+++ paste_arg2 '$build-batch #108'
+++ set -f
+++ set -- '$build-batch' '#108'
+++ echo '#108'
++ echo '    '\''$build-batch #108'\'' -> shell 斷成 2 個 token,參數是 '\''#108'\'''
+    '$build-batch #108' -> shell 斷成 2 個 token,參數是 '#108'
+++ paste_tokens '$build-batch #108'
+++ set -f
+++ set -- '$build-batch' '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '$build-batch #108'
++ grep -qE '^#[0-9]+$'
++ set -f
++ set -- '$build-batch' '#108'
++ echo '#108'
++ IFS=
++ read -r c
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt ']'
++ grep -qF '重跑 `/build-batch #108`(Codex: `$build-batch #108`)會接續這條 lane' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ grep -q '# 108' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 0 = 0 ']'
++ ok 0 '續跑指令印成 `/build-batch #108`,整份輸出沒有一個 `# 108`,參數是單一 token `#108`'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (續跑指令印成 `/build-batch #108`,整份輸出沒有一個 `# 108`,參數是單一 token `#108`)'
+RESULT PASS (續跑指令印成 `/build-batch #108`,整份輸出沒有一個 `# 108`,參數是單一 token `#108`)
++ echo '---- A2  merged 全綠那半'
+---- A2  merged 全綠那半
++ spec_cell '{"mode":"merged","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}' '1 張已合併,下一步:`/client-demo #108`(Codex: `$client-demo #108`) — 一次 demo 這批'
++ runp '{"mode":"merged","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}'
++ BIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"merged","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+1 張已合併,下一步:`/client-demo #108`(Codex: `$client-demo #108`) — 一次 demo 這批
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ echo '--- 反引號裡照抄貼的下一棒指令:'
+--- 反引號裡照抄貼的下一棒指令:
++ paste_cmds
++ grep -oE '`[$/][a-z-]+ [^`]*`' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ sed 's/^`//; s/`$//'
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/cmds.txt
+/client-demo #108
+$client-demo #108
++ BADARG=0
++ '[' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/cmds.txt ']'
++ IFS=
++ read -r c
+++ paste_tokens '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo 2
+++ paste_arg2 '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo '#108'
++ echo '    '\''/client-demo #108'\'' -> shell 斷成 2 個 token,參數是 '\''#108'\'''
+    '/client-demo #108' -> shell 斷成 2 個 token,參數是 '#108'
+++ paste_tokens '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '/client-demo #108'
++ grep -qE '^#[0-9]+$'
++ set -f
++ set -- /client-demo '#108'
++ echo '#108'
++ IFS=
++ read -r c
+++ paste_tokens '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo 2
+++ paste_arg2 '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo '#108'
++ echo '    '\''$client-demo #108'\'' -> shell 斷成 2 個 token,參數是 '\''#108'\'''
+    '$client-demo #108' -> shell 斷成 2 個 token,參數是 '#108'
+++ paste_tokens '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '$client-demo #108'
++ set -f
++ set -- '$client-demo' '#108'
++ echo '#108'
++ grep -qE '^#[0-9]+$'
++ IFS=
++ read -r c
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt ']'
++ grep -qF '1 張已合併,下一步:`/client-demo #108`(Codex: `$client-demo #108`) — 一次 demo 這批' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ grep -q '# 108' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 0 = 0 ']'
++ ok 0 '交棒行印成 `/client-demo #108`,貼得動'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (交棒行印成 `/client-demo #108`,貼得動)'
+RESULT PASS (交棒行印成 `/client-demo #108`,貼得動)
++ echo '---- A3  merged 有人還在修那半'
+---- A3  merged 有人還在修那半
++ spec_cell '{"mode":"merged","numbers":[47,48],"spec":" 108 ","fixing":[48],"titles":{"47":"a","48":"b"}}' '下一步:`/client-demo #108`(Codex: `$client-demo #108`) — 先 demo 已收的 1 張'
++ runp '{"mode":"merged","numbers":[47,48],"spec":" 108 ","fixing":[48],"titles":{"47":"a","48":"b"}}'
++ BIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"merged","numbers":[47,48],"spec":" 108 ","fixing":[48],"titles":{"47":"a","48":"b"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+1 張已合併可以 demo,#48 還在修
+還在修 #48 b — QA 沒過,工作區 .git/batch-worktrees/48(branch batch/48)保留,下一步:`/build #48`(Codex: `$build #48`)
+下一步:`/client-demo #108`(Codex: `$client-demo #108`) — 先 demo 已收的 1 張
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ echo '--- 反引號裡照抄貼的下一棒指令:'
+--- 反引號裡照抄貼的下一棒指令:
++ paste_cmds
++ grep -oE '`[$/][a-z-]+ [^`]*`' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ sed 's/^`//; s/`$//'
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/cmds.txt
+/build #48
+$build #48
+/client-demo #108
+$client-demo #108
++ BADARG=0
++ '[' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/cmds.txt ']'
++ IFS=
++ read -r c
+++ paste_tokens '/build #48'
+++ set -f
+++ set -- /build '#48'
+++ echo 2
+++ paste_arg2 '/build #48'
+++ set -f
+++ set -- /build '#48'
+++ echo '#48'
++ echo '    '\''/build #48'\'' -> shell 斷成 2 個 token,參數是 '\''#48'\'''
+    '/build #48' -> shell 斷成 2 個 token,參數是 '#48'
+++ paste_tokens '/build #48'
+++ set -f
+++ set -- /build '#48'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '/build #48'
++ set -f
++ set -- /build '#48'
++ echo '#48'
++ grep -qE '^#[0-9]+$'
++ IFS=
++ read -r c
+++ paste_tokens '$build #48'
+++ set -f
+++ set -- '$build' '#48'
+++ echo 2
+++ paste_arg2 '$build #48'
+++ set -f
+++ set -- '$build' '#48'
+++ echo '#48'
++ echo '    '\''$build #48'\'' -> shell 斷成 2 個 token,參數是 '\''#48'\'''
+    '$build #48' -> shell 斷成 2 個 token,參數是 '#48'
+++ paste_tokens '$build #48'
+++ set -f
+++ set -- '$build' '#48'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '$build #48'
++ grep -qE '^#[0-9]+$'
++ set -f
++ set -- '$build' '#48'
++ echo '#48'
++ IFS=
++ read -r c
+++ paste_tokens '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo 2
+++ paste_arg2 '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo '#108'
++ echo '    '\''/client-demo #108'\'' -> shell 斷成 2 個 token,參數是 '\''#108'\'''
+    '/client-demo #108' -> shell 斷成 2 個 token,參數是 '#108'
+++ paste_tokens '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '/client-demo #108'
++ set -f
++ set -- /client-demo '#108'
++ echo '#108'
++ grep -qE '^#[0-9]+$'
++ IFS=
++ read -r c
+++ paste_tokens '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo 2
+++ paste_arg2 '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo '#108'
++ echo '    '\''$client-demo #108'\'' -> shell 斷成 2 個 token,參數是 '\''#108'\'''
+    '$client-demo #108' -> shell 斷成 2 個 token,參數是 '#108'
+++ paste_tokens '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '$client-demo #108'
++ grep -qE '^#[0-9]+$'
++ set -f
++ set -- '$client-demo' '#108'
++ echo '#108'
++ IFS=
++ read -r c
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt ']'
++ grep -qF '下一步:`/client-demo #108`(Codex: `$client-demo #108`) — 先 demo 已收的 1 張' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ grep -q '# 108' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 0 = 0 ']'
++ ok 0 '同一批裡兩種下一棒指令(`/build #48` 與 `/client-demo #108`)都貼得動'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (同一批裡兩種下一棒指令(`/build #48` 與 `/client-demo #108`)都貼得動)'
+RESULT PASS (同一批裡兩種下一棒指令(`/build #48` 與 `/client-demo #108`)都貼得動)
++ echo '---- A4  summary 的交棒行'
+---- A4  summary 的交棒行
++ spec_cell '{"mode":"summary","numbers":[47],"spec":" 108 ","titles":{"47":"a"},"coverage":{"47":["1. 登入頁"]}}' '下一步:`/client-demo #108`(Codex: `$client-demo #108`)'
++ runp '{"mode":"summary","numbers":[47],"spec":" 108 ","titles":{"47":"a"},"coverage":{"47":["1. 登入頁"]}}'
++ BIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"summary","numbers":[47],"spec":" 108 ","titles":{"47":"a"},"coverage":{"47":["1. 登入頁"]}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+## 批次總結(1 張)
+
+- #47 a — 已合併(batch/47)
+
+整批驗證:regression + 下列覆蓋驗收項聯集(只含已收的票),全綠。
+
+- 1. 登入頁
+
+下一步:`/client-demo #108`(Codex: `$client-demo #108`)
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ echo '--- 反引號裡照抄貼的下一棒指令:'
+--- 反引號裡照抄貼的下一棒指令:
++ paste_cmds
++ grep -oE '`[$/][a-z-]+ [^`]*`' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ sed 's/^`//; s/`$//'
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/cmds.txt
+/client-demo #108
+$client-demo #108
++ BADARG=0
++ '[' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/cmds.txt ']'
++ IFS=
++ read -r c
+++ paste_tokens '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo 2
+++ paste_arg2 '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo '#108'
++ echo '    '\''/client-demo #108'\'' -> shell 斷成 2 個 token,參數是 '\''#108'\'''
+    '/client-demo #108' -> shell 斷成 2 個 token,參數是 '#108'
+++ paste_tokens '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '/client-demo #108'
++ grep -qE '^#[0-9]+$'
++ set -f
++ set -- /client-demo '#108'
++ echo '#108'
++ IFS=
++ read -r c
+++ paste_tokens '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo 2
+++ paste_arg2 '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo '#108'
++ echo '    '\''$client-demo #108'\'' -> shell 斷成 2 個 token,參數是 '\''#108'\'''
+    '$client-demo #108' -> shell 斷成 2 個 token,參數是 '#108'
+++ paste_tokens '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '$client-demo #108'
++ grep -qE '^#[0-9]+$'
++ set -f
++ set -- '$client-demo' '#108'
++ echo '#108'
++ IFS=
++ read -r c
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt ']'
++ grep -qF '下一步:`/client-demo #108`(Codex: `$client-demo #108`)' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ grep -q '# 108' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 0 = 0 ']'
++ ok 0 'spec 票上那則批次總結的交棒行也印成 `#108`'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (spec 票上那則批次總結的交棒行也印成 `#108`)'
+RESULT PASS (spec 票上那則批次總結的交棒行也印成 `#108`)
++ echo '---- A5  全掃:四個 mode 印出來的每一段照抄貼指令,參數都是 `#<純數字>`'
+---- A5  全掃:四個 mode 印出來的每一段照抄貼指令,參數都是 `#<純數字>`
++ :
++ for p in "$P_INTR" "$P_DONE" "$P_FIXING" "$P_SUMMARY"
++ printf %s '{"mode":"interrupted","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ tr -d '\r'
++ for p in "$P_INTR" "$P_DONE" "$P_FIXING" "$P_SUMMARY"
++ printf %s '{"mode":"merged","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ tr -d '\r'
++ for p in "$P_INTR" "$P_DONE" "$P_FIXING" "$P_SUMMARY"
++ printf %s '{"mode":"merged","numbers":[47,48],"spec":" 108 ","fixing":[48],"titles":{"47":"a","48":"b"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ tr -d '\r'
++ for p in "$P_INTR" "$P_DONE" "$P_FIXING" "$P_SUMMARY"
++ printf %s '{"mode":"summary","numbers":[47],"spec":" 108 ","titles":{"47":"a"},"coverage":{"47":["1. 登入頁"]}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ tr -d '\r'
++ paste_cmds C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allpaste.txt
++ grep -oE '`[$/][a-z-]+ [^`]*`' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allpaste.txt
++ sed 's/^`//; s/`$//'
+/build-batch #108
+$build-batch #108
+/client-demo #108
+$client-demo #108
+/build #48
+$build #48
+/client-demo #108
+$client-demo #108
+/client-demo #108
+$client-demo #108
+++ paste_cmds C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allpaste.txt
+++ wc -l
+++ grep -oE '`[$/][a-z-]+ [^`]*`' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allpaste.txt
+++ sed 's/^`//; s/`$//'
++ ALLN=10
+++ paste_cmds C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allpaste.txt
+++ grep -cvE '^[$/][a-z-]+ #[0-9]+$'
+++ grep -oE '`[$/][a-z-]+ [^`]*`' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allpaste.txt
+++ sed 's/^`//; s/`$//'
++ BADN=0
++ echo '     照抄貼指令共 10 段,不合 `<指令> #<純數字>` 的有 0 段'
+     照抄貼指令共 10 段,不合 `<指令> #<純數字>` 的有 0 段
++ '[' 10 -ge 8 ']'
++ '[' 0 = 0 ']'
++ ok 0 '10 段指令全部是 `<指令> #<純數字>`,一段都沒歪'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (10 段指令全部是 `<指令> #<純數字>`,一段都沒歪)'
+RESULT PASS (10 段指令全部是 `<指令> #<純數字>`,一段都沒歪)
++ echo '---- A6  每一段都拿 shell 的斷詞規則量一次(不是只有 regex 說好)'
+---- A6  每一段都拿 shell 的斷詞規則量一次(不是只有 regex 說好)
++ BAD2=0
++ paste_cmds C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allpaste.txt
++ sort -u
++ grep -oE '`[$/][a-z-]+ [^`]*`' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allpaste.txt
++ sed 's/^`//; s/`$//'
++ IFS=
++ read -r c
+++ paste_tokens '$build #48'
+++ set -f
+++ set -- '$build' '#48'
+++ echo 2
+++ paste_arg2 '$build #48'
+++ set -f
+++ set -- '$build' '#48'
+++ echo '#48'
++ echo '    '\''$build #48'\'' -> 2 個 token,參數 '\''#48'\'''
+    '$build #48' -> 2 個 token,參數 '#48'
+++ paste_tokens '$build #48'
+++ set -f
+++ set -- '$build' '#48'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '$build #48'
++ set -f
++ set -- '$build' '#48'
++ echo '#48'
++ grep -qE '^#[0-9]+$'
++ IFS=
++ read -r c
+++ paste_tokens '$build-batch #108'
+++ set -f
+++ set -- '$build-batch' '#108'
+++ echo 2
+++ paste_arg2 '$build-batch #108'
+++ set -f
+++ set -- '$build-batch' '#108'
+++ echo '#108'
++ echo '    '\''$build-batch #108'\'' -> 2 個 token,參數 '\''#108'\'''
+    '$build-batch #108' -> 2 個 token,參數 '#108'
+++ paste_tokens '$build-batch #108'
+++ set -f
+++ set -- '$build-batch' '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '$build-batch #108'
++ set -f
++ set -- '$build-batch' '#108'
++ echo '#108'
++ grep -qE '^#[0-9]+$'
++ IFS=
++ read -r c
+++ paste_tokens '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo 2
+++ paste_arg2 '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo '#108'
++ echo '    '\''$client-demo #108'\'' -> 2 個 token,參數 '\''#108'\'''
+    '$client-demo #108' -> 2 個 token,參數 '#108'
+++ paste_tokens '$client-demo #108'
+++ set -f
+++ set -- '$client-demo' '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '$client-demo #108'
++ set -f
++ set -- '$client-demo' '#108'
++ echo '#108'
++ grep -qE '^#[0-9]+$'
++ IFS=
++ read -r c
+++ paste_tokens '/build #48'
+++ set -f
+++ set -- /build '#48'
+++ echo 2
+++ paste_arg2 '/build #48'
+++ set -f
+++ set -- /build '#48'
+++ echo '#48'
++ echo '    '\''/build #48'\'' -> 2 個 token,參數 '\''#48'\'''
+    '/build #48' -> 2 個 token,參數 '#48'
+++ paste_tokens '/build #48'
+++ set -f
+++ set -- /build '#48'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '/build #48'
++ grep -qE '^#[0-9]+$'
++ set -f
++ set -- /build '#48'
++ echo '#48'
++ IFS=
++ read -r c
+++ paste_tokens '/build-batch #108'
+++ set -f
+++ set -- /build-batch '#108'
+++ echo 2
+++ paste_arg2 '/build-batch #108'
+++ set -f
+++ set -- /build-batch '#108'
+++ echo '#108'
++ echo '    '\''/build-batch #108'\'' -> 2 個 token,參數 '\''#108'\'''
+    '/build-batch #108' -> 2 個 token,參數 '#108'
+++ paste_tokens '/build-batch #108'
+++ set -f
+++ set -- /build-batch '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '/build-batch #108'
++ set -f
++ set -- /build-batch '#108'
++ echo '#108'
++ grep -qE '^#[0-9]+$'
++ IFS=
++ read -r c
+++ paste_tokens '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo 2
+++ paste_arg2 '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo '#108'
++ echo '    '\''/client-demo #108'\'' -> 2 個 token,參數 '\''#108'\'''
+    '/client-demo #108' -> 2 個 token,參數 '#108'
+++ paste_tokens '/client-demo #108'
+++ set -f
+++ set -- /client-demo '#108'
+++ echo 2
++ '[' 2 = 2 ']'
++ paste_arg2 '/client-demo #108'
++ grep -qE '^#[0-9]+$'
++ set -f
++ set -- /client-demo '#108'
++ echo '#108'
++ IFS=
++ read -r c
++ '[' 0 = 0 ']'
++ ok 0 '每一段照抄貼的指令都是「指令 + `#<純數字>`」兩個 token,沒有一個裸 `#`'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (每一段照抄貼的指令都是「指令 + `#<純數字>`」兩個 token,沒有一個裸 `#`)'
+RESULT PASS (每一段照抄貼的指令都是「指令 + `#<純數字>`」兩個 token,沒有一個裸 `#`)
++ echo '---- A7  AC1 的後半:帶空白那批跟裸整數 108 那批**逐字相同**'
+---- A7  AC1 的後半:帶空白那批跟裸整數 108 那批**逐字相同**
++ echo '     (空白根本沒在輸出裡留下痕跡,不是「也印得出來」)'
+     (空白根本沒在輸出裡留下痕跡,不是「也印得出來」)
++ same_path '{"mode":"interrupted","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}' '{"mode":"interrupted","numbers":[47],"spec":108,"titles":{"47":"a"}}'
++ printf %s '{"mode":"interrupted","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ A_EXIT=0
++ printf %s '{"mode":"interrupted","numbers":[47],"spec":108,"titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ B_EXIT=0
++ echo '--- ` 108 ` 那批 stdout(client 螢幕)'
+--- ` 108 ` 那批 stdout(client 螢幕)
++ tr -d '\r'
+中斷,可續 #47 a — 未合併,工作區 .git/batch-worktrees/47 與 branch batch/47 都留著;重跑 `/build-batch #108`(Codex: `$build-batch #108`)會接續這條 lane
++ echo '--- 兩批的 exit:帶空白 0 / 裸整數 0'
+--- 兩批的 exit:帶空白 0 / 裸整數 0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ D1=0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ D2=0
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ S1=0
++ same_path '{"mode":"merged","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}' '{"mode":"merged","numbers":[47],"spec":108,"titles":{"47":"a"}}'
++ printf %s '{"mode":"merged","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ A_EXIT=0
++ printf %s '{"mode":"merged","numbers":[47],"spec":108,"titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ B_EXIT=0
++ echo '--- ` 108 ` 那批 stdout(client 螢幕)'
+--- ` 108 ` 那批 stdout(client 螢幕)
++ tr -d '\r'
+1 張已合併,下一步:`/client-demo #108`(Codex: `$client-demo #108`) — 一次 demo 這批
++ echo '--- 兩批的 exit:帶空白 0 / 裸整數 0'
+--- 兩批的 exit:帶空白 0 / 裸整數 0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ D1=0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ D2=0
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ S2=0
++ same_path '{"mode":"merged","numbers":[47,48],"spec":" 108 ","fixing":[48],"titles":{"47":"a","48":"b"}}' '{"mode":"merged","numbers":[47,48],"spec":108,"fixing":[48],"titles":{"47":"a","48":"b"}}'
++ printf %s '{"mode":"merged","numbers":[47,48],"spec":" 108 ","fixing":[48],"titles":{"47":"a","48":"b"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ A_EXIT=0
++ printf %s '{"mode":"merged","numbers":[47,48],"spec":108,"fixing":[48],"titles":{"47":"a","48":"b"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ B_EXIT=0
++ echo '--- ` 108 ` 那批 stdout(client 螢幕)'
+--- ` 108 ` 那批 stdout(client 螢幕)
++ tr -d '\r'
+1 張已合併可以 demo,#48 還在修
+還在修 #48 b — QA 沒過,工作區 .git/batch-worktrees/48(branch batch/48)保留,下一步:`/build #48`(Codex: `$build #48`)
+下一步:`/client-demo #108`(Codex: `$client-demo #108`) — 先 demo 已收的 1 張
++ echo '--- 兩批的 exit:帶空白 0 / 裸整數 0'
+--- 兩批的 exit:帶空白 0 / 裸整數 0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ D1=0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ D2=0
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ S3=0
++ same_path '{"mode":"summary","numbers":[47],"spec":" 108 ","titles":{"47":"a"},"coverage":{"47":["1. 登入頁"]}}' '{"mode":"summary","numbers":[47],"spec":108,"titles":{"47":"a"},"coverage":{"47":["1. 登入頁"]}}'
++ printf %s '{"mode":"summary","numbers":[47],"spec":" 108 ","titles":{"47":"a"},"coverage":{"47":["1. 登入頁"]}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ A_EXIT=0
++ printf %s '{"mode":"summary","numbers":[47],"spec":108,"titles":{"47":"a"},"coverage":{"47":["1. 登入頁"]}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ B_EXIT=0
++ echo '--- ` 108 ` 那批 stdout(client 螢幕)'
+--- ` 108 ` 那批 stdout(client 螢幕)
++ tr -d '\r'
+## 批次總結(1 張)
+
+- #47 a — 已合併(batch/47)
+
+整批驗證:regression + 下列覆蓋驗收項聯集(只含已收的票),全綠。
+
+- 1. 登入頁
+
+下一步:`/client-demo #108`(Codex: `$client-demo #108`)
++ echo '--- 兩批的 exit:帶空白 0 / 裸整數 0'
+--- 兩批的 exit:帶空白 0 / 裸整數 0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ D1=0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ D2=0
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ S4=0
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ ok 0 '四個 mode 的 stdout / stderr / exit 三樣都跟裸整數版逐字相同'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (四個 mode 的 stdout / stderr / exit 三樣都跟裸整數版逐字相同)'
+RESULT PASS (四個 mode 的 stdout / stderr / exit 三樣都跟裸整數版逐字相同)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 B  AC2:spec 轉不成整數 -> 當場停,指名 `spec` 那格 + 他填了什麼'
+==== 情境 B  AC2:spec 轉不成整數 -> 當場停,指名 `spec` 那格 + 他填了什麼
++ echo '====        不是裸 traceback、stdout 不准有半個字'
+====        不是裸 traceback、stdout 不准有半個字
++ echo ===================================================================
+===================================================================
++ echo '---- B1  票上重現步驟②(修後):spec=108.0'
+---- B1  票上重現步驟②(修後):spec=108.0
++ bad '{"mode":"merged","numbers":[47],"spec":108.0,"titles":{"47":"a"}}' '停在這裡 —— `spec` 那格票號不是數字,他填的是 108.0 —— 改成票號那個數字(像 47 這樣)再重跑' '108.0 當場停、指名是 `spec` 那格、原值 108.0 回貼給 client,stdout 空的、沒有 traceback'
++ runp '{"mode":"merged","numbers":[47],"spec":108.0,"titles":{"47":"a"}}'
++ BIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"merged","numbers":[47],"spec":108.0,"titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ RC=1
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
+停在這裡 —— `spec` 那格票號不是數字,他填的是 108.0 —— 改成票號那個數字(像 47 這樣)再重跑
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q Traceback C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt ']'
+++ wc -l
++ '[' 1 -le 1 ']'
++ grep -qF '停在這裡 —— `spec` 那格票號不是數字,他填的是 108.0 —— 改成票號那個數字(像 47 這樣)再重跑' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ ok 0 '108.0 當場停、指名是 `spec` 那格、原值 108.0 回貼給 client,stdout 空的、沒有 traceback'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (108.0 當場停、指名是 `spec` 那格、原值 108.0 回貼給 client,stdout 空的、沒有 traceback)'
+RESULT PASS (108.0 當場停、指名是 `spec` 那格、原值 108.0 回貼給 client,stdout 空的、沒有 traceback)
++ echo '---- B2  spec="一〇八"'
+---- B2  spec="一〇八"
++ bad '{"mode":"merged","numbers":[47],"spec":"一〇八","titles":{"47":"a"}}' '停在這裡 —— `spec` 那格票號不是數字,他填的是 '\''一〇八'\'' —— 改成票號那個數字(像 47 這樣)再重跑' 中文數字停得有聲、原文照樣回貼
++ runp '{"mode":"merged","numbers":[47],"spec":"一〇八","titles":{"47":"a"}}'
++ BIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"merged","numbers":[47],"spec":"一〇八","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ RC=1
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
+停在這裡 —— `spec` 那格票號不是數字,他填的是 '一〇八' —— 改成票號那個數字(像 47 這樣)再重跑
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q Traceback C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt ']'
+++ wc -l
++ '[' 1 -le 1 ']'
++ grep -qF '停在這裡 —— `spec` 那格票號不是數字,他填的是 '\''一〇八'\'' —— 改成票號那個數字(像 47 這樣)再重跑' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ ok 0 中文數字停得有聲、原文照樣回貼
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (中文數字停得有聲、原文照樣回貼)'
+RESULT PASS (中文數字停得有聲、原文照樣回貼)
++ echo '---- B3  spec 那格填 null'
+---- B3  spec 那格填 null
++ bad '{"mode":"merged","numbers":[47],"spec":null,"titles":{"47":"a"}}' '停在這裡 —— `spec` 那格票號不是數字,他填的是 None —— 改成票號那個數字(像 47 這樣)再重跑' 沒填也停得有聲
++ runp '{"mode":"merged","numbers":[47],"spec":null,"titles":{"47":"a"}}'
++ BIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"merged","numbers":[47],"spec":null,"titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ RC=1
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
+停在這裡 —— `spec` 那格票號不是數字,他填的是 None —— 改成票號那個數字(像 47 這樣)再重跑
++ echo 'exit 1'
+exit 1
++ '[' 1 '!=' 0 ']'
++ grep -q Traceback C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt ']'
+++ wc -l
++ '[' 1 -le 1 ']'
++ grep -qF '停在這裡 —— `spec` 那格票號不是數字,他填的是 None —— 改成票號那個數字(像 47 這樣)再重跑' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ ok 0 沒填也停得有聲
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (沒填也停得有聲)'
+RESULT PASS (沒填也停得有聲)
++ echo '---- B4  同型全掃:另外五種寫得出來的壞值,訊息長同一個樣子'
+---- B4  同型全掃:另外五種寫得出來的壞值,訊息長同一個樣子
++ tr -d '\r'
++ mv C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allbad.tmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allbad.txt
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allbad.txt
++ for p in "$B_EMPTY" "$B_FLOATSTR" "$B_HASH" "$B_TAIL" "$B_URL"
++ printf %s '{"mode":"merged","numbers":[47],"spec":"","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
+停在這裡 —— `spec` 那格票號不是數字,他填的是 '' —— 改成票號那個數字(像 47 這樣)再重跑
++ for p in "$B_EMPTY" "$B_FLOATSTR" "$B_HASH" "$B_TAIL" "$B_URL"
++ printf %s '{"mode":"merged","numbers":[47],"spec":"108.0","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
+停在這裡 —— `spec` 那格票號不是數字,他填的是 '108.0' —— 改成票號那個數字(像 47 這樣)再重跑
++ for p in "$B_EMPTY" "$B_FLOATSTR" "$B_HASH" "$B_TAIL" "$B_URL"
++ printf %s '{"mode":"merged","numbers":[47],"spec":"#108","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
+停在這裡 —— `spec` 那格票號不是數字,他填的是 '#108' —— 改成票號那個數字(像 47 這樣)再重跑
++ for p in "$B_EMPTY" "$B_FLOATSTR" "$B_HASH" "$B_TAIL" "$B_URL"
++ printf %s '{"mode":"merged","numbers":[47],"spec":"108a","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
+停在這裡 —— `spec` 那格票號不是數字,他填的是 '108a' —— 改成票號那個數字(像 47 這樣)再重跑
++ for p in "$B_EMPTY" "$B_FLOATSTR" "$B_HASH" "$B_TAIL" "$B_URL"
++ printf %s '{"mode":"merged","numbers":[47],"spec":"https://example.invalid/1","titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
+停在這裡 —— `spec` 那格票號不是數字,他填的是 'https://example.invalid/1' —— 改成票號那個數字(像 47 這樣)再重跑
+++ grep -c '^停在這裡 —— `spec` 那格票號不是數字,他填的是 .* —— 改成票號那個數字(像 47 這樣)再重跑$' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allbad.txt
++ '[' 5 = 5 ']'
++ grep -q Traceback C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/allbad.txt
++ ok 0 '五格全部同一句型、全部指名 `spec`、全部沒有 traceback'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (五格全部同一句型、全部指名 `spec`、全部沒有 traceback)'
+RESULT PASS (五格全部同一句型、全部指名 `spec`、全部沒有 traceback)
++ echo '---- B5  邊界:`spec` 這格整個缺席 —— 票上宣告過的天花板,不在 AC 裡'
+---- B5  邊界:`spec` 這格整個缺席 —— 票上宣告過的天花板,不在 AC 裡
++ echo '     (印出來當已知狀態,不判 FAIL)'
+     (印出來當已知狀態,不判 FAIL)
++ printf %s '{"mode":"merged","numbers":[47],"titles":{"47":"a"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ MISS_RC=1
++ tr -d '\r'
++ tail -3
+    print(format_batch_done(merged, [31mdata[0m[1;31m["spec"][0m, fixing, titles))
+                                    [31m~~~~[0m[1;31m^^^^^^^^[0m
+[1;35mKeyError[0m: [35m'spec'[0m
++ echo 'exit 1 —— commit message 已宣告:key 整個缺席時仍是裸 KeyError,不在這片 AC'
+exit 1 —— commit message 已宣告:key 整個缺席時仍是裸 KeyError,不在這片 AC
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 C  AC3 / AC4:斷言與 knob 是活的嗎'
+==== 情境 C  AC3 / AC4:斷言與 knob 是活的嗎
++ echo ===================================================================
+===================================================================
++ echo '---- C1  出貨版 --self-check 綠'
+---- C1  出貨版 --self-check 綠
++ python '/d/Self Project/Skills/skills/build-batch/batch.py' --self-check
+OK batch self-check green
++ ok 0 'batch.py --self-check exit 0'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (batch.py --self-check exit 0)'
+RESULT PASS (batch.py --self-check exit 0)
++ echo '---- C2  AC3:四段斷言從**原始碼裡抓出來**,每一段拿去實跑對答案'
+---- C2  AC3:四段斷言從**原始碼裡抓出來**,每一段拿去實跑對答案
++ echo '        (不是 grep 一個死字串 —— 抓到的 payload 真的餵進 batch.py,'
+        (不是 grep 一個死字串 —— 抓到的 payload 真的餵進 batch.py,
++ echo '         抓到的整句真的要出現在那個 mode 的 stdout 上)'
+         抓到的整句真的要出現在那個 mode 的 stdout 上)
++ python - '/d/Self Project/Skills/skills/build-batch/batch.py'
++ C2=0
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/asserts.txt
+從 batch.py 的 self-check 抓到 4 段咬 spec 的斷言
+  [咬到] mode=interrupted  spec=' 108 '
+       斷言整句: 重跑 `/build-batch #108`(Codex: `$build-batch #108`)會接續這條 lane
+       實跑 exit=0,這句在 stdout 上
+  [咬到] mode=merged/全綠    spec=' 108 '
+       斷言整句: 1 張已合併,下一步:`/client-demo #108`(Codex: `$client-demo #108`) — 一次 demo 這批
+       實跑 exit=0,這句在 stdout 上
+  [咬到] mode=merged/有人還在修 spec=' 108 '
+       斷言整句: 下一步:`/client-demo #108`(Codex: `$client-demo #108`) — 先 demo 已收的 1 張
+       實跑 exit=0,這句在 stdout 上
+  [咬到] mode=summary      spec=' 108 '
+       斷言整句: 下一步:`/client-demo #108`(Codex: `$client-demo #108`)
+       實跑 exit=0,這句在 stdout 上
+涵蓋的 mode: ['interrupted', 'merged/全綠', 'merged/有人還在修', 'summary']
+四個印 spec 的地方都在: True
++ '[' 0 = 0 ']'
++ ok 0 '四段斷言各對一個印 spec 的地方,整句都咬得到、都是實跑出來的原文'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (四段斷言各對一個印 spec 的地方,整句都咬得到、都是實跑出來的原文)'
+RESULT PASS (四段斷言各對一個印 spec 的地方,整句都咬得到、都是實跑出來的原文)
++ echo '---- C3  AC4:97-mutate 的 spec_not_normalized —— 只把 `spec` 那格漏掉'
+---- C3  AC4:97-mutate 的 spec_not_normalized —— 只把 `spec` 那格漏掉
++ echo '        client 螢幕要退回 #130 出廠的形狀,而 --self-check 要轉紅'
+        client 螢幕要退回 #130 出廠的形狀,而 --self-check 要轉紅
++ python '/d/Self Project/Skills/scripts/qa/97-mutate.py' --list
++ grep -xE 'spec_not_normalized|number_scalars_not_normalized'
+number_scalars_not_normalized
+spec_not_normalized
+++ python '/d/Self Project/Skills/scripts/qa/97-mutate.py' --list
+++ grep -cxE 'spec_not_normalized|number_scalars_not_normalized'
++ '[' 2 = 2 ']'
++ ok 0 '兩個 #130 knob 都在表上(只漏 spec / 單格值整條關掉的對照組)'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (兩個 #130 knob 都在表上(只漏 spec / 單格值整條關掉的對照組))'
+RESULT PASS (兩個 #130 knob 都在表上(只漏 spec / 單格值整條關掉的對照組))
++ fresh
++ rm -rf C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ cp -r C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/pristine C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ python '/d/Self Project/Skills/scripts/qa/97-mutate.py' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case spec_not_normalized
+mutation 已套用: spec_not_normalized
++ ok 0 '副本上套用 spec_not_normalized'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (副本上套用 spec_not_normalized)'
+RESULT PASS (副本上套用 spec_not_normalized)
++ runp '{"mode":"interrupted","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ BIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ printf %s '{"mode":"interrupted","numbers":[47],"spec":" 108 ","titles":{"47":"a"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+中斷,可續 #47 a — 未合併,工作區 .git/batch-worktrees/47 與 branch batch/47 都留著;重跑 `/build-batch # 108 `(Codex: `$build-batch # 108 `)會接續這條 lane
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt ']'
++ grep -q '重跑 `/build-batch # 108 `' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ ok 0 '拆掉之後真的退回「`# 108 `、exit 0、stderr 空的」—— 這格量的是活的東西'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (拆掉之後真的退回「`# 108 `、exit 0、stderr 空的」—— 這格量的是活的東西)'
+RESULT PASS (拆掉之後真的退回「`# 108 `、exit 0、stderr 空的」—— 這格量的是活的東西)
+++ paste_tokens '/build-batch # 108 '
+++ set -f
+++ set -- /build-batch '#' 108
+++ echo 3
+++ paste_arg2 '/build-batch # 108 '
+++ set -f
+++ set -- /build-batch '#' 108
+++ echo '#'
++ echo '     退化後那段照抄貼的指令:3 個 token,參數是裸 '\''#'\'''
+     退化後那段照抄貼的指令:3 個 token,參數是裸 '#'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py --self-check
++ CS=1
++ tail -6 C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/c-self.txt
+    [31mself_check[0m[1;31m()[0m
+    [31m~~~~~~~~~~[0m[1;31m^^[0m
+  File [35m"C:\Users\user\.claude\jobs\22414aa1\tmp\wt-130\run\case\skills\build-batch\batch.py"[0m, line [35m2107[0m, in [35mself_check[0m
+    assert [1;31mwant in pasted[0m, (payload["mode"], pasted)
+           [1;31m^^^^^^^^^^^^^^[0m
+[1;35mAssertionError[0m: [35m('interrupted', '中斷,可續 #47 a — 未合併,工作區 .git/batch-worktrees/47 與 branch batch/47 都留著;重跑 `/build-batch # 108 `(Codex: `$build-batch # 108 `)會接續這條 lane\r\n')[0m
++ '[' 1 '!=' 0 ']'
++ grep -q AssertionError C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/c-self.txt
++ ok 0 '同一個 knob 讓 --self-check 紅在 AssertionError'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (同一個 knob 讓 --self-check 紅在 AssertionError)'
+RESULT PASS (同一個 knob 讓 --self-check 紅在 AssertionError)
++ fresh
++ rm -rf C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ cp -r C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/pristine C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ python '/d/Self Project/Skills/scripts/qa/97-mutate.py' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case number_scalars_not_normalized
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py --self-check
++ CS2=1
++ tail -3 C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/c-self2.txt
+    assert [1;31mwant in pasted[0m, (payload["mode"], pasted)
+           [1;31m^^^^^^^^^^^^^^[0m
+[1;35mAssertionError[0m: [35m('interrupted', '中斷,可續 #47 a — 未合併,工作區 .git/batch-worktrees/47 與 branch batch/47 都留著;重跑 `/build-batch # 108 `(Codex: `$build-batch # 108 `)會接續這條 lane\r\n')[0m
++ '[' 1 '!=' 0 ']'
++ ok 0 '對照組 number_scalars_not_normalized 也轉紅'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (對照組 number_scalars_not_normalized 也轉紅)'
+RESULT PASS (對照組 number_scalars_not_normalized 也轉紅)
++ echo '---- C4  AC4:整張 mutation 表重跑一遍(不碰 repo 本體,全在暫存副本)'
+---- C4  AC4:整張 mutation 表重跑一遍(不碰 repo 本體,全在暫存副本)
++ echo '        跑的是 HEAD 的乾淨副本 —— 工作區裡別條 lane 的半成品不算在內'
+        跑的是 HEAD 的乾淨副本 —— 工作區裡別條 lane 的半成品不算在內
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/pristine/scripts/qa/97-mutate.py --run
++ MR=0
++ grep -E '^(咬住|沒咬住) +(spec_not_normalized|number_scalars_not_normalized)' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/mutrun.txt
+咬住  number_scalars_not_normalized  目標=skills/build-batch/batch.py self-check exit=1
+咬住  spec_not_normalized            目標=skills/build-batch/batch.py self-check exit=1
++ tail -2 C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/mutrun.txt
+
+58/58 個 knob 被 self-check 咬住
++ '[' 0 = 0 ']'
++ grep -q '^沒咬住' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/mutrun.txt
++ grep -q '^咬住  spec_not_normalized ' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/mutrun.txt
++ ok 0 '整張表每個 knob 都被 self-check 咬住,含 #130 那兩個'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (整張表每個 knob 都被 self-check 咬住,含 #130 那兩個)'
+RESULT PASS (整張表每個 knob 都被 self-check 咬住,含 #130 那兩個)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 D  AC5:第二把尺(129-wide)母體有沒有 spec,重跑違例 0'
+==== 情境 D  AC5:第二把尺(129-wide)母體有沒有 spec,重跑違例 0
++ echo ===================================================================
+===================================================================
++ echo '---- D1  母體真的補進 `spec` 的型別混用 —— 四個 mode x 四種寫法 + 壞值那半'
+---- D1  母體真的補進 `spec` 的型別混用 —— 四個 mode x 四種寫法 + 壞值那半
++ grep -nE 'spec [0-9"]|壞 spec|N8' '/d/Self Project/Skills/scripts/qa/129-wide.py'
++ head -20
+23:- N8  反引號裡那幾行「照抄貼進終端機」的下一棒指令,`#` 後面**緊接**純數字 ——
+62:# `` `$build #48` ``。抓的是指令名後面那個參數(N8)。
+68:#   2. N8 只跑在「票號全部合法」那半(壞值那半在上面就 early return 了),守的是
+217:    # N8:反引號裡那幾行下一棒指令,client 是整段照抄貼進終端機的 —— `#` 後面
+223:            bad.append((f"N8 照抄貼的指令參數是 `{arg}` —— 不是 `#<純數字>`,"
+360:    # coverage 是為了讓 N2 / N5 / N8 走得到 stdout(空的那條在 coverage_of 就停了),
+378:    # ---- N8:`spec` 那格 —— 它印出來的是 client 要照抄貼的下一棒指令(#130)----
+398:        yield (f"壞 spec {raw!r}",
++ grep -q 'interrupted spec' '/d/Self Project/Skills/scripts/qa/129-wide.py'
++ grep -q 'merged 全綠 spec' '/d/Self Project/Skills/scripts/qa/129-wide.py'
++ grep -q 'merged 有人還在修 spec' '/d/Self Project/Skills/scripts/qa/129-wide.py'
++ grep -q 'summary spec' '/d/Self Project/Skills/scripts/qa/129-wide.py'
++ grep -q '壞 spec' '/d/Self Project/Skills/scripts/qa/129-wide.py'
++ grep -q N8 '/d/Self Project/Skills/scripts/qa/129-wide.py'
++ ok 0 '四個印 spec 的 mode 都在母體裡,壞值那半也在,而且多了 N8 這條判準'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (四個印 spec 的 mode 都在母體裡,壞值那半也在,而且多了 N8 這條判準)'
+RESULT PASS (四個印 spec 的 mode 都在母體裡,壞值那半也在,而且多了 N8 這條判準)
++ echo '---- D2  129-wide 全跑(1900+ 批)—— 違例 0'
+---- D2  129-wide 全跑(1900+ 批)—— 違例 0
++ python '/d/Self Project/Skills/scripts/qa/129-wide.py'
++ WD=0
++ grep -E '^跑了|^==== 沒有違例|^==== 違例' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/wide.txt
+跑了 1943 個批次(quick=False)
+==== 沒有違例 ====
++ '[' 0 = 0 ']'
++ grep -q '^==== 沒有違例 ====' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/wide.txt
++ ok 0 '第二把尺重跑違例 0'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (第二把尺重跑違例 0)'
+RESULT PASS (第二把尺重跑違例 0)
++ echo '---- D3  這把尺是活的:對著漏收 `spec` 的副本跑,N8 要紅'
+---- D3  這把尺是活的:對著漏收 `spec` 的副本跑,N8 要紅
++ fresh
++ rm -rf C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ cp -r C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/pristine C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ python '/d/Self Project/Skills/scripts/qa/97-mutate.py' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case spec_not_normalized
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/scripts/qa/129-wide.py --quick
++ WM=1
++ grep -E '^跑了|^==== 違例' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/wide-mut.txt
+跑了 215 個批次(quick=True)
+==== 違例 25 筆 ====
++ grep -m3 'N8 照抄貼的指令參數' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/wide-mut.txt
+- N8 照抄貼的指令參數是 `# 108 ` —— 不是 `#<純數字>`,貼進終端機不會跑到那張票
+- N8 照抄貼的指令參數是 `# 108 ` —— 不是 `#<純數字>`,貼進終端機不會跑到那張票
+- N8 照抄貼的指令參數是 `# 108 ` —— 不是 `#<純數字>`,貼進終端機不會跑到那張票
++ '[' 1 '!=' 0 ']'
++ grep -q 'N8 照抄貼的指令參數是 `# 108 `' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/wide-mut.txt
++ ok 0 '漏收 spec 的版本被 N8 抓出「`# 108 ` 貼進終端機不會跑到那張票」'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (漏收 spec 的版本被 N8 抓出「`# 108 ` 貼進終端機不會跑到那張票」)'
+RESULT PASS (漏收 spec 的版本被 N8 抓出「`# 108 ` 貼進終端機不會跑到那張票」)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 F  覆蓋驗收項那條原句 —— 端到端走一遍'
+==== 情境 F  覆蓋驗收項那條原句 —— 端到端走一遍
++ echo '====   「切票的時候,每張票都標了「快」或「慢」加一句理由,整批一次列給'
+====   「切票的時候,每張票都標了「快」或「慢」加一句理由,整批一次列給
++ echo '====     我看,我可以當場改任何一張。」'
+====     我看,我可以當場改任何一張。」
++ echo '====   走的是 classify 這條路(切完票列給 client 看的那份清單);票號那'
+====   走的是 classify 這條路(切完票列給 client 看的那份清單);票號那
++ echo '====   幾格刻意混型別 —— #130 收的就是同一個入口,順便驗它沒把這條弄壞'
+====   幾格刻意混型別 —— #130 收的就是同一個入口,順便驗它沒把這條弄壞
++ echo ===================================================================
+===================================================================
++ F_MIX='{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ F_INT='{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":48,"coverage":["1. 登入頁"]},
+  {"number":49,"coverage":[],"judgement":true},
+  {"number":50,"coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ F_OV47='{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ F_OV50='{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ F_OV47_INT='{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":48,"coverage":["1. 登入頁"]},
+  {"number":49,"coverage":[],"judgement":true},
+  {"number":50,"coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ F_OV50_INT='{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":48,"coverage":["1. 登入頁"]},
+  {"number":49,"coverage":[],"judgement":true},
+  {"number":50,"coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ echo '---- F1  「整批一次列給我看」—— 一份輸出把四張票全列完,不是分批印'
+---- F1  「整批一次列給我看」—— 一份輸出把四張票全列完,不是分批印
++ runp '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ BIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
+++ grep -cE '^  (快|慢) +#[0-9]+ ' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+++ grep -cE '^  #[0-9]+  分級:' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ echo '     分級列 4 行 / 貼票行 4 行'
+     分級列 4 行 / 貼票行 4 行
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt ']'
++ grep -q '^分級(4 張)— 標「慢」的會演給你看,標「快」的不會:$' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+++ grep -cE '^  (快|慢) +#[0-9]+ ' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 4 = 4 ']'
+++ grep -cE '^  #[0-9]+  分級:' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 4 = 4 ']'
+++ grep -c '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 2 = 2 ']'
+++ grep -c '#48' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 2 = 2 ']'
+++ grep -c '#49' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 2 = 2 ']'
+++ grep -c '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 2 = 2 ']'
++ ok 0 '抬頭就是「4 張」,四張票在同一份輸出裡各出現一次(分級清單 + 貼票段)'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (抬頭就是「4 張」,四張票在同一份輸出裡各出現一次(分級清單 + 貼票段))'
+RESULT PASS (抬頭就是「4 張」,四張票在同一份輸出裡各出現一次(分級清單 + 貼票段))
++ echo '---- F2  「每張票都標了『快』或『慢』」—— 欄位拆出來量,一張都不漏'
+---- F2  「每張票都標了『快』或『慢』」—— 欄位拆出來量,一張都不漏
++ lane_check C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 lanes
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 lanes
+  #47 骨架  -> 分級「快」
+  #48 登入頁  -> 分級「慢」
+  #49 算票  -> 分級「慢」
+  #50 結帳  -> 分級「慢」
+拆出來的分級列: 4 張;票號: [47, 48, 49, 50]
++ ok 0 四張票各自拆得出分級,而且都落在「快」或「慢」
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (四張票各自拆得出分級,而且都落在「快」或「慢」)'
+RESULT PASS (四張票各自拆得出分級,而且都落在「快」或「慢」)
++ echo '---- F3  「加一句理由」—— 每張的理由都非空、不是佔位符'
+---- F3  「加一句理由」—— 每張的理由都非空、不是佔位符
++ lane_check C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 whys
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 whys
+  #47 骨架  -> 理由「沒有覆蓋驗收項,不會有你看得到的行為」(18 字)
+  #48 登入頁  -> 理由「覆蓋 1 條驗收項」(9 字)
+  #49 算票  -> 理由「動到判斷邏輯或資料寫入,硬規則一律慢」(18 字)
+  #50 結帳  -> 理由「覆蓋 1 條驗收項」(9 字)
+拆出來的分級列: 4 張;票號: [47, 48, 49, 50]
++ ok 0 '四張票各有一句講得出來的理由(四種分級**來源**各一張,理由字串有三種 —— #48 與 #50 同樣是「覆蓋 1 條驗收項」)'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (四張票各有一句講得出來的理由(四種分級**來源**各一張,理由字串有三種 —— #48 與 #50 同樣是「覆蓋 1 條驗收項」))'
+RESULT PASS (四張票各有一句講得出來的理由(四種分級**來源**各一張,理由字串有三種 —— #48 與 #50 同樣是「覆蓋 1 條驗收項」))
++ echo '---- F4  「我可以當場改任何一張」—— 改哪一張、那張才變,其他張一個字不動'
+---- F4  「我可以當場改任何一張」—— 改哪一張、那張才變,其他張一個字不動
++ echo '     F4a:把名單上**第一張** #47 從「快」改成「慢」'
+     F4a:把名單上**第一張** #47 從「快」改成「慢」
++ ov '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#47' '  慢  #47 骨架 — 你當場改成「慢」' '#47 真的變成「慢」而且理由改口說是 client 當場改的,#48/#49/#50 三張逐字不變'
++ ov_probe '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#47' '  慢  #47 骨架 — 你當場改成「慢」'
++ OVBIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ tr -d '\r'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ OVRC=0
++ tr -d '\r'
++ echo '--- 改之前 client 螢幕上那張的兩行:'
+--- 改之前 client 螢幕上那張的兩行:
++ grep -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
++ echo '--- 改之後 client 螢幕(整份):'
+--- 改之後 client 螢幕(整份):
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  慢  #47 骨架 — 你當場改成「慢」
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:慢 — 你當場改成「慢」
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 其他張有沒有被動到(把 #47 那兩行拿掉之後 diff):'
+--- 其他張有沒有被動到(把 #47 那兩行拿掉之後 diff):
++ grep -v -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
++ grep -v -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ echo '     (沒有差異)'
+     (沒有差異)
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.err ']'
++ grep -qF '  慢  #47 骨架 — 你當場改成「慢」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ cmp -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ cmp -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ ok 0 '#47 真的變成「慢」而且理由改口說是 client 當場改的,#48/#49/#50 三張逐字不變'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (#47 真的變成「慢」而且理由改口說是 client 當場改的,#48/#49/#50 三張逐字不變)'
+RESULT PASS (#47 真的變成「慢」而且理由改口說是 client 當場改的,#48/#49/#50 三張逐字不變)
++ echo '     F4b:把名單上**最後一張** #50 從「慢」改成「快」——「任何一張」不是只有第一張'
+     F4b:把名單上**最後一張** #50 從「慢」改成「快」——「任何一張」不是只有第一張
++ ov '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#50' '  快  #50 結帳 — 你當場改成「快」' '#50 真的變成「快」,#47/#48/#49 三張逐字不變'
++ ov_probe '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#50' '  快  #50 結帳 — 你當場改成「快」'
++ OVBIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ tr -d '\r'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ OVRC=0
++ tr -d '\r'
++ echo '--- 改之前 client 螢幕上那張的兩行:'
+--- 改之前 client 螢幕上那張的兩行:
++ grep -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 改之後 client 螢幕(整份):'
+--- 改之後 client 螢幕(整份):
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  快  #50 結帳 — 你當場改成「快」
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:快 — 你當場改成「快」
++ echo '--- 其他張有沒有被動到(把 #50 那兩行拿掉之後 diff):'
+--- 其他張有沒有被動到(把 #50 那兩行拿掉之後 diff):
++ grep -v -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
++ grep -v -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ echo '     (沒有差異)'
+     (沒有差異)
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.err ']'
++ grep -qF '  快  #50 結帳 — 你當場改成「快」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ cmp -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ cmp -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ ok 0 '#50 真的變成「快」,#47/#48/#49 三張逐字不變'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (#50 真的變成「快」,#47/#48/#49 三張逐字不變)'
+RESULT PASS (#50 真的變成「快」,#47/#48/#49 三張逐字不變)
++ echo '---- F5  跟 #130 的接點:票號混型別的那批,跟全裸整數那批**逐字相同**'
+---- F5  跟 #130 的接點:票號混型別的那批,跟全裸整數那批**逐字相同**
++ echo '        (證明 #130 把 spec/number 收在入口,沒有把這條 demo path 弄壞)'
+        (證明 #130 把 spec/number 收在入口,沒有把這條 demo path 弄壞)
++ same_path '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":48,"coverage":["1. 登入頁"]},
+  {"number":49,"coverage":[],"judgement":true},
+  {"number":50,"coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ A_EXIT=0
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":48,"coverage":["1. 登入頁"]},
+  {"number":49,"coverage":[],"judgement":true},
+  {"number":50,"coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ B_EXIT=0
++ echo '--- ` 108 ` 那批 stdout(client 螢幕)'
+--- ` 108 ` 那批 stdout(client 螢幕)
++ tr -d '\r'
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 兩批的 exit:帶空白 0 / 裸整數 0'
+--- 兩批的 exit:帶空白 0 / 裸整數 0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ D1=0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ D2=0
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ F5A=0
++ same_path '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":48,"coverage":["1. 登入頁"]},
+  {"number":49,"coverage":[],"judgement":true},
+  {"number":50,"coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ A_EXIT=0
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":48,"coverage":["1. 登入頁"]},
+  {"number":49,"coverage":[],"judgement":true},
+  {"number":50,"coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ B_EXIT=0
++ echo '--- ` 108 ` 那批 stdout(client 螢幕)'
+--- ` 108 ` 那批 stdout(client 螢幕)
++ tr -d '\r'
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  慢  #47 骨架 — 你當場改成「慢」
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:慢 — 你當場改成「慢」
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 兩批的 exit:帶空白 0 / 裸整數 0'
+--- 兩批的 exit:帶空白 0 / 裸整數 0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ D1=0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ D2=0
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ F5B=0
++ same_path '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":48,"coverage":["1. 登入頁"]},
+  {"number":49,"coverage":[],"judgement":true},
+  {"number":50,"coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ A_EXIT=0
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":48,"coverage":["1. 登入頁"]},
+  {"number":49,"coverage":[],"judgement":true},
+  {"number":50,"coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ B_EXIT=0
++ echo '--- ` 108 ` 那批 stdout(client 螢幕)'
+--- ` 108 ` 那批 stdout(client 螢幕)
++ tr -d '\r'
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  快  #50 結帳 — 你當場改成「快」
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:快 — 你當場改成「快」
++ echo '--- 兩批的 exit:帶空白 0 / 裸整數 0'
+--- 兩批的 exit:帶空白 0 / 裸整數 0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ D1=0
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ D2=0
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.out C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.out
++ cmp C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/b.err C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/a.err
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ F5C=0
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ ok 0 '沒改的那批與 client 當場改過的兩批,混型別版與裸整數版 stdout / stderr / exit 全部逐字相同'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (沒改的那批與 client 當場改過的兩批,混型別版與裸整數版 stdout / stderr / exit 全部逐字相同)'
+RESULT PASS (沒改的那批與 client 當場改過的兩批,混型別版與裸整數版 stdout / stderr / exit 全部逐字相同)
++ echo '---- F6  反證格:F1–F4 那幾把尺各演一次紅的'
+---- F6  反證格:F1–F4 那幾把尺各演一次紅的
++ echo '        (這 repo 的慣例 —— 尺沒紅過就不知道它在不在量東西。手法照 C3:'
+        (這 repo 的慣例 —— 尺沒紅過就不知道它在不在量東西。手法照 C3:
++ echo '         `git archive HEAD` 出乾淨副本再改壞,工作區一個字都不碰)'
+         `git archive HEAD` 出乾淨副本再改壞,工作區一個字都不碰)
++ echo '     F6a:把**分級那一欄**從清單列上拿掉 —— client 看不到誰快誰慢'
+     F6a:把**分級那一欄**從清單列上拿掉 —— client 看不到誰快誰慢
++ fresh
++ rm -rf C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ cp -r C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/pristine C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ mutate C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py 'f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}"' 'f"      {_titled(n, titles)} — {reason}"'
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py 'f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}"' 'f"      {_titled(n, titles)} — {reason}"'
+  改壞了: f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}"
+      ->   f"      {_titled(n, titles)} — {reason}"
++ ok 0 副本上套用「分級欄拿掉」
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (副本上套用「分級欄拿掉」)'
+RESULT PASS (副本上套用「分級欄拿掉」)
++ f_rulers C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ runp '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ BIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+      #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+      #48 登入頁 — 覆蓋 1 條驗收項
+      #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+      #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ R1=1
++ '[' 0 = 0 ']'
+++ grep -cE '^  (快|慢) +#[0-9]+ ' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 0 = 4 ']'
++ echo '--- F2 那把尺(每張都標到快/慢):'
+--- F2 那把尺(每張都標到快/慢):
++ lane_check C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 lanes
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 lanes
+拆出來的分級列: 0 張;票號: []
+  ^^ 期待 4 張,拆出來 0 張
++ R2=1
++ echo '--- F3 那把尺(每張都有一句理由):'
+--- F3 那把尺(每張都有一句理由):
++ lane_check C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 whys
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 whys
+拆出來的分級列: 0 張;票號: []
+  ^^ 期待 4 張,拆出來 0 張
++ R3=1
++ echo '--- F4a 那把尺(當場改 #47 快->慢):'
+--- F4a 那把尺(當場改 #47 快->慢):
++ ov_probe '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#47' '  慢  #47 骨架 — 你當場改成「慢」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVBIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ tr -d '\r'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVRC=0
++ tr -d '\r'
++ echo '--- 改之前 client 螢幕上那張的兩行:'
+--- 改之前 client 螢幕上那張的兩行:
++ grep -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
+      #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
++ echo '--- 改之後 client 螢幕(整份):'
+--- 改之後 client 螢幕(整份):
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+      #47 骨架 — 你當場改成「慢」
+      #48 登入頁 — 覆蓋 1 條驗收項
+      #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+      #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:慢 — 你當場改成「慢」
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 其他張有沒有被動到(把 #47 那兩行拿掉之後 diff):'
+--- 其他張有沒有被動到(把 #47 那兩行拿掉之後 diff):
++ grep -v -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
++ grep -v -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ echo '     (沒有差異)'
+     (沒有差異)
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.err ']'
++ grep -qF '  慢  #47 骨架 — 你當場改成「慢」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ R4A=1
++ echo '--- F4b 那把尺(當場改 #50 慢->快):'
+--- F4b 那把尺(當場改 #50 慢->快):
++ ov_probe '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#50' '  快  #50 結帳 — 你當場改成「快」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVBIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ tr -d '\r'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVRC=0
++ tr -d '\r'
++ echo '--- 改之前 client 螢幕上那張的兩行:'
+--- 改之前 client 螢幕上那張的兩行:
++ grep -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
+      #50 結帳 — 覆蓋 1 條驗收項
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 改之後 client 螢幕(整份):'
+--- 改之後 client 螢幕(整份):
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+      #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+      #48 登入頁 — 覆蓋 1 條驗收項
+      #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+      #50 結帳 — 你當場改成「快」
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:快 — 你當場改成「快」
++ echo '--- 其他張有沒有被動到(把 #50 那兩行拿掉之後 diff):'
+--- 其他張有沒有被動到(把 #50 那兩行拿掉之後 diff):
++ grep -v -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
++ grep -v -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ echo '     (沒有差異)'
+     (沒有差異)
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.err ']'
++ grep -qF '  快  #50 結帳 — 你當場改成「快」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ R4B=1
++ echo '     這份 batch.py 量出來(0=綠 / 非 0=紅):F1=1  F2=1  F3=1  F4a=1  F4b=1'
+     這份 batch.py 量出來(0=綠 / 非 0=紅):F1=1  F2=1  F3=1  F4a=1  F4b=1
++ '[' 1 '!=' 0 ']'
++ '[' 1 '!=' 0 ']'
++ ok 0 'F2 轉紅(拆不出分級欄)、F1 也跟著紅(清單列量不到 4 行)—— 分級欄真的有人在量'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (F2 轉紅(拆不出分級欄)、F1 也跟著紅(清單列量不到 4 行)—— 分級欄真的有人在量)'
+RESULT PASS (F2 轉紅(拆不出分級欄)、F1 也跟著紅(清單列量不到 4 行)—— 分級欄真的有人在量)
++ echo '     F6b:分級欄留著,把**理由**換成佔位符 TODO —— 這是 F3 專屬的紅'
+     F6b:分級欄留著,把**理由**換成佔位符 TODO —— 這是 F3 專屬的紅
++ fresh
++ rm -rf C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ cp -r C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/pristine C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ mutate C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py 'f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}"' 'f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — TODO"'
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py 'f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}"' 'f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — TODO"'
+  改壞了: f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — {reason}"
+      ->   f"  {_grade_cell(grade, width)}  {_titled(n, titles)} — TODO"
++ ok 0 副本上套用「理由變佔位符」
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (副本上套用「理由變佔位符」)'
+RESULT PASS (副本上套用「理由變佔位符」)
++ f_rulers C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ runp '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ BIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — TODO
+  慢  #48 登入頁 — TODO
+  慢  #49 算票 — TODO
+  慢  #50 結帳 — TODO
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ R1=1
++ '[' 0 = 0 ']'
+++ grep -cE '^  (快|慢) +#[0-9]+ ' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 4 = 4 ']'
+++ grep -cE '^  #[0-9]+  分級:' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 4 = 4 ']'
++ R1=0
++ echo '--- F2 那把尺(每張都標到快/慢):'
+--- F2 那把尺(每張都標到快/慢):
++ lane_check C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 lanes
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 lanes
+  #47 骨架  -> 分級「快」
+  #48 登入頁  -> 分級「慢」
+  #49 算票  -> 分級「慢」
+  #50 結帳  -> 分級「慢」
+拆出來的分級列: 4 張;票號: [47, 48, 49, 50]
++ R2=0
++ echo '--- F3 那把尺(每張都有一句理由):'
+--- F3 那把尺(每張都有一句理由):
++ lane_check C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 whys
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 whys
+  #47 骨架  -> 理由「TODO」(4 字)
+      ^^ 這張的理由不算數
+  #48 登入頁  -> 理由「TODO」(4 字)
+      ^^ 這張的理由不算數
+  #49 算票  -> 理由「TODO」(4 字)
+      ^^ 這張的理由不算數
+  #50 結帳  -> 理由「TODO」(4 字)
+      ^^ 這張的理由不算數
+拆出來的分級列: 4 張;票號: [47, 48, 49, 50]
++ R3=1
++ echo '--- F4a 那把尺(當場改 #47 快->慢):'
+--- F4a 那把尺(當場改 #47 快->慢):
++ ov_probe '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#47' '  慢  #47 骨架 — 你當場改成「慢」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVBIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ tr -d '\r'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVRC=0
++ tr -d '\r'
++ echo '--- 改之前 client 螢幕上那張的兩行:'
+--- 改之前 client 螢幕上那張的兩行:
++ grep -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
+  快  #47 骨架 — TODO
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
++ echo '--- 改之後 client 螢幕(整份):'
+--- 改之後 client 螢幕(整份):
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  慢  #47 骨架 — TODO
+  慢  #48 登入頁 — TODO
+  慢  #49 算票 — TODO
+  慢  #50 結帳 — TODO
+
+點頭之後,每張票上會多這一行:
+  #47  分級:慢 — 你當場改成「慢」
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 其他張有沒有被動到(把 #47 那兩行拿掉之後 diff):'
+--- 其他張有沒有被動到(把 #47 那兩行拿掉之後 diff):
++ grep -v -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
++ grep -v -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ echo '     (沒有差異)'
+     (沒有差異)
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.err ']'
++ grep -qF '  慢  #47 骨架 — 你當場改成「慢」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ R4A=1
++ echo '--- F4b 那把尺(當場改 #50 慢->快):'
+--- F4b 那把尺(當場改 #50 慢->快):
++ ov_probe '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#50' '  快  #50 結帳 — 你當場改成「快」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVBIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ tr -d '\r'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVRC=0
++ tr -d '\r'
++ echo '--- 改之前 client 螢幕上那張的兩行:'
+--- 改之前 client 螢幕上那張的兩行:
++ grep -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
+  慢  #50 結帳 — TODO
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 改之後 client 螢幕(整份):'
+--- 改之後 client 螢幕(整份):
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — TODO
+  慢  #48 登入頁 — TODO
+  慢  #49 算票 — TODO
+  快  #50 結帳 — TODO
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:快 — 你當場改成「快」
++ echo '--- 其他張有沒有被動到(把 #50 那兩行拿掉之後 diff):'
+--- 其他張有沒有被動到(把 #50 那兩行拿掉之後 diff):
++ grep -v -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
++ grep -v -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ echo '     (沒有差異)'
+     (沒有差異)
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.err ']'
++ grep -qF '  快  #50 結帳 — 你當場改成「快」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ R4B=1
++ echo '     這份 batch.py 量出來(0=綠 / 非 0=紅):F1=0  F2=0  F3=1  F4a=1  F4b=1'
+     這份 batch.py 量出來(0=綠 / 非 0=紅):F1=0  F2=0  F3=1  F4a=1  F4b=1
++ '[' 1 '!=' 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ ok 0 '只有 F3 轉紅,F1 / F2 照樣綠 —— 理由那一欄是被單獨量的,不是靠行數蒙到的'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (只有 F3 轉紅,F1 / F2 照樣綠 —— 理由那一欄是被單獨量的,不是靠行數蒙到的)'
+RESULT PASS (只有 F3 轉紅,F1 / F2 照樣綠 —— 理由那一欄是被單獨量的,不是靠行數蒙到的)
++ echo '     F6c:讓 client 的 override **靜靜失效**(改了跟沒改一模一樣)'
+     F6c:讓 client 的 override **靜靜失效**(改了跟沒改一模一樣)
++ echo '          —— 這正是 batch.py 註解裡點名最怕的畫面:改成功跟被忽略長得一樣'
+          —— 這正是 batch.py 註解裡點名最怕的畫面:改成功跟被忽略長得一樣
++ fresh
++ rm -rf C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ cp -r C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/pristine C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case
++ mutate C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py '    if override is not None:' '    if override is not None and False:'
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py '    if override is not None:' '    if override is not None and False:'
+  改壞了: if override is not None:
+      ->   if override is not None and False:
++ ok 0 '副本上套用「override 靜靜失效」'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (副本上套用「override 靜靜失效」)'
+RESULT PASS (副本上套用「override 靜靜失效」)
++ f_rulers C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ runp '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ BIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ R1=1
++ '[' 0 = 0 ']'
+++ grep -cE '^  (快|慢) +#[0-9]+ ' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 4 = 4 ']'
+++ grep -cE '^  #[0-9]+  分級:' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 4 = 4 ']'
++ R1=0
++ echo '--- F2 那把尺(每張都標到快/慢):'
+--- F2 那把尺(每張都標到快/慢):
++ lane_check C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 lanes
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 lanes
+  #47 骨架  -> 分級「快」
+  #48 登入頁  -> 分級「慢」
+  #49 算票  -> 分級「慢」
+  #50 結帳  -> 分級「慢」
+拆出來的分級列: 4 張;票號: [47, 48, 49, 50]
++ R2=0
++ echo '--- F3 那把尺(每張都有一句理由):'
+--- F3 那把尺(每張都有一句理由):
++ lane_check C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 whys
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 whys
+  #47 骨架  -> 理由「沒有覆蓋驗收項,不會有你看得到的行為」(18 字)
+  #48 登入頁  -> 理由「覆蓋 1 條驗收項」(9 字)
+  #49 算票  -> 理由「動到判斷邏輯或資料寫入,硬規則一律慢」(18 字)
+  #50 結帳  -> 理由「覆蓋 1 條驗收項」(9 字)
+拆出來的分級列: 4 張;票號: [47, 48, 49, 50]
++ R3=0
++ echo '--- F4a 那把尺(當場改 #47 快->慢):'
+--- F4a 那把尺(當場改 #47 快->慢):
++ ov_probe '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#47' '  慢  #47 骨架 — 你當場改成「慢」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVBIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ tr -d '\r'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVRC=0
++ tr -d '\r'
++ echo '--- 改之前 client 螢幕上那張的兩行:'
+--- 改之前 client 螢幕上那張的兩行:
++ grep -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
++ echo '--- 改之後 client 螢幕(整份):'
+--- 改之後 client 螢幕(整份):
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 其他張有沒有被動到(把 #47 那兩行拿掉之後 diff):'
+--- 其他張有沒有被動到(把 #47 那兩行拿掉之後 diff):
++ grep -v -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
++ grep -v -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ echo '     (沒有差異)'
+     (沒有差異)
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.err ']'
++ grep -qF '  慢  #47 骨架 — 你當場改成「慢」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ R4A=1
++ echo '--- F4b 那把尺(當場改 #50 慢->快):'
+--- F4b 那把尺(當場改 #50 慢->快):
++ ov_probe '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#50' '  快  #50 結帳 — 你當場改成「快」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVBIN=C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ tr -d '\r'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/case/skills/build-batch/batch.py
++ OVRC=0
++ tr -d '\r'
++ echo '--- 改之前 client 螢幕上那張的兩行:'
+--- 改之前 client 螢幕上那張的兩行:
++ grep -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 改之後 client 螢幕(整份):'
+--- 改之後 client 螢幕(整份):
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 其他張有沒有被動到(把 #50 那兩行拿掉之後 diff):'
+--- 其他張有沒有被動到(把 #50 那兩行拿掉之後 diff):
++ grep -v -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
++ grep -v -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ echo '     (沒有差異)'
+     (沒有差異)
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.err ']'
++ grep -qF '  快  #50 結帳 — 你當場改成「快」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ R4B=1
++ echo '     這份 batch.py 量出來(0=綠 / 非 0=紅):F1=0  F2=0  F3=0  F4a=1  F4b=1'
+     這份 batch.py 量出來(0=綠 / 非 0=紅):F1=0  F2=0  F3=0  F4a=1  F4b=1
++ '[' 1 '!=' 0 ']'
++ '[' 1 '!=' 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ ok 0 'F4a 與 F4b 兩個方向都轉紅,F1/F2/F3 不受影響 —— 「當場改得動」是真的有人在量'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (F4a 與 F4b 兩個方向都轉紅,F1/F2/F3 不受影響 —— 「當場改得動」是真的有人在量)'
+RESULT PASS (F4a 與 F4b 兩個方向都轉紅,F1/F2/F3 不受影響 —— 「當場改得動」是真的有人在量)
++ echo '     F6d:三種壞法收完之後,出貨版自己再量一次 —— 四把尺全綠'
+     F6d:三種壞法收完之後,出貨版自己再量一次 —— 四把尺全綠
++ f_rulers '/d/Self Project/Skills/skills/build-batch/batch.py'
++ runp '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '/d/Self Project/Skills/skills/build-batch/batch.py'
++ BIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ RC=0
++ tr -d '\r'
++ tr -d '\r'
++ echo '--- stdout(client 螢幕上看到的)'
+--- stdout(client 螢幕上看到的)
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- stderr'
+--- stderr
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/err.txt
++ echo 'exit 0'
+exit 0
++ R1=1
++ '[' 0 = 0 ']'
+++ grep -cE '^  (快|慢) +#[0-9]+ ' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 4 = 4 ']'
+++ grep -cE '^  #[0-9]+  分級:' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt
++ '[' 4 = 4 ']'
++ R1=0
++ echo '--- F2 那把尺(每張都標到快/慢):'
+--- F2 那把尺(每張都標到快/慢):
++ lane_check C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 lanes
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 lanes
+  #47 骨架  -> 分級「快」
+  #48 登入頁  -> 分級「慢」
+  #49 算票  -> 分級「慢」
+  #50 結帳  -> 分級「慢」
+拆出來的分級列: 4 張;票號: [47, 48, 49, 50]
++ R2=0
++ echo '--- F3 那把尺(每張都有一句理由):'
+--- F3 那把尺(每張都有一句理由):
++ lane_check C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 whys
++ python - C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/out.txt 4 whys
+  #47 骨架  -> 理由「沒有覆蓋驗收項,不會有你看得到的行為」(18 字)
+  #48 登入頁  -> 理由「覆蓋 1 條驗收項」(9 字)
+  #49 算票  -> 理由「動到判斷邏輯或資料寫入,硬規則一律慢」(18 字)
+  #50 結帳  -> 理由「覆蓋 1 條驗收項」(9 字)
+拆出來的分級列: 4 張;票號: [47, 48, 49, 50]
++ R3=0
++ echo '--- F4a 那把尺(當場改 #47 快->慢):'
+--- F4a 那把尺(當場改 #47 快->慢):
++ ov_probe '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#47' '  慢  #47 骨架 — 你當場改成「慢」' '/d/Self Project/Skills/skills/build-batch/batch.py'
++ OVBIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ tr -d '\r'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[],"override":"慢"},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ OVRC=0
++ tr -d '\r'
++ echo '--- 改之前 client 螢幕上那張的兩行:'
+--- 改之前 client 螢幕上那張的兩行:
++ grep -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
++ echo '--- 改之後 client 螢幕(整份):'
+--- 改之後 client 螢幕(整份):
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  慢  #47 骨架 — 你當場改成「慢」
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+
+點頭之後,每張票上會多這一行:
+  #47  分級:慢 — 你當場改成「慢」
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 其他張有沒有被動到(把 #47 那兩行拿掉之後 diff):'
+--- 其他張有沒有被動到(把 #47 那兩行拿掉之後 diff):
++ grep -v -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
++ grep -v -- '#47' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ echo '     (沒有差異)'
+     (沒有差異)
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.err ']'
++ grep -qF '  慢  #47 骨架 — 你當場改成「慢」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ cmp -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ cmp -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ R4A=0
++ echo '--- F4b 那把尺(當場改 #50 慢->快):'
+--- F4b 那把尺(當場改 #50 慢->快):
++ ov_probe '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}' '#50' '  快  #50 結帳 — 你當場改成「快」' '/d/Self Project/Skills/skills/build-batch/batch.py'
++ OVBIN='/d/Self Project/Skills/skills/build-batch/batch.py'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"]}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ tr -d '\r'
++ printf %s '{"mode":"classify","tickets":[
+  {"number":47,"coverage":[]},
+  {"number":"48","coverage":["1. 登入頁"]},
+  {"number":" 49 ","coverage":[],"judgement":true},
+  {"number":"50","coverage":["2. 結帳"],"override":"快"}],
+  "titles":{"47":"骨架","48":"登入頁","49":"算票","50":"結帳"}}'
++ python '/d/Self Project/Skills/skills/build-batch/batch.py'
++ OVRC=0
++ tr -d '\r'
++ echo '--- 改之前 client 螢幕上那張的兩行:'
+--- 改之前 client 螢幕上那張的兩行:
++ grep -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
+  慢  #50 結帳 — 覆蓋 1 條驗收項
+  #50  分級:慢 — 覆蓋 1 條驗收項
++ echo '--- 改之後 client 螢幕(整份):'
+--- 改之後 client 螢幕(整份):
++ cat C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
+分級(4 張)— 標「慢」的會演給你看,標「快」的不會:
+  快  #47 骨架 — 沒有覆蓋驗收項,不會有你看得到的行為
+  慢  #48 登入頁 — 覆蓋 1 條驗收項
+  慢  #49 算票 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  快  #50 結帳 — 你當場改成「快」
+
+點頭之後,每張票上會多這一行:
+  #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+  #48  分級:慢 — 覆蓋 1 條驗收項
+  #49  分級:慢 — 動到判斷邏輯或資料寫入,硬規則一律慢
+  #50  分級:快 — 你當場改成「快」
++ echo '--- 其他張有沒有被動到(把 #50 那兩行拿掉之後 diff):'
+--- 其他張有沒有被動到(把 #50 那兩行拿掉之後 diff):
++ grep -v -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt
++ grep -v -- '#50' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ diff C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ echo '     (沒有差異)'
+     (沒有差異)
++ '[' 0 = 0 ']'
++ '[' '!' -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.err ']'
++ grep -qF '  快  #50 結帳 — 你當場改成「快」' C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ cmp -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-a.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-rest-b.txt
++ cmp -s C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-base.txt C:/Users/user/.claude/jobs/22414aa1/tmp/wt-130/run/f-ov.txt
++ R4B=0
++ echo '     這份 batch.py 量出來(0=綠 / 非 0=紅):F1=0  F2=0  F3=0  F4a=0  F4b=0'
+     這份 batch.py 量出來(0=綠 / 非 0=紅):F1=0  F2=0  F3=0  F4a=0  F4b=0
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ '[' 0 = 0 ']'
++ ok 0 '同一批尺量出貨版全綠 —— 上面三格的紅是改壞造成的,不是尺壞了'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (同一批尺量出貨版全綠 —— 上面三格的紅是改壞造成的,不是尺壞了)'
+RESULT PASS (同一批尺量出貨版全綠 —— 上面三格的紅是改壞造成的,不是尺壞了)
++ echo ===================================================================
+===================================================================
++ echo '==== 情境 E  收尾'
+==== 情境 E  收尾
++ echo ===================================================================
+===================================================================
++ echo '---- E1  工作區沒被弄髒(所有改壞都跑在拋棄式副本上)'
+---- E1  工作區沒被弄髒(所有改壞都跑在拋棄式副本上)
++ git -C '/d/Self Project/Skills' status --porcelain -- skills scripts
++ grep -v '^?? '
+++ git -C '/d/Self Project/Skills' status --porcelain -- skills scripts
+++ grep -v '^?? '
++ '[' -z '' ']'
++ ok 0 'skills / scripts 底下被追蹤的檔一個都沒被動到'
++ '[' 0 = 0 ']'
++ echo 'RESULT PASS (skills / scripts 底下被追蹤的檔一個都沒被動到)'
+RESULT PASS (skills / scripts 底下被追蹤的檔一個都沒被動到)
++ set +x
+
+全部格子符合預期
