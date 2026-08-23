@@ -163,8 +163,27 @@ def check(batch, name, payload):
     return bad, wide
 
 
+def resolve_batch(arg):
+    """參數 -> 要跑的那支 batch.py。
+
+    這 repo 的每一支 `*-wide.py` 都吃 repo root(`… 130-wide.py .`),而這支還要能
+    被 `130-prevdiff.py` 指到修前那版的單檔,所以兩種都收:目錄就照 repo 的版面
+    往下找,`.py` 就直接用。收不了的當場停 —— 之前這裡是 `python <參數>` 直接吞,
+    給 `.` 會跑出 348 筆「訊息裡沒有指名 `spec`」的假違例,而真正的訊息是
+    `can't find '__main__' module`,讀報告的人看不出是自己參數給錯。
+    """
+    p = pathlib.Path(arg)
+    if p.is_dir():
+        p = p / "skills" / "build-batch" / "batch.py"
+    if p.suffix != ".py" or not p.is_file():
+        raise SystemExit(
+            f"停在這裡 —— 跑不了 {arg!r}:要嘛給 repo root(像 `.`),"
+            f"要嘛給一支 batch.py 的路徑。找到的是 {p}")
+    return p
+
+
 def main():
-    batch = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else BATCH
+    batch = resolve_batch(sys.argv[1]) if len(sys.argv) > 1 else BATCH
     total = 0
     all_bad, all_wide = [], []
     for name, payload in cases():
