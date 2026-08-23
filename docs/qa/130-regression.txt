@@ -7888,3 +7888,20 @@ exit=0
 `validate.py .` / `validate.py --self-check` / `96-newrule-probe.py` /
 `107-walkthrough.sh` / `120-walkthrough.sh` 全部重跑,上表就是重跑後的結果。
 這是本 lane 自己產出的檔的問題,不是 #130 的 product 問題。
+
+########################################################################
+# commit 30329fa 之後的重跑
+# (118 / 130 的 walkthrough 斷言「工作區乾淨」,所以固定在 commit 後跑;
+#  commit 前那輪 118 紅在該格,原因是本輪新增的 130-* 檔還沒進版控。)
+########################################################################
+
+==== $ bash scripts/qa/118-walkthrough.sh <workdir>
+exit=0
+
+==== $ bash scripts/qa/130-walkthrough.sh <workdir>
+RESULT PASS 80 行 / RESULT FAIL 0 行(40 格)
+exit=0
+
+==== $ git status --porcelain -- skills scripts
+(空)
+exit=0
