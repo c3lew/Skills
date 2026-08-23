@@ -1,0 +1,368 @@
+修前 = 643f683^ 的 skills/build-batch/batch.py -> C:\Users\user\AppData\Local\Temp\prevdiff129-j1mswnj9\batch_before.py
+修後 = 工作區 C:\Users\user\AppData\Local\Temp\claude\D--Self-Project-Skills\2a6fb746-20c6-4bae-8be7-6012747a8d7a\scratchpad\wt-wide\skills\build-batch\batch.py
+
+母體 47 批(alias 10、clean 27、tighten 10)
+
+批次                          面         修前        修後        判定
+c01_classify_normal         clean     exit 0    exit 0    OK              [逐字相同]
+c02_classify_empty          clean     exit 0    exit 0    OK              [逐字相同]
+c03_classify_single         clean     exit 0    exit 0    OK              [逐字相同]
+c04_classify_typo           clean     exit 1    exit 1    OK              [逐字相同]
+c05_classify_judgement      clean     exit 1    exit 1    OK              [逐字相同]
+c06_classify_dupe_int       clean     exit 1    exit 1    OK              [逐字相同]
+c07_classify_no_titles      clean     exit 0    exit 0    OK              [逐字相同]
+c08_classify_titles_partial clean     exit 0    exit 0    OK              [逐字相同]
+c09_plan_plain              clean     exit 0    exit 0    OK              [逐字相同]
+c10_plan_blocked_chain      clean     exit 0    exit 0    OK              [逐字相同]
+c11_plan_cap_overflow       clean     exit 0    exit 0    OK              [逐字相同]
+c26_plan_closed_blocker     clean     exit 0    exit 0    OK              [逐字相同]
+c27_titles_key_padded       clean     exit 0    exit 0    OK              [逐字相同]
+c12_split                   clean     exit 0    exit 0    OK              [逐字相同]
+c13_split_none_fixing       clean     exit 0    exit 0    OK              [逐字相同]
+c14_start                   clean     exit 0    exit 0    OK              [逐字相同]
+c15_done                    clean     exit 0    exit 0    OK              [逐字相同]
+c16_refill                  clean     exit 0    exit 0    OK              [逐字相同]
+c17_interrupted             clean     exit 0    exit 0    OK              [逐字相同]
+c18_merged                  clean     exit 0    exit 0    OK              [逐字相同]
+c19_fixing                  clean     exit 0    exit 0    OK              [逐字相同]
+c20_summary                 clean     exit 1    exit 1    OK              [逐字相同]
+c21_conflict_resolved       clean     exit 0    exit 0    OK              [逐字相同]
+c22_conflict_stopped        clean     exit 0    exit 0    OK              [逐字相同]
+c23_resume                  clean     exit 0    exit 0    OK              [逐字相同]
+c24_unknown_mode            clean     exit 1    exit 1    OK              [逐字相同]
+c25_classify_big_numbers    clean     exit 0    exit 0    OK              [逐字相同]
+a01_dupe_str_vs_int         alias     exit 0    exit 1    OK              [有差額]
+a02_dupe_spaces             alias     exit 0    exit 1    OK              [有差額]
+a03_dupe_all_str            alias     exit 1    exit 1    OK              [有差額]
+a04_split_number_str        alias     exit 0    exit 0    OK              [有差額]
+a05_start_number_str        alias     exit 0    exit 0    OK              [有差額]
+a06_plan_blocked_by_str     alias     exit 0    exit 0    OK              [有差額]
+a07_start_number_padded     alias     exit 0    exit 0    OK              [有差額]
+a08_fixing_number_str       alias     exit 1    exit 0    OK              [有差額]
+a09_refill_queue_str        alias     exit 0    exit 0    OK              [有差額]
+a10_conflict_stopped_str    alias     exit 0    exit 0    OK              [有差額]
+t01_float_47_0              tighten   exit 0    exit 1    OK              [有差額]
+t02_float_47_9              tighten   exit 0    exit 1    OK              [有差額]
+t03_number_null             tighten   exit 0    exit 1    OK              [有差額]
+t04_number_str_words        tighten   exit 0    exit 1    OK              [有差額]
+t05_blocked_by_words        tighten   exit 0    exit 1    OK              [有差額]
+t06_titles_bad_key          tighten   exit 1    exit 1    OK              [有差額]
+t07_titles_float_key        tighten   exit 1    exit 1    OK              [有差額]
+t08_numbers_list_words      tighten   exit 0    exit 1    OK              [有差額]
+t09_pending_list_words      tighten   exit 0    exit 1    OK              [有差額]
+t10_number_field_words      tighten   exit 1    exit 1    OK              [有差額]
+
+==== 差額 20 筆(逐筆原文)====
+
+  [a01_dupe_str_vs_int] 預期內(#129 要修的那一面)
+    --- 修前 exit=0
+    | 分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
+    |   快  #47 登入頁 — 沒有覆蓋驗收項,不會有你看得到的行為
+    |   慢  #47 — 覆蓋 1 條驗收項
+    | 
+    | 點頭之後,每張票上會多這一行:
+    |   #47  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+    |   #47  分級:慢 — 覆蓋 1 條驗收項
+    --- 修後 exit=1
+    | 分級(1 張、2 列,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
+    |   快(改不了)  #47 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+    |   慢(改不了)  #47 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+    | 
+    | 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+    |   #47 登入頁
+    !err 停在這裡 —— #47(重複 2 次) 的分級改不了,理由跟著各自那一列
+
+  [a02_dupe_spaces] 預期內(#129 要修的那一面)
+    --- 修前 exit=0
+    | 分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
+    |   快  # 47 — 沒有覆蓋驗收項,不會有你看得到的行為
+    |   慢  #47 登入頁 — 覆蓋 1 條驗收項
+    | 
+    | 點頭之後,每張票上會多這一行:
+    |   # 47   分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+    |   #47  分級:慢 — 覆蓋 1 條驗收項
+    --- 修後 exit=1
+    | 分級(1 張、2 列,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
+    |   快(改不了)  #47 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+    |   慢(改不了)  #47 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+    | 
+    | 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+    |   #47 登入頁
+    !err 停在這裡 —— #47(重複 2 次) 的分級改不了,理由跟著各自那一列
+
+  [a03_dupe_all_str] 預期內(#129 要修的那一面)
+    --- 修前 exit=1
+    | 分級(1 張、2 列,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
+    |   快(改不了)  #47 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+    |   慢(改不了)  #47 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+    | 
+    | 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+    |   #47
+    !err 停在這裡 —— #47(重複 2 次) 的分級改不了,理由跟著各自那一列
+    --- 修後 exit=1
+    | 分級(1 張、2 列,其中 1 張改不了)— 標「慢」的會演給你看,標「快」的不會:
+    |   快(改不了)  #47 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+    |   慢(改不了)  #47 登入頁 — 這個票號在這批出現 2 次 —— 同一張票只能有一列,刪掉多的再重跑
+    | 
+    | 這批還不能貼 —— 下面這幾張的分級改不了,先解決再整批重跑一次:
+    |   #47 登入頁
+    !err 停在這裡 —— #47(重複 2 次) 的分級改不了,理由跟著各自那一列
+
+  [a04_split_number_str] 預期內(#129 要修的那一面)
+    --- 修前 exit=0
+    | 已收(1 張)— 照這個順序 merge:
+    |   #47 登入頁
+    | 還在修(1 張)— worktree 與 branch 都留著,不 remove:
+    |   #48
+    --- 修後 exit=0
+    | 已收(1 張)— 照這個順序 merge:
+    |   #47 登入頁
+    | 還在修(1 張)— worktree 與 branch 都留著,不 remove:
+    |   #48 結帳流程
+
+  [a05_start_number_str] 預期內(#129 要修的那一面)
+    --- 修前 exit=0
+    | 開工 #47 — 工作區 .git/batch-worktrees/47(branch batch/47)
+    | 開工 #48 結帳流程 — 工作區 .git/batch-worktrees/48(branch batch/48)
+    --- 修後 exit=0
+    | 開工 #47 登入頁 — 工作區 .git/batch-worktrees/47(branch batch/47)
+    | 開工 #48 結帳流程 — 工作區 .git/batch-worktrees/48(branch batch/48)
+
+  [a06_plan_blocked_by_str] 預期內(#129 要修的那一面)
+    --- 修前 exit=0
+    | 要開(0 張):
+    |   (無)
+    | 排隊(0 張):
+    |   (無)
+    | 還卡著(1 張):
+    |   #48 結帳流程 — 卡在 #47
+    --- 修後 exit=0
+    | 要開(1 張):
+    |   #48 結帳流程
+    | 排隊(0 張):
+    |   (無)
+    | 還卡著(0 張):
+    |   (無)
+
+  [a07_start_number_padded] 預期內(#129 要修的那一面)
+    --- 修前 exit=0
+    | 開工 # 47 — 工作區 .git/batch-worktrees/ 47 (branch batch/ 47 )
+    | 開工 #48 結帳流程 — 工作區 .git/batch-worktrees/48(branch batch/48)
+    --- 修後 exit=0
+    | 開工 #47 登入頁 — 工作區 .git/batch-worktrees/47(branch batch/47)
+    | 開工 #48 結帳流程 — 工作區 .git/batch-worktrees/48(branch batch/48)
+
+  [a08_fixing_number_str] 預期內(#129 要修的那一面)
+    --- 修前 exit=1
+    | (空)
+    !err #48 不在 fixing 裡,這則 comment 會貼到一張已收的票上
+    --- 修後 exit=0
+    | QA 沒過 — #48 結帳流程 還在修,另外 1 張已經合回主線。
+    | 
+    | 工作區 `.git/batch-worktrees/48`(branch `batch/48`)保留、沒有回收 — 接著在裡面繼續修。
+    | 
+    | 下一步:`/build #48`(Codex: `$build #48`)
+
+  [a09_refill_queue_str] 預期內(#129 要修的那一面)
+    --- 修前 exit=0
+    | 補位 #48 — 工作區 .git/batch-worktrees/48(branch batch/48);同時跑 2 條,佇列剩 0 張
+    --- 修後 exit=0
+    | 補位 #48 結帳流程 — 工作區 .git/batch-worktrees/48(branch batch/48);同時跑 2 條,佇列剩 0 張
+
+  [a10_conflict_stopped_str] 預期內(#129 要修的那一面)
+    --- 修前 exit=0
+    | 撞車停下:#47 跟主線上既有的內容撞在 a.py,自己解不掉 — 這批合併停在這裡,等你決定。
+    | 
+    | 已經合進主線的(1 張):
+    |   #47
+    | 
+    | 還沒合的(1 張),工作區與 branch 都留著:
+    |   #48 — .git/batch-worktrees/48(branch batch/48)
+    | 
+    | 沒有猜、沒有強推,也沒有把任何一邊蓋掉。
+    --- 修後 exit=0
+    | 撞車停下:#47 登入頁 跟主線上既有的內容撞在 a.py,自己解不掉 — 這批合併停在這裡,等你決定。
+    | 
+    | 已經合進主線的(1 張):
+    |   #47 登入頁
+    | 
+    | 還沒合的(1 張),工作區與 branch 都留著:
+    |   #48 結帳流程 — .git/batch-worktrees/48(branch batch/48)
+    | 
+    | 沒有猜、沒有強推,也沒有把任何一邊蓋掉。
+
+  [t01_float_47_0] 收緊(宣告過)
+    判讀:宣告過的天花板(票上 code-review「47.0 被誤傷」那條:不收)。放行整數值的小數就得在入口開型別特例,正是這條路要拆的。停是有聲的,訊息講得出他填了什麼。
+    --- 修前 exit=0
+    | 分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
+    |   快  #47.0 登入頁 — 沒有覆蓋驗收項,不會有你看得到的行為
+    |   慢  #48 結帳流程 — 覆蓋 1 條驗收項
+    | 
+    | 點頭之後,每張票上會多這一行:
+    |   #47.0  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+    |   #48  分級:慢 — 覆蓋 1 條驗收項
+    --- 修後 exit=1
+    | (空)
+    !err 停在這裡 —— 第 1 列的票號不是數字,他填的是 47.0 —— 改成票號那個數字(像 47 這樣)再重跑
+
+  [t02_float_47_9] 收緊(宣告過)
+    判讀:修對的收緊:修前 47.9 自成一張票、靜靜印成 #47.9;現在當場停。捨小數會靜靜換成別張票,停才是對的。
+    --- 修前 exit=0
+    | 分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
+    |   快  #47.9 — 沒有覆蓋驗收項,不會有你看得到的行為
+    | 
+    | 點頭之後,每張票上會多這一行:
+    |   #47.9  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+    --- 修後 exit=1
+    | (空)
+    !err 停在這裡 —— 第 1 列的票號不是數字,他填的是 47.9 —— 改成票號那個數字(像 47 這樣)再重跑
+
+  [t03_number_null] 收緊(宣告過)
+    判讀:修對的收緊:修前 `null` 一路印成 `#None`(client 讀到一張不存在的票);現在當場停並指名是第幾列。
+    --- 修前 exit=0
+    | 分級(2 張)— 標「慢」的會演給你看,標「快」的不會:
+    |   快  #None — 沒有覆蓋驗收項,不會有你看得到的行為
+    |   慢  #48 結帳流程 — 覆蓋 1 條驗收項
+    | 
+    | 點頭之後,每張票上會多這一行:
+    |   #None  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+    |   #48  分級:慢 — 覆蓋 1 條驗收項
+    --- 修後 exit=1
+    | (空)
+    !err 停在這裡 —— 第 1 列的票號不是數字,他填的是 None —— 改成票號那個數字(像 47 這樣)再重跑
+
+  [t04_number_str_words] 收緊(宣告過)
+    判讀:修對的收緊:修前 `'四十七'` 靜靜印成 `#四十七`;現在停,訊息指名第幾列 + 他填了什麼,沒有 traceback。
+    --- 修前 exit=0
+    | 分級(1 張)— 標「慢」的會演給你看,標「快」的不會:
+    |   快  #四十七 — 沒有覆蓋驗收項,不會有你看得到的行為
+    | 
+    | 點頭之後,每張票上會多這一行:
+    |   #四十七  分級:快 — 沒有覆蓋驗收項,不會有你看得到的行為
+    --- 修後 exit=1
+    | (空)
+    !err 停在這裡 —— 第 1 列的票號不是數字,他填的是 '四十七' —— 改成票號那個數字(像 47 這樣)再重跑
+
+  [t05_blocked_by_words] 收緊(宣告過)
+    判讀:修對的收緊:plan 模式比的就是 number / blocked_by 兩份名單,非數字的 blocked_by 修前會讓那張被讀成「卡在一個沒見過的票號後面」,永遠排不進去。
+    --- 修前 exit=0
+    | 要開(1 張):
+    |   #47 登入頁
+    | 排隊(0 張):
+    |   (無)
+    | 還卡著(1 張):
+    |   #48 結帳流程 — 卡在 #四十七
+    --- 修後 exit=1
+    | (空)
+    !err 停在這裡 —— 第 2 列的「卡在誰後面」那份名單裡的票號不是數字,他填的是 '四十七' —— 改成票號那個數字(像 47 這樣)再重跑
+
+  [t06_titles_bad_key] 收緊(宣告過)
+    判讀:修對的收緊:`titles` 的 key 修前是裸 `int(k)`,壞 key 直接裸 traceback;現在走同一支 `ticket_number`,有聲地停並指名。
+    --- 修前 exit=1
+    | (空)
+    !err Traceback (most recent call last):
+    !err   File "<batch.py>", line <n>, in <module>
+    !err     main()
+    !err     ~~~~^^
+    !err   File "<batch.py>", line <n>, in main
+    !err     titles = {int(k): v for k, v in data.get("titles", {}).items()}
+    !err               ~~~^^^
+    !err ValueError: invalid literal for int() with base 10: '四七'
+    --- 修後 exit=1
+    | (空)
+    !err 停在這裡 —— `titles` 那份標題表裡的票號不是數字,他填的是 '四七' —— 改成票號那個數字(像 47 這樣)再重跑
+
+  [t07_titles_float_key] 收緊(宣告過)
+    判讀:同 t01 的天花板,換到 `titles` 這一格:'47.0' 當 key 修前一樣是裸 traceback,現在是有聲的停。
+    --- 修前 exit=1
+    | (空)
+    !err Traceback (most recent call last):
+    !err   File "<batch.py>", line <n>, in <module>
+    !err     main()
+    !err     ~~~~^^
+    !err   File "<batch.py>", line <n>, in main
+    !err     titles = {int(k): v for k, v in data.get("titles", {}).items()}
+    !err               ~~~^^^
+    !err ValueError: invalid literal for int() with base 10: '47.0'
+    --- 修後 exit=1
+    | (空)
+    !err 停在這裡 —— `titles` 那份標題表裡的票號不是數字,他填的是 '47.0' —— 改成票號那個數字(像 47 這樣)再重跑
+
+  [t08_numbers_list_words] 收緊(宣告過)
+    判讀:修對的收緊:`numbers` 名單裡的非數字修前一路帶到查表,靜靜少印一個標題;現在停並指名是哪份名單。
+    --- 修前 exit=0
+    | 已收(2 張)— 照這個順序 merge:
+    |   #47 登入頁
+    |   #四八
+    | 還在修(0 張)— worktree 與 branch 都留著,不 remove:
+    |   (無)
+    --- 修後 exit=1
+    | (空)
+    !err 停在這裡 —— `numbers` 那份名單裡的票號不是數字,他填的是 '四八' —— 改成票號那個數字(像 47 這樣)再重跑
+
+  [t09_pending_list_words] 收緊(宣告過)
+    判讀:同 t08,換到 `pending` 那份名單 —— `NUMBER_LISTS` 六格走同一支,這格證明不是只收了 `numbers`。
+    --- 修前 exit=0
+    | 撞車停下:#47 登入頁 跟主線上既有的內容撞在 a.py,自己解不掉 — 這批合併停在這裡,等你決定。
+    | 
+    | 已經合進主線的(1 張):
+    |   #47 登入頁
+    | 
+    | 還沒合的(1 張),工作區與 branch 都留著:
+    |   #四八 — .git/batch-worktrees/四八(branch batch/四八)
+    | 
+    | 沒有猜、沒有強推,也沒有把任何一邊蓋掉。
+    --- 修後 exit=1
+    | (空)
+    !err 停在這裡 —— `pending` 那份名單裡的票號不是數字,他填的是 '四八' —— 改成票號那個數字(像 47 這樣)再重跑
+
+  [t10_number_field_words] 收緊(宣告過)
+    判讀:同上,換到 `number` 那格(fixing 模式)。修前它會拿去跟 fixing 名單比,比不上就報「不在 fixing 裡」—— 訊息指錯方向。
+    --- 修前 exit=1
+    | (空)
+    !err #四八 不在 fixing 裡,這則 comment 會貼到一張已收的票上
+    --- 修後 exit=1
+    | (空)
+    !err 停在這裡 —— `number` 那格票號不是數字,他填的是 '四八' —— 改成票號那個數字(像 47 這樣)再重跑
+
+==== 本輪新出現的停(修前 exit 0 -> 修後非 0)9 筆 ====
+每一筆都要判讀是「修對的收緊」還是 regression:
+
+  [a01_dupe_str_vs_int] #129 要修的那一面(重複票號 alias)
+    判讀:(見上面的面別)
+    修後 stderr:'停在這裡 —— #47(重複 2 次) 的分級改不了,理由跟著各自那一列'
+
+  [a02_dupe_spaces] #129 要修的那一面(重複票號 alias)
+    判讀:(見上面的面別)
+    修後 stderr:'停在這裡 —— #47(重複 2 次) 的分級改不了,理由跟著各自那一列'
+
+  [t01_float_47_0] 修對的收緊 / 宣告過的天花板
+    判讀:宣告過的天花板(票上 code-review「47.0 被誤傷」那條:不收)。放行整數值的小數就得在入口開型別特例,正是這條路要拆的。停是有聲的,訊息講得出他填了什麼。
+    修後 stderr:'停在這裡 —— 第 1 列的票號不是數字,他填的是 47.0 —— 改成票號那個數字(像 47 這樣)再重跑'
+
+  [t02_float_47_9] 修對的收緊 / 宣告過的天花板
+    判讀:修對的收緊:修前 47.9 自成一張票、靜靜印成 #47.9;現在當場停。捨小數會靜靜換成別張票,停才是對的。
+    修後 stderr:'停在這裡 —— 第 1 列的票號不是數字,他填的是 47.9 —— 改成票號那個數字(像 47 這樣)再重跑'
+
+  [t03_number_null] 修對的收緊 / 宣告過的天花板
+    判讀:修對的收緊:修前 `null` 一路印成 `#None`(client 讀到一張不存在的票);現在當場停並指名是第幾列。
+    修後 stderr:'停在這裡 —— 第 1 列的票號不是數字,他填的是 None —— 改成票號那個數字(像 47 這樣)再重跑'
+
+  [t04_number_str_words] 修對的收緊 / 宣告過的天花板
+    判讀:修對的收緊:修前 `'四十七'` 靜靜印成 `#四十七`;現在停,訊息指名第幾列 + 他填了什麼,沒有 traceback。
+    修後 stderr:"停在這裡 —— 第 1 列的票號不是數字,他填的是 '四十七' —— 改成票號那個數字(像 47 這樣)再重跑"
+
+  [t05_blocked_by_words] 修對的收緊 / 宣告過的天花板
+    判讀:修對的收緊:plan 模式比的就是 number / blocked_by 兩份名單,非數字的 blocked_by 修前會讓那張被讀成「卡在一個沒見過的票號後面」,永遠排不進去。
+    修後 stderr:"停在這裡 —— 第 2 列的「卡在誰後面」那份名單裡的票號不是數字,他填的是 '四十七' —— 改成票號那個數字(像 47 這樣)再重跑"
+
+  [t08_numbers_list_words] 修對的收緊 / 宣告過的天花板
+    判讀:修對的收緊:`numbers` 名單裡的非數字修前一路帶到查表,靜靜少印一個標題;現在停並指名是哪份名單。
+    修後 stderr:"停在這裡 —— `numbers` 那份名單裡的票號不是數字,他填的是 '四八' —— 改成票號那個數字(像 47 這樣)再重跑"
+
+  [t09_pending_list_words] 修對的收緊 / 宣告過的天花板
+    判讀:同 t08,換到 `pending` 那份名單 —— `NUMBER_LISTS` 六格走同一支,這格證明不是只收了 `numbers`。
+    修後 stderr:"停在這裡 —— `pending` 那份名單裡的票號不是數字,他填的是 '四八' —— 改成票號那個數字(像 47 這樣)再重跑"
+
+
+母體 47,不合 0
